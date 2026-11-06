@@ -53,6 +53,9 @@ function deleteCommittedTenant(string $tenantId): void
         "select table_name from information_schema.columns where table_schema = 'public' and column_name = 'tenant_id'"
     ))->pluck('table_name')->all();
 
+    // Riferimento circolare struttura ↔ politica di cancellazione predefinita.
+    $db->table('properties')->where('tenant_id', $tenantId)->update(['default_cancellation_policy_id' => null]);
+
     // Più passate: una riga referenziata si cancella al giro successivo.
     for ($pass = 0; $pass < 10 && $tables !== []; $pass++) {
         foreach ($tables as $index => $table) {

@@ -19,3 +19,4 @@ require_once __DIR__.'/Support/source.php';
 require_once __DIR__.'/Support/fixtures.php';
 require_once __DIR__.'/Support/auth.php';
 require_once __DIR__.'/Support/concurrency.php';
+require_once __DIR__.'/Support/booking.php';

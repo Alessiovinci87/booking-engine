@@ -1,5 +1,7 @@
 <?php
 
+use App\Domain\Reservations\Outbox\SendReservationEmail;
+
 /*
  * Consegna dei messaggi in uscita (02 OutboxMessage, 03 "Regole generali").
  */
@@ -8,7 +10,20 @@ return [
     // Gestore per tipo di messaggio: classe che implementa App\Domain\Tenancy\Outbox\OutboxHandler.
     // I tipi arrivano con le milestone che li generano (email di conferma, notifiche, ...).
     'handlers' => [
-        // 'reservation.confirmed' => App\Domain\Reservations\Outbox\SendConfirmationEmail::class,
+        'reservation.confirmed' => SendReservationEmail::class,
+        'reservation.awaiting_approval' => SendReservationEmail::class,
+        'reservation.approval_requested' => SendReservationEmail::class,
+        'reservation.expired' => SendReservationEmail::class,
+        'reservation.payment_failed' => SendReservationEmail::class,
+        'reservation.late_payment' => SendReservationEmail::class,
+        'reservation.rejected' => SendReservationEmail::class,
+        'reservation.approval_expired' => SendReservationEmail::class,
+        'reservation.approval_expired_manager' => SendReservationEmail::class,
+        'reservation.capture_failed' => SendReservationEmail::class,
+        'reservation.recovery_link' => SendReservationEmail::class,
+        'reservation.dates_released' => SendReservationEmail::class,
+        'reservation.cancelled' => SendReservationEmail::class,
+        'reservation.refund_completed' => SendReservationEmail::class,
     ],
 
     // Tentativi massimi prima dello stato FAILED.

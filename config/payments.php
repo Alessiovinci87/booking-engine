@@ -18,4 +18,8 @@ return [
     // Margine tra la scadenza della sessione e quella dell'occupazione (05, passo 3).
     'occupancy_grace_minutes' => 5,
 
+    // Finestra di approvazione delle richieste (03 "Timeout": 12 h). La configurazione per struttura
+    // (1–48 h) non ha ancora un campo nel modello di 02 (ADR-0011).
+    'approval_window_hours' => 12,
+
 ];

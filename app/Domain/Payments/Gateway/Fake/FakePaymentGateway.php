@@ -270,6 +270,21 @@ final class FakePaymentGateway implements PaymentGateway
         return $this->state($session);
     }
 
+    /**
+     * Solo test: pagamento registrato dal fornitore dopo che la sessione risultava chiusa da noi
+     * (corsa tra webhook e rilascio, T7). Porta la sessione a COMPLETE e il PaymentIntent a
+     * `succeeded` (o `requires_capture` con capture manuale).
+     */
+    public function completeLate(string $sessionId): CheckoutSessionState
+    {
+        $session = $this->load($sessionId);
+        $session['status'] = CheckoutSessionStatus::OPEN->value;
+        $session['expires_at'] = CarbonImmutable::now()->addMinute()->toIso8601String();
+        $this->save($session);
+
+        return $this->simulateCustomer($sessionId, FakeCustomerAction::PAY);
+    }
+
     /** Programma un errore per la prossima chiamata dell'operazione (coda per operazione). */
     public function failNext(FakeOperation $operation, FakeFailure $failure): void
     {
