@@ -48,6 +48,8 @@ return [
     'mimes' => 'Il file deve essere di tipo: :values.',
     'mimetypes' => 'Il file deve essere di tipo: :values.',
     'list' => 'Il campo :attribute deve essere un elenco.',
+    'dimensions' => 'L\'immagine è troppo grande.',
+    'uploaded' => 'Il caricamento del file non è riuscito.',
     'distinct' => 'Il campo :attribute contiene valori ripetuti.',
     'password' => [
         'uncompromised' => 'Questa password è comparsa in una violazione di dati nota: scegline un\'altra.',

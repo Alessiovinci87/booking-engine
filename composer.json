@@ -7,7 +7,10 @@
     "license": "proprietary",
     "require": {
         "php": "^8.3",
+        "ext-exif": "*",
+        "ext-gd": "*",
         "bacon/bacon-qr-code": "^3.1",
+        "intervention/image": "3.11",
         "laravel/framework": "^13.0",
         "laravel/sanctum": "^4.3",
         "laravel/tinker": "^3.0",

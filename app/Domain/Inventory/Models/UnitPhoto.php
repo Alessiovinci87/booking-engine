@@ -13,8 +13,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $disk
  * @property string $path
  * @property string $mime_type
+ * @property string|null $thumbnail_path miniatura (2.2)
  * @property int $size_bytes
- * @property int $position
+ * @property int|null $width
+ * @property int|null $height
+ * @property int $position 0 = copertina
  */
 class UnitPhoto extends TenantModel
 {

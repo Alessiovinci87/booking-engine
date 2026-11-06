@@ -6,4 +6,8 @@ return [
         'required_when_published' => 'Obbligatorio finché la struttura è pubblicata.',
         'max_below_base' => 'La capienza massima non può essere inferiore a quella base.',
     ],
+    'photos' => [
+        'limit' => 'Puoi caricare al massimo :max foto per unità.',
+        'order_mismatch' => 'L\'ordine deve contenere tutte le foto dell\'unità.',
+    ],
 ];

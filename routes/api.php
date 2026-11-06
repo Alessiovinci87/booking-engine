@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\V1\Admin\Auth\SessionController;
 use App\Http\Controllers\Api\V1\Admin\MeController;
 use App\Http\Controllers\Api\V1\Admin\PropertyController;
 use App\Http\Controllers\Api\V1\Admin\UnitController;
+use App\Http\Controllers\Api\V1\Admin\UnitPhotoController;
 use Illuminate\Support\Facades\Route;
 
 // Identificativi UUID nei percorsi: un valore diverso non trova la rotta (404) e non arriva mai al database.
@@ -48,5 +49,10 @@ Route::prefix('admin')->group(function (): void {
         Route::post('properties/{property}/units', [UnitController::class, 'store'])->name('admin.units.store');
         Route::get('units/{unit}', [UnitController::class, 'show'])->name('admin.units.show');
         Route::patch('units/{unit}', [UnitController::class, 'update'])->name('admin.units.update');
+
+        Route::get('units/{unit}/photos', [UnitPhotoController::class, 'index'])->name('admin.units.photos.index');
+        Route::post('units/{unit}/photos', [UnitPhotoController::class, 'store'])->name('admin.units.photos.store');
+        Route::put('units/{unit}/photos/order', [UnitPhotoController::class, 'reorder'])->name('admin.units.photos.order');
+        Route::delete('units/{unit}/photos/{photo}', [UnitPhotoController::class, 'destroy'])->name('admin.units.photos.destroy');
     });
 });
