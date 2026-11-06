@@ -6,7 +6,9 @@ use App\Domain\Tenancy\Enums\AuditActorType;
 use App\Domain\Tenancy\Models\AuditLog;
 use App\Domain\Tenancy\TenantContext;
 use Illuminate\Contracts\Auth\Factory as AuthFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 /**
  * Unico punto di scrittura dell'audit log (02, 08). Non registra mai valori di campi personali (09):
@@ -65,6 +67,27 @@ final class AuditLogger
         }
 
         $write(null);
+    }
+
+    /**
+     * Registra la creazione o la modifica appena salvata di un modello (08 "Audit log"). Per i campi
+     * #[PersonalData] resta solo il nome con il valore "[personal]" (02, 09); i campi nascosti del
+     * modello (segreti, hash) diventano "[hidden]".
+     *
+     * @param  array<string, mixed>  $extra  valori aggiuntivi non personali
+     */
+    public function recordModelChange(string $action, Model $model, array $extra = [], ?AuditActor $actor = null): void
+    {
+        $key = $model->getKey();
+
+        $this->record(
+            $action,
+            Str::snake(class_basename($model)),
+            is_string($key) ? $key : null,
+            AuditChanges::fromModel($model) + $extra,
+            tenantId: is_string($model->getAttribute('tenant_id')) ? $model->getAttribute('tenant_id') : null,
+            actor: $actor,
+        );
     }
 
     private function currentActor(): AuditActor

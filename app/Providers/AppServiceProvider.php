@@ -3,6 +3,8 @@
 namespace App\Providers;
 
 use App\Domain\Tenancy\MembershipTenantResolver;
+use App\Domain\Tenancy\Outbox\AdminOpsPendingOutboxMessages;
+use App\Domain\Tenancy\Outbox\PendingOutboxMessages;
 use App\Domain\Tenancy\TenantContext;
 use App\Domain\Tenancy\TenantResolver;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -21,6 +23,9 @@ class AppServiceProvider extends ServiceProvider
         // il risolutore restituisce null e il middleware risponde 404 (fail-closed). La superficie
         // pubblica (slug) avrà un proprio risolutore in M3.
         $this->app->scoped(TenantResolver::class, MembershipTenantResolver::class);
+
+        // Dispatcher dell'outbox: lettura cross-tenant degli ID con app_admin_ops (08).
+        $this->app->bind(PendingOutboxMessages::class, AdminOpsPendingOutboxMessages::class);
     }
 
     public function boot(): void
