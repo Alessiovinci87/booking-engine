@@ -4,6 +4,7 @@ namespace App\Domain\Pricing\Models;
 
 use App\Domain\Reservations\Casts\StayRangeCast;
 use App\Domain\Reservations\StayRange;
+use App\Domain\Tenancy\Models\Concerns\HasVersion;
 use App\Domain\Tenancy\Models\TenantModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -12,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * notti facoltativo.
  *
  * @property string $id
+ * @property int $version
  * @property string $rate_plan_id
  * @property string $name
  * @property StayRange $date_range
@@ -21,6 +23,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class SeasonRule extends TenantModel
 {
+    use HasVersion;
+
     protected function casts(): array
     {
         return [

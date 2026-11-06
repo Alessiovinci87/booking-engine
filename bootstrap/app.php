@@ -1,5 +1,6 @@
 <?php
 
+use App\Domain\Tenancy\Exceptions\BusinessRuleViolation;
 use App\Domain\Tenancy\Http\WithTenantContext;
 use App\Http\Api\ApiError;
 use App\Http\Middleware\EnsureMfaVerified;
@@ -39,6 +40,13 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withExceptions(function (Exceptions $exceptions): void {
         // Errori dell'API nel formato di 07, senza dettagli interni.
         $isApi = fn (Request $request): bool => $request->is('api/*');
+
+        // Regole di dominio non rispettate: risposte previste, non errori da registrare.
+        $exceptions->dontReport(BusinessRuleViolation::class);
+
+        $exceptions->render(function (BusinessRuleViolation $e, Request $request) use ($isApi) {
+            return $isApi($request) ? ApiError::response($e->httpStatus, $e->errorCode, $e->details) : null;
+        });
 
         $exceptions->render(function (ValidationException $e, Request $request) use ($isApi) {
             return $isApi($request) ? ApiError::response(400, 'VALIDATION_FAILED', ['fields' => $e->errors()]) : null;

@@ -61,6 +61,15 @@
         "NOT_FOUND": "Risorsa non trovata.",
         "RATE_LIMITED": "Troppi tentativi. Riprova tra qualche minuto.",
         "CSRF_TOKEN_EXPIRED": "La pagina è rimasta aperta troppo a lungo: riprova.",
-        "SERVER_ERROR": "Si è verificato un errore. Riprova più tardi."
+        "SERVER_ERROR": "Si è verificato un errore. Riprova più tardi.",
+        "VERSION_MISMATCH": "Qualcuno ha modificato questi dati nel frattempo: ricarica la pagina e riprova.",
+        "EXTERNAL_CALENDARS_ACTIVE": "La prenotazione immediata non è possibile finché ci sono calendari esterni attivi.",
+        "NO_ACTIVE_UNITS": "Serve almeno un'unità attiva.",
+        "TRANSLATION_IT_MISSING": "Manca il testo in italiano della struttura.",
+        "CANCELLATION_POLICY_MISSING": "Scegli la politica di cancellazione predefinita.",
+        "PAYMENTS_NOT_ENABLED": "I pagamenti online non sono attivi: collega Stripe o usa solo la prenotazione su richiesta.",
+        "MIN_NIGHTS_NOT_MET": "Il soggiorno è più corto del minimo di notti.",
+        "OCCUPANCY_EXCEEDED": "Troppi ospiti per questa unità.",
+        "AMOUNT_BELOW_MINIMUM": "L'importo è inferiore al minimo pagabile online (0,50 €)."
     }
 }
