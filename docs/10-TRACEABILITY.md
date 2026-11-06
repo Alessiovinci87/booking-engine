@@ -1,6 +1,6 @@
 # 10 — Matrice di tracciabilità
 
-Versione: 1.2 · Data: 06/11/2026 · Modifiche: percorsi reali dei test di catalogo, test dei controlli statici, stato dell'implementazione a fine M0
+Versione: 1.3 · Data: 06/11/2026 · Modifiche: servizi, tabelle, endpoint e test di M1; stato dell'implementazione a fine M1
 
 Ogni requisito (criteri di accettazione `AC` da 01, invarianti `I` da 02) è collegato a servizio, tabelle, endpoint e test. I nomi di servizi e test sono quelli da usare nel codice; Claude Code aggiorna questa matrice quando li crea o li rinomina.
 
@@ -35,6 +35,9 @@ Convenzioni dei test: `Unit/…` (Pest, senza database), `Feature/…` (Pest con
 | `PropertySetupService` | strutture, unità, traduzioni, pubblicazione | 01, 02 |
 | `UnitService` | modalità di prenotazione, sospensione vendite (I12) | 02 |
 | `ConflictService` | presa in carico e chiusura dei conflitti | 03 |
+| `LoginService`, `MfaService`, `RecoveryCodes`, `LoginThrottle`, `PanelSession` | accesso al pannello, MFA TOTP, codici di recupero, limiti ai tentativi, durata della sessione | 08, ADR-0008 |
+| `TenantProvisioning` | creazione di tenant e proprietario (`tenant:create`) | 01, 08 |
+| `Outbox`, `OutboxMessageStateMachine`, `DispatchOutboxJob`, `DeliverOutboxMessageJob` | accodamento con `dedupe_key`, consegna per tenant, retry con backoff | 02, 03, ADR-0008 |
 
 ## Criteri di accettazione
 
@@ -96,19 +99,32 @@ Convenzioni dei test: `Unit/…` (Pest, senza database), `Feature/…` (Pest con
 | Nessuna chiamata HTTP verso URL utente fuori da `SafeHttpFetcher` | 06, 08 | `Arch/ExternalHttpTest` | attivo da M0; eccezione: `App\Domain\Payments\Stripe` |
 | Tabelle con `tenant_id` senza RLS forzata | I5 | `Feature/Architecture/RlsCatalogTest` | attivo da M0 |
 | FK tra tabelle tenant-scoped senza `tenant_id` | I17 | `Feature/Architecture/CompositeFkCatalogTest` | attivo da M0 |
-| Campi `#[PersonalData]` presenti in log o payload di audit | I22 | `Feature/AuditLogNoPersonalDataTest` | da M1 (1.3, 1.6) |
+| Campi `#[PersonalData]` presenti in log o payload di audit | I22 | `Feature/AuditLogNoPersonalDataTest` | attivo da M1: tutti i modelli con `#[PersonalData]`, modifiche reali di `Guest`, campi nascosti di `User` |
 
 ## Stato dell'implementazione
 
-Aggiornato a fine M0 (06/11/2026). Solo fondamenta: nessuna tabella di dominio, nessun endpoint `/api/v1`.
+Aggiornato a fine M1 (06/11/2026). Tutte le tabelle di 02 con RLS forzata e FK composite; accesso al pannello con MFA; nessun endpoint di dominio oltre `/admin/me` e la lettura di base di `/admin/properties/{id}`.
 
 | Elemento | Classe / file | Test |
 |---|---|---|
 | `TenantContext` | `App\Domain\Tenancy\TenantContext` | `Feature/Tenancy/TenantContextTest` |
 | Funzione `app_current_tenant()` | `database/migrations/2026_11_06_100000_create_app_current_tenant_function.php` | `Feature/Tenancy/TenantContextTest` |
-| Middleware tenant delle richieste | `App\Domain\Tenancy\Http\WithTenantContext` (alias `tenant`), `App\Domain\Tenancy\TenantResolver` | `Feature/Tenancy/TenantMiddlewareTest` |
+| Middleware tenant delle richieste | `App\Domain\Tenancy\Http\WithTenantContext` (alias `tenant`), `App\Domain\Tenancy\MembershipTenantResolver` (pannello) | `Feature/Tenancy/TenantMiddlewareTest`, `Feature/TenantIsolationApiTest` |
 | Contesto tenant dei job | `App\Domain\Tenancy\Jobs\{TenantAwareJob, InteractsWithTenant, SetTenantContextForJob}` | `Feature/Tenancy/TenantJobTest` |
 | Ruoli PostgreSQL | `docker/postgres/init/02-roles.sh`, connessioni `pgsql`, `pgsql_migrator`, `pgsql_admin_ops` | `Feature/Database/DatabaseRolesTest` |
+| Tabelle di 02 (1.1) | `database/migrations/2026_11_09_000100…000800`, helper `App\Domain\Tenancy\Database\TenantTable` | `Feature/Database/SchemaTest`, `Feature/OccupancyExclusionTest`, `Unit/StayRangeTest` |
+| RLS e FK composite (1.1, 1.2) | `TenantTable::create` / `enableRowLevelSecurity`, policy `tenant_isolation` | `Feature/Architecture/RlsCatalogTest`, `Feature/Architecture/CompositeFkCatalogTest`, `Feature/CrossTenantInsertRejectedTest`, `Feature/Database/TenantRowIsolationTest` |
+| `audit_log` append-only (1.2) | `2026_11_09_001000_restrict_audit_log_privileges.php` | `Feature/Database/AuditLogPrivilegesTest` |
+| Funzioni `SECURITY DEFINER` | `app_user_tenants(uuid)`, `app_tenant_by_slug(text)` (`2026_11_09_000900`) | `Feature/Database/TenantLookupFunctionsTest` |
+| Modelli, enum, `#[PersonalData]` (1.3) | `app/Domain/<Area>/Models`, `app/Domain/<Area>/Enums`, `App\Domain\Privacy\{PersonalData, PersonalDataRegistry}` | `Feature/Domain/ModelsTest` |
+| Scritture di `status` solo dalle macchine a stati | `GuardsStatusWrites`, `StatusGuardedBuilder`, `StatusWriteGuard` | `Feature/Domain/ModelsTest`, `Arch/StateTransitionsTest` |
+| Accesso al pannello (1.4) | `App\Domain\Tenancy\Auth\*`, middleware `panel.fresh`, `mfa`, `reauth`, `App\Http\Controllers\Api\V1\Admin\Auth\*` | `Feature/Auth/{LoginTest, LoginThrottleTest, MfaTest, SessionExpiryTest, ReauthTest}` |
+| `GET /api/v1/admin/me`, `GET /api/v1/admin/properties/{id}` | `MeController`, `PropertyController` (lettura di base; M2.1 completa) | `Feature/TenantIsolationApiTest` |
+| `tenant:create` (1.5) | `App\Console\Commands\CreateTenantCommand`, `App\Domain\Tenancy\TenantProvisioning` | `Feature/Tenancy/CreateTenantCommandTest` |
+| `AuditLogger` (1.6) | `App\Domain\Tenancy\Audit\{AuditLogger, AuditChanges}` | `Feature/AuditLogNoPersonalDataTest` |
+| Outbox (1.6) | `App\Domain\Tenancy\Outbox\*`, `App\Domain\Tenancy\StateMachines\OutboxMessageStateMachine`, job `DispatchOutboxJob` (ogni minuto) e `DeliverOutboxMessageJob` | `Feature/Tenancy/OutboxTest` |
+| Pannello: accesso e layout (1.7) | `resources/js/panel/{api,auth,components,pages}` | `Feature/Frontend/SpaRoutesTest` |
+| Seeder demo (1.8) | `Database\Seeders\DemoSeeder` | `Feature/DemoSeederTest` |
 | `InventoryService` | `App\Domain\Inventory\InventoryService` (segnaposto fino a 3.1) | `Arch/InventoryWritesTest` |
 | `SafeHttpFetcher` | `App\Domain\Calendar\SafeHttpFetcher` (segnaposto fino a 5.1) | `Arch/ExternalHttpTest` |
 | Struttura del codice (ADR-0006) | `app/Domain/<Area>`, `app/Http/Controllers/Api/V1/{Admin,Public}` | `Arch/DomainStructureTest` |

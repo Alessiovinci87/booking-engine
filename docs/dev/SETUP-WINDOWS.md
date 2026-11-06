@@ -153,6 +153,8 @@ Variabili da impostare:
 | `DB_PASSWORD` | ruolo `app_runtime` (applicazione, soggetto a RLS) |
 | `DB_ADMIN_OPS_PASSWORD` | ruolo `app_admin_ops` (solo dispatcher dei job cross-tenant) |
 
+In locale il pannello gira su `http`: lascia `SESSION_SECURE_COOKIE=false` (già in `.env.example`), altrimenti il browser non rimanda il cookie di sessione e il login non resta attivo. Se il tuo `.env` è precedente a M1, aggiungi anche `SANCTUM_STATEFUL_DOMAINS` copiandolo da `.env.example`.
+
 Le password devono essere impostate **prima** del primo avvio di PostgreSQL: gli script di inizializzazione creano i ruoli solo quando il volume è vuoto (vedi 5.2).
 
 `.env` non va mai committato (è in `.gitignore`).
@@ -249,6 +251,22 @@ Cartella: `C:\dev\booking-engine`
 php artisan migrate --database=pgsql_migrator
 ```
 
+### 7.1 Dati demo
+
+Con `APP_ENV=local` il seeder crea il tenant `demo-alghero` (struttura "Casa Demo Alghero", due unità, dati inventati) e il proprietario `proprietario.demo@example.test`:
+
+```powershell
+php artisan db:seed
+```
+
+La password del proprietario viene mostrata **una sola volta**: annotala. Al primo accesso il pannello chiede di configurare la verifica in due passaggi con un'app di autenticazione (TOTP) e mostra 10 codici di recupero. Rieseguire il seeder non cambia nulla se il tenant esiste già.
+
+Per creare un altro tenant (la password viene chiesta in modo nascosto):
+
+```powershell
+php artisan tenant:create mio-tenant "Nome del tenant" proprietario@example.test
+```
+
 ## 8. Verifiche di qualità
 
 Cartella: `C:\dev\booking-engine`
@@ -290,8 +308,14 @@ Code (al posto di Horizon):
 php artisan queue:work
 ```
 
+Per la consegna dei messaggi in uscita serve anche lo scheduler (oppure lancia a mano `php artisan schedule:run`):
+
+```powershell
+php artisan schedule:work
+```
+
 Indirizzi:
-- Pannello: http://127.0.0.1:8000/app
+- Pannello: http://127.0.0.1:8000/app (accesso con l'utente demo, vedi 7.1)
 - Pagina ospite di prova: http://127.0.0.1:8000/p/demo/casa-demo
 
 ## 10. Problemi frequenti
