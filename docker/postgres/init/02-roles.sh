@@ -13,6 +13,7 @@ set -euo pipefail
 : "${POSTGRES_USER:?POSTGRES_USER mancante}"
 : "${POSTGRES_DB:?POSTGRES_DB mancante}"
 : "${APP_TEST_DATABASE:?APP_TEST_DATABASE mancante}"
+APP_E2E_DATABASE="${APP_E2E_DATABASE:-booking_engine_e2e}"
 : "${APP_MIGRATOR_PASSWORD:?APP_MIGRATOR_PASSWORD mancante (DB_MIGRATOR_PASSWORD in .env)}"
 : "${APP_RUNTIME_PASSWORD:?APP_RUNTIME_PASSWORD mancante (DB_PASSWORD in .env)}"
 : "${APP_ADMIN_OPS_PASSWORD:?APP_ADMIN_OPS_PASSWORD mancante (DB_ADMIN_OPS_PASSWORD in .env)}"
@@ -34,7 +35,7 @@ ALTER ROLE app_runtime   LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION
 ALTER ROLE app_admin_ops LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION BYPASSRLS   PASSWORD :'admin_ops_pw';
 SQL
 
-for db in "$POSTGRES_DB" "$APP_TEST_DATABASE"; do
+for db in "$POSTGRES_DB" "$APP_TEST_DATABASE" "$APP_E2E_DATABASE"; do
   "${PSQL[@]}" --dbname "$db" -v dbname="$db" <<'SQL'
 -- app_migrator possiede database e schema: crea, modifica ed elimina le tabelle (migrate:fresh nei test).
 ALTER DATABASE :"dbname" OWNER TO app_migrator;

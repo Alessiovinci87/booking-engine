@@ -1,11 +1,10 @@
 import { defineConfig, devices } from '@playwright/test';
 
+import { E2E_BASE_URL, E2E_ENV, E2E_PORT } from './tests/E2E/support/environment';
+
 /**
- * Test E2E (ADR-0006: Playwright). Per ora solo in locale (headless), sul server di sviluppo e sul
- * database demo rigenerato da tests/E2E/global-setup.ts; in CI da M6 (11, attività 6.6).
- *
- * L'indirizzo deve restare http://127.0.0.1:8000: è tra i domini stateful di Sanctum (.env), senza
- * i quali il pannello non riceve il cookie di sessione.
+ * Test E2E (ADR-0006: Playwright). Per ora solo in locale (headless); in CI da M6 (11, attività 6.6).
+ * Database e server dedicati (tests/E2E/support/environment.ts): il database di sviluppo resta intatto.
  */
 export default defineConfig({
     testDir: 'tests/E2E',
@@ -17,16 +16,20 @@ export default defineConfig({
     expect: { timeout: 10_000 },
     reporter: [['list']],
     use: {
-        baseURL: 'http://127.0.0.1:8000',
+        baseURL: E2E_BASE_URL,
         locale: 'it-IT',
         timezoneId: 'Europe/Rome',
         trace: 'retain-on-failure',
         ...devices['Desktop Chrome'],
     },
     webServer: {
-        command: 'php artisan serve --host=127.0.0.1 --port=8000',
-        url: 'http://127.0.0.1:8000/up',
-        reuseExistingServer: true,
+        // server.php di Laravel usa la cartella corrente come public/.
+        command: `php -S 127.0.0.1:${E2E_PORT} ../vendor/laravel/framework/src/Illuminate/Foundation/resources/server.php`,
+        cwd: 'public',
+        url: `${E2E_BASE_URL}/up`,
+        env: E2E_ENV,
+        // Mai riusare un server già avviato: potrebbe puntare al database di sviluppo.
+        reuseExistingServer: false,
         timeout: 60_000,
     },
 });
