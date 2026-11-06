@@ -1,0 +1,62 @@
+<?php
+
+namespace App\Domain\Tenancy\Models;
+
+use App\Domain\Privacy\PersonalData;
+use App\Domain\Tenancy\Enums\Locale;
+use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+
+/**
+ * Utente del pannello (02). Tabella globale: il tenant si ricava dalle membership tramite la funzione
+ * app_user_tenants (08). Password Argon2id; segreto MFA cifrato a riposo (08).
+ *
+ * @property string $id
+ * @property string $email
+ * @property string $password_hash
+ * @property string|null $mfa_secret_encrypted
+ * @property CarbonImmutable|null $mfa_enabled_at
+ * @property Locale $locale
+ */
+#[PersonalData('email')]
+class User extends Authenticatable
+{
+    use HasUuids;
+
+    protected $authPasswordName = 'password_hash';
+
+    /** @var list<string> */
+    protected $fillable = ['email', 'password_hash', 'locale'];
+
+    /** @var list<string> */
+    protected $hidden = ['password_hash', 'mfa_secret_encrypted'];
+
+    protected function casts(): array
+    {
+        return [
+            'password_hash' => 'hashed',
+            'mfa_secret_encrypted' => 'encrypted',
+            'mfa_enabled_at' => 'immutable_datetime',
+            'locale' => Locale::class,
+        ];
+    }
+
+    public function hasMfaEnabled(): bool
+    {
+        return $this->mfa_enabled_at !== null && $this->mfa_secret_encrypted !== null;
+    }
+
+    /** @return HasMany<UserRecoveryCode, $this> */
+    public function recoveryCodes(): HasMany
+    {
+        return $this->hasMany(UserRecoveryCode::class);
+    }
+
+    /** Email normalizzata: l'unicità nel database è case-insensitive (02). */
+    public static function normalizeEmail(string $email): string
+    {
+        return mb_strtolower(trim($email));
+    }
+}

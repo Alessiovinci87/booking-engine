@@ -92,7 +92,7 @@ Convenzioni dei test: `Unit/…` (Pest, senza database), `Feature/…` (Pest con
 | Controllo | Protegge | Test | Stato |
 |---|---|---|---|
 | Nessuna scrittura su `inventory_occupancies` fuori da `InventoryService` | I1, I15 | `Arch/InventoryWritesTest` | attivo da M0 (modello e tabella non ancora esistenti) |
-| Nessun `update(['status' => …])` sui modelli con macchina a stati | 03 | `Arch/StateTransitionsTest` | attivo da M0, segnaposto: vieta `'status' =>` fuori da `app/Domain/*/StateMachines` |
+| Nessun `update(['status' => …])` sui modelli con macchina a stati | 03 | `Arch/StateTransitionsTest`, `Feature/Domain/ModelsTest` | da M1 (decisione dopo M0): (a) a runtime, trait `GuardsStatusWrites` e builder `StatusGuardedBuilder` su `Reservation`, `Payment`, `Refund`, `Quote`, `InventoryConflict`, `OutboxMessage`: eccezione `IllegalStatusWrite` se `status` viene scritto fuori da una classe in `app/Domain/*/StateMachines`; (b) controllo statico limitato alle scritture fuori dalle StateMachines (`update`, `fill`, `forceFill`, `create` e varianti con chiave `status`, `setAttribute('status')`, `->status =`); validazioni e API Resource consentite; eccezione `InventoryService` per le occupazioni |
 | Nessuna chiamata HTTP verso URL utente fuori da `SafeHttpFetcher` | 06, 08 | `Arch/ExternalHttpTest` | attivo da M0; eccezione: `App\Domain\Payments\Stripe` |
 | Tabelle con `tenant_id` senza RLS forzata | I5 | `Feature/Architecture/RlsCatalogTest` | attivo da M0 |
 | FK tra tabelle tenant-scoped senza `tenant_id` | I17 | `Feature/Architecture/CompositeFkCatalogTest` | attivo da M0 |
