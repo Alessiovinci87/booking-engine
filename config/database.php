@@ -17,7 +17,7 @@ return [
     |
     */
 
-    'default' => env('DB_CONNECTION', 'sqlite'),
+    'default' => env('DB_CONNECTION', 'pgsql'),
 
     /*
     |--------------------------------------------------------------------------
@@ -84,19 +84,59 @@ return [
             ]) : [],
         ],
 
+        /*
+         * Tre connessioni allo stesso database, una per ruolo (08, "Livello database (RLS)").
+         *
+         * pgsql            app_runtime: predefinita a runtime. NOSUPERUSER, NOBYPASSRLS, solo DML.
+         *                  Ogni transazione imposta il tenant tramite TenantContext.
+         * pgsql_migrator   app_migrator: proprietario delle tabelle, usato solo dalle migration
+         *                  (php artisan migrate --database=pgsql_migrator).
+         * pgsql_admin_ops  app_admin_ops: lettura cross-tenant, solo nei dispatcher dei job.
+         */
         'pgsql' => [
             'driver' => 'pgsql',
             'url' => env('DB_URL'),
             'host' => env('DB_HOST', '127.0.0.1'),
-            'port' => env('DB_PORT', '5432'),
-            'database' => env('DB_DATABASE', 'laravel'),
-            'username' => env('DB_USERNAME', 'root'),
+            'port' => env('DB_PORT', '5434'),
+            'database' => env('DB_DATABASE', 'booking_engine'),
+            'username' => env('DB_USERNAME', 'app_runtime'),
             'password' => env('DB_PASSWORD', ''),
             'charset' => env('DB_CHARSET', 'utf8'),
             'prefix' => '',
             'prefix_indexes' => true,
             'search_path' => 'public',
             'sslmode' => env('DB_SSLMODE', 'prefer'),
+            'timezone' => 'UTC',
+        ],
+
+        'pgsql_migrator' => [
+            'driver' => 'pgsql',
+            'host' => env('DB_HOST', '127.0.0.1'),
+            'port' => env('DB_PORT', '5434'),
+            'database' => env('DB_DATABASE', 'booking_engine'),
+            'username' => env('DB_MIGRATOR_USERNAME', 'app_migrator'),
+            'password' => env('DB_MIGRATOR_PASSWORD', ''),
+            'charset' => env('DB_CHARSET', 'utf8'),
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'search_path' => 'public',
+            'sslmode' => env('DB_SSLMODE', 'prefer'),
+            'timezone' => 'UTC',
+        ],
+
+        'pgsql_admin_ops' => [
+            'driver' => 'pgsql',
+            'host' => env('DB_HOST', '127.0.0.1'),
+            'port' => env('DB_PORT', '5434'),
+            'database' => env('DB_DATABASE', 'booking_engine'),
+            'username' => env('DB_ADMIN_OPS_USERNAME', 'app_admin_ops'),
+            'password' => env('DB_ADMIN_OPS_PASSWORD', ''),
+            'charset' => env('DB_CHARSET', 'utf8'),
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'search_path' => 'public',
+            'sslmode' => env('DB_SSLMODE', 'prefer'),
+            'timezone' => 'UTC',
         ],
 
         'sqlsrv' => [

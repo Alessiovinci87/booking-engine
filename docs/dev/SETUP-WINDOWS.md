@@ -185,9 +185,18 @@ Verifica:
 docker compose exec -T postgres psql -U postgres -tAc "SELECT rolname, rolsuper, rolbypassrls FROM pg_roles WHERE rolname LIKE 'app_%' ORDER BY 1"
 ```
 
-### 5.2 Ricreare il database da zero
+### 5.2 Password cambiate o ruoli da riallineare
 
-Serve se hai cambiato le password in `.env` dopo il primo avvio o se gli script di inizializzazione sono cambiati. **Cancella i dati locali** di PostgreSQL e Redis di questo progetto (non tocca altri progetti):
+Lo script dei ruoli è idempotente: se hai cambiato solo le password in `.env`, ricrea il container (per leggere il nuovo `.env`) e rieseguilo, senza perdere dati:
+
+```powershell
+docker compose up -d --force-recreate --wait postgres
+docker compose exec -T postgres bash /docker-entrypoint-initdb.d/02-roles.sh
+```
+
+### 5.3 Ricreare il database da zero
+
+Serve se gli script di inizializzazione sono cambiati o vuoi ripartire da un database vuoto. **Cancella i dati locali** di PostgreSQL e Redis di questo progetto (non tocca altri progetti):
 
 ```powershell
 docker compose down -v
