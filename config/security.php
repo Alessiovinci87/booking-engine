@@ -31,4 +31,7 @@ return [
 
     'admin_rate_limit_per_minute' => 300,
 
+    // API pubblica in lettura (struttura, calcolo prezzo): 120 richieste al minuto per IP (07).
+    'public_read_rate_limit_per_minute' => 120,
+
 ];

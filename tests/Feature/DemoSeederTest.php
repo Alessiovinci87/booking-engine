@@ -1,5 +1,8 @@
 <?php
 
+use App\Domain\Inventory\Enums\PropertyStatus;
+use App\Domain\Inventory\Models\Property;
+use App\Domain\Inventory\PropertySetupService;
 use App\Domain\Tenancy\Models\User;
 use App\Domain\Tenancy\TenantContext;
 use App\Domain\Tenancy\TenantProvisioning;
@@ -8,7 +11,7 @@ use Illuminate\Support\Facades\DB;
 
 /*
  * 1.8: seeder demo con dati inventati (tenant demo-alghero, Casa Demo Alghero it/en, due unità,
- * una tariffa base per unità).
+ * una tariffa base per unità con due stagioni).
  */
 
 function demoTenantId(): ?string
@@ -34,7 +37,9 @@ it('crea tenant, struttura con traduzioni, due unità e le tariffe base', functi
         expect($units)->toHaveCount(2)
             ->and(DB::table('unit_translations')->count())->toBe(4)
             ->and(DB::table('rate_plans')->where('active', true)->count())->toBe(2)
-            ->and(DB::table('rate_plans')->pluck('base_nightly_cents')->sort()->values()->all())->toBe([9500, 14500]);
+            ->and(DB::table('rate_plans')->pluck('base_nightly_cents')->sort()->values()->all())->toBe([9500, 14500])
+            ->and(DB::table('season_rules')->count())->toBe(4)
+            ->and(DB::table('season_rules')->where('name', 'Ferragosto')->pluck('date_range')->unique()->all())->toBe(['[2027-08-13,2027-08-18)']);
 
         // Politiche standard della struttura, flessibile come predefinita (ADR-0009).
         expect(DB::table('cancellation_policies')->orderBy('code')->pluck('code')->all())->toBe(['FLEXIBLE_7D', 'NON_REFUNDABLE'])
@@ -43,6 +48,23 @@ it('crea tenant, struttura con traduzioni, due unità e le tariffe base', functi
 
     $owner = User::query()->where('email', DemoSeeder::OWNER_EMAIL)->sole();
     expect($owner->hasMfaEnabled())->toBeFalse();
+});
+
+// Verifica di M2 (ADR-0010): account Stripe finto perché la struttura demo si possa pubblicare.
+it('crea un account Stripe finto con cui la struttura demo si pubblica', function () {
+    $this->seed(DemoSeeder::class);
+
+    inTenant(demoTenantId(), function () {
+        $account = DB::table('stripe_accounts')->sole();
+        expect($account->stripe_account_id)->toStartWith(DemoSeeder::STRIPE_ACCOUNT_PREFIX)
+            ->and($account->livemode)->toBeFalse()
+            ->and($account->charges_enabled)->toBeTrue()
+            ->and($account->payouts_enabled)->toBeTrue();
+
+        $property = app(PropertySetupService::class)->publish(Property::query()->sole());
+
+        expect($property->status)->toBe(PropertyStatus::PUBLISHED);
+    });
 });
 
 it('usa solo dati inventati', function () {
@@ -63,12 +85,16 @@ it('non duplica i dati se rieseguito', function () {
         ->and(User::query()->where('email', DemoSeeder::OWNER_EMAIL)->count())->toBe(1);
 });
 
-it('non gira in produzione', function () {
+it('in produzione si ferma senza scrivere nulla', function () {
     app()->detectEnvironment(fn () => 'production');
 
     try {
-        app(DemoSeeder::class)->run(app(TenantProvisioning::class), app(TenantContext::class));
+        expect(fn () => app(DemoSeeder::class)->run(app(TenantProvisioning::class), app(TenantContext::class)))
+            ->toThrow(RuntimeException::class);
     } finally {
         app()->detectEnvironment(fn () => 'testing');
     }
-})->throws(RuntimeException::class);
+
+    expect(demoTenantId())->toBeNull()
+        ->and(User::query()->where('email', DemoSeeder::OWNER_EMAIL)->exists())->toBeFalse();
+});

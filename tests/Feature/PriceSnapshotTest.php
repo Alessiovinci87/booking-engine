@@ -1,0 +1,45 @@
+<?php
+
+use App\Domain\Inventory\Models\Unit;
+use App\Domain\Pricing\Calculator\PriceLine;
+use App\Domain\Pricing\Calculator\PriceRequest;
+use App\Domain\Pricing\PriceQuoteService;
+use App\Domain\Reservations\StayRange;
+use Illuminate\Support\Facades\DB;
+
+/*
+ * I14, parte prezzi (11, criteri di uscita di M2): il calcolo produce righe autosufficienti (data,
+ * quantità, importo) che si possono congelare così come sono; un cambio di tariffe cambia i calcoli
+ * successivi ma non una copia già fatta. La copia in reservation_price_lines e quotes.price_lines
+ * arriva con M3 e M5, che estendono questo test.
+ */
+
+it('le righe calcolate sono una copia autosufficiente che non segue le tariffe', function () {
+    $tenant = createTenantRow();
+    $golden = goldenUnitRows($tenant);
+    $request = new PriceRequest(StayRange::of('2027-08-10', '2027-08-17'), 4, 1);
+
+    [$frozen, $total] = inTenant($tenant, function () use ($golden, $request) {
+        $quote = app(PriceQuoteService::class)->quote(Unit::query()->findOrFail($golden['unit']), $request);
+
+        return [json_encode(array_map(fn (PriceLine $l) => $l->toArray(), $quote->lines)), $quote->totalCents];
+    });
+
+    // Il gestore cambia le tariffe dopo il calcolo.
+    inTenant($tenant, function () use ($golden) {
+        DB::table('season_rules')->where('id', $golden['seasons']['ferragosto'])->update(['nightly_cents' => 30000]);
+        DB::table('rate_plans')->where('id', $golden['plan'])->update(['base_nightly_cents' => 99000]);
+        DB::table('units')->where('id', $golden['unit'])->update(['cleaning_fee_cents' => 9000]);
+    });
+
+    $recalculated = inTenant($tenant, fn () => app(PriceQuoteService::class)->quote(Unit::query()->findOrFail($golden['unit']), $request));
+    $lines = json_decode($frozen, true);
+
+    expect($total)->toBe(158500)
+        ->and(array_sum(array_column($lines, 'amount_cents')))->toBe(158500)
+        // Righe per notte: NIGHT ed EXTRA_GUEST alternate.
+        ->and($lines[4])->toMatchArray(['kind' => 'NIGHT', 'date' => '2027-08-12', 'amount_cents' => 18000])
+        ->and($lines[6])->toMatchArray(['kind' => 'NIGHT', 'date' => '2027-08-13', 'amount_cents' => 22000])
+        ->and($recalculated->totalCents)->toBe(158500 + 4 * 8000 + 3000)
+        ->and(array_sum(array_column($lines, 'amount_cents')))->toBe(158500);
+});

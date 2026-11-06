@@ -253,7 +253,7 @@ php artisan migrate --database=pgsql_migrator
 
 ### 7.1 Dati demo
 
-Con `APP_ENV=local` il seeder crea il tenant `demo-alghero` (struttura "Casa Demo Alghero", due unità, dati inventati) e il proprietario `proprietario.demo@example.test`:
+Con `APP_ENV=local` il seeder crea il tenant `demo-alghero` (struttura "Casa Demo Alghero", due unità, dati inventati, un account Stripe finto `acct_demo_…` con cui le strutture demo si possono pubblicare) e il proprietario `proprietario.demo@example.test`. Il seeder si rifiuta di girare con `APP_ENV=production`:
 
 ```powershell
 php artisan db:seed
@@ -285,6 +285,22 @@ npm run build
 ```
 
 `composer lint` controlla soltanto; per correggere lo stile automaticamente: `vendor\bin\pint`.
+
+### 8.1 Test E2E (Playwright)
+
+Solo in locale fino a M6. La prima volta installa il browser:
+
+```powershell
+npx playwright install chromium
+```
+
+Poi, con Docker avviato e `npm run dev` **fermo** (servono gli asset di `npm run build`):
+
+```powershell
+npm run test:e2e
+```
+
+**Attenzione:** il comando rigenera il database di sviluppo `booking_engine` (`migrate:fresh` e seeder demo) e accetta solo `APP_ENV=local`. Usa il server su http://127.0.0.1:8000: se `php artisan serve` è già avviato lo riusa, altrimenti lo avvia. Gli screenshot di ogni passo finiscono in `storage\e2e-screenshots\` (non committati).
 
 ## 9. Avvio dell'applicazione in sviluppo
 
@@ -329,6 +345,7 @@ Indirizzi:
 | `pcntl` richiesta da Horizon | in locale non si usa Horizon: `php artisan queue:work` |
 | `composer install` molto lento (minuti per pochi pacchetti) | disco esterno exFAT e scansione antivirus: attendi, oppure esegui di nuovo il comando (riprende dalla cache di Composer) |
 | `detected dubious ownership ... git config --global --add safe.directory D:/booking-engine/vendor/...` | exFAT non registra il proprietario dei file: Composer ha ripiegato sul clone git di un pacchetto. Esegui di nuovo `composer install --prefer-dist`; non serve aggiungere eccezioni `safe.directory` per `vendor` |
+| Caricamento delle foto: "Si è verificato un errore" e nel terminale di `php artisan serve` `unable to create a temporary file` | `php artisan serve` non passava `TEMP`/`TMP` al server PHP; corretto in `AppServiceProvider` (solo `local`). Riavvia `php artisan serve` |
 | `php artisan storage:link` fallisce | exFAT non supporta i collegamenti simbolici; in sviluppo non serve finché non si usano file pubblici (foto da M2, con URL firmati) |
 
 ### Note sul disco D: (exFAT)

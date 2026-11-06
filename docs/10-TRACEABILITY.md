@@ -1,6 +1,6 @@
 # 10 — Matrice di tracciabilità
 
-Versione: 1.4 · Data: 06/11/2026 · Modifiche: servizi, tabelle, endpoint e test di M1; stato dell'implementazione a fine M1; decisioni dopo la verifica di M1 (ADR-0008, ADR-0009)
+Versione: 1.6 · Data: 06/11/2026 · Modifiche: servizi, tabelle, endpoint e test di M1; stato dell'implementazione a fine M1; decisioni dopo la verifica di M1 (ADR-0008, ADR-0009); servizi, endpoint e test di M2 e stato a fine M2; 1.6: decisioni dopo la verifica di M2 (ADR-0010 accettata), primo test E2E
 
 Ogni requisito (criteri di accettazione `AC` da 01, invarianti `I` da 02) è collegato a servizio, tabelle, endpoint e test. I nomi di servizi e test sono quelli da usare nel codice; Claude Code aggiorna questa matrice quando li crea o li rinomina.
 
@@ -13,7 +13,9 @@ Convenzioni dei test: `Unit/…` (Pest, senza database), `Feature/…` (Pest con
 | `TenantContext` | `SET LOCAL app.tenant_id` per transazione | 08 |
 | `InventoryService` | unico scrittore di `inventory_occupancies` | 02 |
 | `AvailabilityService` | notti vendibili su tre fonti | 02 |
-| `PriceCalculator` | prezzo, caparra, saldo | 04 |
+| `PriceCalculator` | prezzo, caparra, saldo (puro: niente database, rete, orologio, configurazione) | 04 |
+| `PriceQuoteService` | dati salvati dell'unità → `PriceCalculator` (anteprima e pagina ospite) | 04, 07 |
+| `RatePlanService` | prezzo base e stagioni, avvisi di sovrapposizione a parità di priorità | 04, ADR-0010 |
 | `ReservationStateMachine` | transizioni T1–T18 | 03 |
 | `CheckoutService` | sequenza in tre passi, recupero sessione | 05 |
 | `OccupancyReleaseJob` | rilascio con `expire` e verifica sessione | 05 |
@@ -32,8 +34,11 @@ Convenzioni dei test: `Unit/…` (Pest, senza database), `Feature/…` (Pest con
 | `AuditLogger` | audit senza valori personali | 02, 08 |
 | `SafeHttpFetcher` | download di URL forniti dagli utenti | 06, 08 |
 | `MetricsService` | fatturato diretto, beneficio stimato | 01 |
-| `PropertySetupService` | strutture, unità, traduzioni, pubblicazione | 01, 02 |
-| `UnitService` | modalità di prenotazione, sospensione vendite (I12) | 02 |
+| `PropertySetupService` | strutture, traduzioni, politiche standard, pubblicazione con le guardie di 07; unico punto che cambia lo stato della struttura | 01, 02, 07, ADR-0009, ADR-0010 |
+| `UnitPhotoService` | foto delle unità: ricodifica WebP senza EXIF, ordine, URL firmati | 08, 09, ADR-0006 |
+| `PublicCatalog` | ciò che la superficie pubblica vede: struttura `PUBLISHED`, tenant `ACTIVE`, unità `ACTIVE` | 02, 07 |
+| `TenantLifecycleService` | stato del tenant (eccezione esplicita di `Arch/StateTransitionsTest`) | 02, ADR-0009 |
+| `UnitService` | modalità di prenotazione (I12), sospensione vendite, stato dell'unità, piano tariffario alla creazione | 02 |
 | `ConflictService` | presa in carico e chiusura dei conflitti | 03 |
 | `LoginService`, `MfaService`, `RecoveryCodes`, `LoginThrottle`, `PanelSession` | accesso al pannello, MFA TOTP, codici di recupero, limiti ai tentativi, durata della sessione | 08, ADR-0008 |
 | `PwnedPasswordsVerifier` | password compromesse, fail-open con avviso nel log | 08, ADR-0009 |
@@ -45,7 +50,7 @@ Convenzioni dei test: `Unit/…` (Pest, senza database), `Feature/…` (Pest con
 
 | ID | Requisito | Servizio | Tabelle | Endpoint | Test |
 |---|---|---|---|---|---|
-| AC1 | Configurazione e pubblicazione della struttura IT/EN | `PropertySetupService` | `properties`, `property_translations`, `units`, `unit_translations`, `rate_plans`, `season_rules` | `PATCH /admin/properties/{id}`, `POST /admin/properties/{id}/publish`, `GET /public/{t}/{p}` | `Feature/PropertyPublishTest`, `E2E/setup-property.spec` |
+| AC1 | Configurazione e pubblicazione della struttura IT/EN | `PropertySetupService`, `UnitService`, `RatePlanService`, `UnitPhotoService`, `PublicCatalog` | `properties`, `property_translations`, `units`, `unit_translations`, `unit_photos`, `rate_plans`, `season_rules` | `GET/POST /admin/properties`, `GET/PATCH /admin/properties/{id}`, `POST /admin/properties/{id}/publish`, `/admin/units/*`, `GET /public/{t}/{p}` | `Feature/PropertyPublishTest`, `Feature/Admin/{PropertyApiTest, UnitApiTest, UnitPhotoApiTest, RatePlanApiTest}`, `Feature/Public/PublicPropertyApiTest`, `E2E/m2-panel.spec` (in locale da M2), `E2E/setup-property.spec` (M6) |
 | AC2 | Prenotazione `INSTANT` pagata e confermata, UID stabile in tutti i feed | `CheckoutService`, `ReservationStateMachine`, `IcsFeedBuilder` | `reservations`, `inventory_occupancies`, `payments`, `ics_feeds` | `POST /public/{t}/{p}/reservations`, `GET /ical/{token}.ics` | `Stripe/InstantBookingFlowTest`, `Feature/IcsUidStabilityTest`, `E2E/instant-booking.spec` |
 | AC3 | Richiesta pre-autorizzata, approvata e incassata | `CheckoutService`, `CapturePaymentJob` | `reservations`, `payments`, `inventory_occupancies` | `POST /admin/reservations/{id}/approve` | `Stripe/RequestApproveCaptureTest`, `E2E/request-approve.spec` |
 | AC4 | Richiesta rifiutata o scaduta, autorizzazione annullata | `ReservationStateMachine`, `OccupancyReleaseJob` | `reservations`, `payments` | `POST /admin/reservations/{id}/reject` | `Stripe/RequestRejectTest`, `Feature/ApprovalDeadlineTest` |
@@ -80,9 +85,9 @@ Convenzioni dei test: `Unit/…` (Pest, senza database), `Feature/…` (Pest con
 | I9 | Retry senza duplicati | `CheckoutService`, `CapturePaymentJob`, `RefundService` | idempotency key | tutte le POST con `Idempotency-Key` | `Stripe/IdempotentRetryTest`, `Feature/IdempotencyKeyTest` |
 | I10 | Backup ripristinabile | — | — | — | `Ops/BackupRestoreCheck` |
 | I11 | Conferma online solo dopo incasso; manuale amministrativa ammessa | `ReservationStateMachine` | `reservations.confirmation_kind` | `…/reservations` | `Feature/ConfirmationKindTest` |
-| I12 | Unità con calendari esterni mai `INSTANT` | `UnitService` + trigger | `units`, `external_calendars` | `PATCH /admin/units/{id}` | `Feature/InstantWithCalendarRejectedTest` |
+| I12 | Unità con calendari esterni mai `INSTANT` | `UnitService` + trigger (SQLSTATE `BE012`) | `units`, `external_calendars` | `PATCH /admin/units/{id}` (`409 EXTERNAL_CALENDARS_ACTIVE`) | `Feature/InstantWithCalendarRejectedTest` |
 | I13 | Chiusura conflitto non libera date occupate | `ConflictService` | `inventory_conflicts` | `…/conflicts/{id}/resolve` | `Feature/ConflictCloseKeepsDatesTest` |
-| I14 | Prezzi congelati (prenotazioni e preventivi) | `PriceCalculator`, `QuoteService` | `reservation_price_lines`, `quotes.price_lines` | — | `Feature/PriceSnapshotTest`, `Feature/QuoteFrozenPriceTest` |
+| I14 | Prezzi congelati (prenotazioni e preventivi) | `PriceCalculator`, `QuoteService` | `reservation_price_lines`, `quotes.price_lines` | — | `Feature/PriceSnapshotTest` (parte prezzi, M2), `Unit/Pricing/PriceCalculatorTest` (golden di 04), `Feature/QuoteFrozenPriceTest` (M5) |
 | I15 | Stato occupante ⇔ una occupazione attiva | `InventoryService`, `ReservationStateMachine`, `PaymentReconciler` | `reservations`, `inventory_occupancies` (indice unico per prenotazione) | — | `Feature/OccupancyConsistencyTest` (dopo ogni transizione) |
 | I16 | Rilascio solo a sessione chiusa o verificata | `OccupancyReleaseJob` | `inventory_occupancies`, `payments` | — | `Stripe/ReleaseJobCompletedSessionTest`, `Stripe/CheckoutCrashRecoveryTest` |
 | I17 | Nessun riferimento tra tenant | migration | FK composite, `UNIQUE (tenant_id, id)` | — | `Feature/Architecture/CompositeFkCatalogTest`, `Feature/CrossTenantInsertRejectedTest` |
@@ -101,17 +106,18 @@ Convenzioni dei test: `Unit/…` (Pest, senza database), `Feature/…` (Pest con
 | Nessuna chiamata HTTP verso URL utente fuori da `SafeHttpFetcher` | 06, 08 | `Arch/ExternalHttpTest` | attivo da M0; eccezioni verso URL fissi: `App\Domain\Payments\Stripe`, `App\Domain\Tenancy\Auth\PwnedPasswordsVerifier` (ADR-0009) |
 | Tabelle con `tenant_id` senza RLS forzata | I5 | `Feature/Architecture/RlsCatalogTest` | attivo da M0 |
 | FK tra tabelle tenant-scoped senza `tenant_id` | I17 | `Feature/Architecture/CompositeFkCatalogTest` | attivo da M0 |
+| `PriceCalculator` puro (niente database, facade, orologio, configurazione, rete) | 04, I14 | `Arch/PriceCalculatorPurityTest` | attivo da M2 |
 | Campi `#[PersonalData]` presenti in log o payload di audit | I22 | `Feature/AuditLogNoPersonalDataTest` | attivo da M1: tutti i modelli con `#[PersonalData]` (compresi i testi liberi di ADR-0009), modifiche reali di `Guest` e `Reservation`, campi nascosti di `User` |
 
 ## Stato dell'implementazione
 
-Aggiornato a fine M1 (06/11/2026). Tutte le tabelle di 02 con RLS forzata e FK composite; accesso al pannello con MFA; nessun endpoint di dominio oltre `/admin/me` e la lettura di base di `/admin/properties/{id}`.
+Aggiornato a fine M2 (06/11/2026). Tutte le tabelle di 02 con RLS forzata e FK composite; accesso al pannello con MFA; API admin di strutture, unità, foto, tariffe, stagioni, pubblicazione e anteprima prezzo; API pubblica `GET /public/{t}/{p}` e `POST quote-price`; pannello di configurazione.
 
 | Elemento | Classe / file | Test |
 |---|---|---|
 | `TenantContext` | `App\Domain\Tenancy\TenantContext` | `Feature/Tenancy/TenantContextTest` |
 | Funzione `app_current_tenant()` | `database/migrations/2026_11_06_100000_create_app_current_tenant_function.php` | `Feature/Tenancy/TenantContextTest` |
-| Middleware tenant delle richieste | `App\Domain\Tenancy\Http\WithTenantContext` (alias `tenant`), `App\Domain\Tenancy\MembershipTenantResolver` (pannello) | `Feature/Tenancy/TenantMiddlewareTest`, `Feature/TenantIsolationApiTest` |
+| Middleware tenant delle richieste | `App\Domain\Tenancy\Http\WithTenantContext` (alias `tenant`; `tenant:public` per lo slug), `App\Domain\Tenancy\MembershipTenantResolver` (pannello), `App\Domain\Tenancy\PublicSlugTenantResolver` (pubblica); rollback se il controller fallisce | `Feature/Tenancy/{TenantMiddlewareTest, TenantRequestRollbackTest}`, `Feature/TenantIsolationApiTest`, `Feature/Public/PublicPropertyApiTest` |
 | Contesto tenant dei job | `App\Domain\Tenancy\Jobs\{TenantAwareJob, InteractsWithTenant, SetTenantContextForJob}` | `Feature/Tenancy/TenantJobTest` |
 | Ruoli PostgreSQL | `docker/postgres/init/02-roles.sh`, connessioni `pgsql`, `pgsql_migrator`, `pgsql_admin_ops` | `Feature/Database/DatabaseRolesTest` |
 | Tabelle di 02 (1.1) | `database/migrations/2026_11_09_000100…000800`, helper `App\Domain\Tenancy\Database\TenantTable` | `Feature/Database/SchemaTest`, `Feature/OccupancyExclusionTest`, `Unit/StayRangeTest` |
@@ -124,12 +130,20 @@ Aggiornato a fine M1 (06/11/2026). Tutte le tabelle di 02 con RLS forzata e FK c
 | Modelli, enum, `#[PersonalData]` (1.3) | `app/Domain/<Area>/Models`, `app/Domain/<Area>/Enums`, `App\Domain\Privacy\{PersonalData, PersonalDataRegistry}` | `Feature/Domain/ModelsTest` |
 | Scritture di `status` solo dalle macchine a stati | `GuardsStatusWrites`, `StatusGuardedBuilder`, `StatusWriteGuard` | `Feature/Domain/ModelsTest`, `Arch/StateTransitionsTest` |
 | Accesso al pannello (1.4) | `App\Domain\Tenancy\Auth\*`, middleware `panel.fresh`, `mfa`, `reauth`, `App\Http\Controllers\Api\V1\Admin\Auth\*` | `Feature/Auth/{LoginTest, LoginThrottleTest, MfaTest, SessionExpiryTest, ReauthTest, CsrfTest, PwnedPasswordsVerifierTest}` |
-| `GET /api/v1/admin/me`, `GET /api/v1/admin/properties/{id}` | `MeController`, `PropertyController` (lettura di base; M2.1 completa) | `Feature/TenantIsolationApiTest` |
+| `GET /api/v1/admin/me` | `MeController` | `Feature/TenantIsolationApiTest` |
+| Strutture e unità (2.1) | `Admin\PropertyController`, `Admin\UnitController`, `PropertySetupService`, `UnitService`, `App\Domain\Inventory\Translations`, colonne `version` e `App\Http\Api\IfMatch` (412) | `Feature/Admin/{PropertyApiTest, UnitApiTest}`, `Feature/TenantIsolationApiTest` |
+| Foto delle unità (2.2) | `Admin\UnitPhotoController`, `App\Domain\Inventory\Photos\UnitPhotoService`, `config/photos.php` | `Feature/Admin/UnitPhotoApiTest` |
+| Tariffe e stagioni (2.3) | `Admin\RatePlanController`, `RatePlanService` | `Feature/Admin/RatePlanApiTest` |
+| Calcolo prezzi (2.4) | `App\Domain\Pricing\Calculator\*`, `PriceQuoteService`, `Admin\PricePreviewController`, `PriceQuoteResource` | `Unit/Pricing/PriceCalculatorTest`, `Feature/Admin/PricePreviewApiTest`, `Feature/PriceSnapshotTest`, `Arch/PriceCalculatorPurityTest` |
+| I12 e stati di tenant, struttura, unità (2.5) | `UnitService`, `TenantLifecycleService`, `2026_11_23_000300_enforce_instant_without_external_calendars.php` | `Feature/InstantWithCalendarRejectedTest`, `Feature/Admin/UnitSalesTest`, `Arch/StateTransitionsTest` |
+| Pubblicazione (2.6) | `PropertySetupService::publish`, `POST /admin/properties/{id}/publish` | `Feature/PropertyPublishTest` |
+| API pubblica (2.7) | `Public\PropertyController`, `PublicCatalog`, `App\Domain\Tenancy\PublicSlugTenantResolver` (middleware `tenant:public`), `App\Http\Middleware\SetGuestLocale`, limite `public-read` | `Feature/Public/PublicPropertyApiTest` |
+| Pannello: struttura, unità, foto, tariffe, anteprima (2.8) | `resources/js/panel/pages/{PropertiesPage, PropertyPage, UnitPage}.tsx`, `resources/js/panel/pages/unit/*`, `resources/js/panel/api/admin.ts`, `resources/js/panel/money.ts` | `Feature/Frontend/SpaRoutesTest`, `npm run typecheck`, `tests/E2E/m2-panel.spec.ts` (`npm run test:e2e`, solo in locale; in CI da M6) |
 | `tenant:create` (1.5) | `App\Console\Commands\CreateTenantCommand`, `App\Domain\Tenancy\TenantProvisioning` | `Feature/Tenancy/CreateTenantCommandTest` |
 | `AuditLogger` (1.6) | `App\Domain\Tenancy\Audit\{AuditLogger, AuditChanges}` | `Feature/AuditLogNoPersonalDataTest` |
 | Outbox (1.6) | `App\Domain\Tenancy\Outbox\*`, `App\Domain\Tenancy\StateMachines\OutboxMessageStateMachine`, job `DispatchOutboxJob` (ogni minuto) e `DeliverOutboxMessageJob` | `Feature/Tenancy/OutboxTest` |
 | Pannello: accesso e layout (1.7) | `resources/js/panel/{api,auth,components,pages}` | `Feature/Frontend/SpaRoutesTest` |
-| Seeder demo (1.8) | `Database\Seeders\DemoSeeder` | `Feature/DemoSeederTest` |
+| Seeder demo (1.8, 2.8) | `Database\Seeders\DemoSeeder` (due stagioni per unità, account Stripe finto `acct_demo_…`, mai in produzione) | `Feature/DemoSeederTest` |
 | `InventoryService` | `App\Domain\Inventory\InventoryService` (segnaposto fino a 3.1) | `Arch/InventoryWritesTest` |
 | `SafeHttpFetcher` | `App\Domain\Calendar\SafeHttpFetcher` (segnaposto fino a 5.1) | `Arch/ExternalHttpTest` |
 | Struttura del codice (ADR-0006) | `app/Domain/<Area>`, `app/Http/Controllers/Api/V1/{Admin,Public}` | `Arch/DomainStructureTest` |

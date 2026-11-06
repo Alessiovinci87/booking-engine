@@ -11,6 +11,7 @@ use App\Domain\Inventory\Enums\UnitStatus;
 use App\Domain\Pricing\Models\RatePlan;
 use App\Domain\Reservations\Models\CancellationPolicy;
 use App\Domain\Reservations\Models\Reservation;
+use App\Domain\Tenancy\Models\Concerns\HasVersion;
 use App\Domain\Tenancy\Models\TenantModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -19,6 +20,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * Unità vendibile (02). Le occupazioni dell'unità si leggono e scrivono solo da InventoryService.
  *
  * @property string $id
+ * @property int $version
  * @property string $tenant_id
  * @property string $property_id
  * @property string $name
@@ -36,6 +38,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 class Unit extends TenantModel
 {
+    use HasVersion;
+
     protected function casts(): array
     {
         return [

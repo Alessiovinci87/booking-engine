@@ -1,6 +1,6 @@
 # 07 — Contratto API
 
-Versione: 1.2 · Data: 06/11/2026 · Modifiche: [CHANGELOG-v1.1](CHANGELOG-v1.1.md); 1.2: ADR-0008, ADR-0009
+Versione: 1.3 · Data: 06/11/2026 · Modifiche: [CHANGELOG-v1.1](CHANGELOG-v1.1.md); 1.2: ADR-0008, ADR-0009; 1.3: ADR-0010 (codici, rotte, avvisi e guardia dei pagamenti dopo M2; API pubblica senza CSRF, `UNIT_NOT_BOOKABLE`)
 
 REST JSON, prefisso `/api/v1`. Tre superfici con autenticazione diversa:
 
@@ -13,6 +13,8 @@ REST JSON, prefisso `/api/v1`. Tre superfici con autenticazione diversa:
 | ICS export | `/ical/{feed_token}.ics` (un feed per unità e destinazione) | token del feed | token |
 
 Il `tenant_id` non viene **mai** accettato dal client.
+
+L'API pubblica non usa cookie di sessione e quindi non usa il token CSRF (ADR-0010). È protetta dal rate limit, dall'`Idempotency-Key` sulle `POST` e, per le chiamate dalla vista incorporata, dal controllo dell'header `Origin` rispetto agli `embed_allowed_origins` del tenant (02).
 
 ## Convenzioni
 
@@ -42,11 +44,11 @@ Il `tenant_id` non viene **mai** accettato dal client.
 | 401 | `UNAUTHENTICATED`, `MFA_REQUIRED`, `MFA_SETUP_REQUIRED`, `INVALID_CREDENTIALS`, `INVALID_MFA_CODE` |
 | 403 | `FORBIDDEN`, `REAUTH_REQUIRED` |
 | 404 | `NOT_FOUND` (anche per risorse di altri tenant: mai `403`) |
-| 409 | `DATES_UNAVAILABLE`, `CHECKOUT_EXPIRED`, `CONFLICT_OPEN`, `ILLEGAL_TRANSITION`, `PRICE_CHANGED`, `MFA_ALREADY_ENABLED` |
+| 409 | `DATES_UNAVAILABLE`, `CHECKOUT_EXPIRED`, `CONFLICT_OPEN`, `ILLEGAL_TRANSITION`, `PRICE_CHANGED`, `MFA_ALREADY_ENABLED`, `EXTERNAL_CALENDARS_ACTIVE`, `UNIT_NOT_BOOKABLE` |
 | 419 | `CSRF_TOKEN_EXPIRED` (la SPA richiede un nuovo cookie CSRF e ripete una volta) |
 | 410 | `QUOTE_EXPIRED`, `QUOTE_REVOKED`, `QUOTE_EXHAUSTED`, `FEED_RETIRED` |
 | 412 | `VERSION_MISMATCH` |
-| 422 | `MIN_NIGHTS_NOT_MET`, `OCCUPANCY_EXCEEDED`, `AMOUNT_BELOW_MINIMUM`, `PAYMENTS_NOT_ENABLED`, `IDEMPOTENCY_KEY_REUSED`, `INVALID_ICAL_URL`, `CANCELLATION_POLICY_MISSING` |
+| 422 | `MIN_NIGHTS_NOT_MET`, `OCCUPANCY_EXCEEDED`, `AMOUNT_BELOW_MINIMUM`, `PAYMENTS_NOT_ENABLED`, `IDEMPOTENCY_KEY_REUSED`, `INVALID_ICAL_URL`, `CANCELLATION_POLICY_MISSING`, `NO_ACTIVE_UNITS`, `TRANSLATION_IT_MISSING` |
 | 429 | `RATE_LIMITED` |
 | 502/503 | `PAYMENT_PROVIDER_UNAVAILABLE` |
 
@@ -57,17 +59,17 @@ I messaggi `message` sono localizzati; il client si basa sempre su `code`.
 ## API pubblica (ospite)
 
 ### `GET /public/{t}/{p}`
-Struttura pubblicata: nomi e descrizioni nella lingua richiesta (con `translation_fallback: true` se manca), foto, orari, politiche, unità attive con capienza e foto.
+Struttura pubblicata: nomi e descrizioni nella lingua richiesta (con `translation_fallback: true` se manca), foto, orari, politiche, unità attive con capienza e foto. Una struttura pubblicata senza unità attive risponde con `units: []`: la pagina ospite mostra "Nessuna disponibilità al momento" (ADR-0010).
 
 ### `GET /public/{t}/{p}/availability?unit_id=&from=&to=`
-Notti non vendibili per unità nell'intervallo (max 18 mesi). Non rivela il motivo (prenotazione, blocco, conflitto).
+Notti non vendibili per unità nell'intervallo (max 18 mesi). Non rivela il motivo (prenotazione, blocco, conflitto). Unità con vendite sospese o non attiva: `409 UNIT_NOT_BOOKABLE` (ADR-0010).
 
 ```json
 { "unit_id": "…", "unavailable_nights": ["2027-08-10", "…"], "min_nights_by_night": { "2027-08-01": 5 } }
 ```
 
 ### `POST /public/{t}/{p}/quote-price`
-Calcola il prezzo senza creare nulla. Body: `unit_id`, `check_in`, `check_out`, `adults`, `children`. Risposta: righe, totale, caparra, saldo, `booking_mode`, politica di cancellazione. Errori: `MIN_NIGHTS_NOT_MET`, `OCCUPANCY_EXCEEDED`, `DATES_UNAVAILABLE`.
+Calcola il prezzo senza creare nulla. Body: `unit_id`, `check_in`, `check_out`, `adults`, `children`. Risposta: righe, totale, caparra, saldo, `booking_mode`, politica di cancellazione. Errori: `MIN_NIGHTS_NOT_MET`, `OCCUPANCY_EXCEEDED`, `DATES_UNAVAILABLE`, `UNIT_NOT_BOOKABLE` (unità con vendite sospese o non attiva, ADR-0010).
 
 ### `POST /public/{t}/{p}/reservations` · Idempotency-Key
 Avvia una prenotazione. Body:
@@ -126,11 +128,14 @@ Tutte richiedono utente autenticato con MFA verificata nella sessione e membersh
 ### Struttura e unità
 | Metodo | Percorso | Note |
 |---|---|---|
+| GET/POST | `/properties` | elenco e creazione (ADR-0010) |
 | GET/PATCH | `/properties/{id}` | incluse traduzioni |
-| POST | `/properties/{id}/publish` | richiede ≥ 1 unità attiva, traduzione `it`, politica di cancellazione predefinita della struttura (`422 CANCELLATION_POLICY_MISSING`, ADR-0009), Stripe `charges_enabled` o solo unità con prenotazione manuale |
+| POST | `/properties/{id}/publish` | richiede, nell'ordine: ≥ 1 unità attiva (`422 NO_ACTIVE_UNITS`), traduzione `it` (`422 TRANSLATION_IT_MISSING`), politica di cancellazione predefinita della struttura (`422 CANCELLATION_POLICY_MISSING`, ADR-0009), account Stripe del tenant con `charges_enabled` (`422 PAYMENTS_NOT_ENABLED`). Risponde con il codice della prima guardia non soddisfatta e l'elenco di tutte in `details.missing`; già pubblicata → `200` senza modifiche; archiviata → `409 ILLEGAL_TRANSITION`. Senza `Idempotency-Key` finché non c'è il meccanismo generico di I9: l'operazione è idempotente per natura (ADR-0010) |
 | GET/POST | `/properties/{id}/units` | |
-| GET/PATCH | `/units/{id}` | cambio a `INSTANT` rifiutato se ci sono calendari esterni attivi (`409`); `cancellation_policy_id` facoltativa, solo tra le politiche della stessa struttura |
-| POST/DELETE | `/units/{id}/photos` | upload con URL firmato |
+| GET/PATCH | `/units/{id}` | cambio a `INSTANT` rifiutato se ci sono calendari esterni attivi (`409 EXTERNAL_CALENDARS_ACTIVE`, `details.active_calendars`); disattivare l'ultima unità attiva di una struttura pubblicata è consentito (il pannello mostra un avviso, ADR-0010); `cancellation_policy_id` facoltativa, solo tra le politiche della stessa struttura |
+| GET/POST | `/units/{id}/photos` | elenco e caricamento; lettura con URL firmato |
+| PUT | `/units/{id}/photos/order` | corpo `photo_ids`; la prima foto è la copertina (ADR-0010) |
+| DELETE | `/units/{id}/photos/{photoId}` | (ADR-0010) |
 | GET/POST | `/units/{id}/ics-feeds` | un feed per destinazione (`BOOKING`, `AIRBNB`, `OTHER`), accoppiato al calendario importato dallo stesso canale; restituisce URL e ultima lettura |
 | POST | `/ics-feeds/{id}/rotate` | nuovo token; il vecchio resta `FROZEN` 7 giorni |
 | GET | `/units/{id}/channel-checklist` | stato dei passi di collegamento a stella (06) |
@@ -141,7 +146,7 @@ Tutte richiedono utente autenticato con MFA verificata nella sessione e membersh
 | Metodo | Percorso |
 |---|---|
 | GET/PATCH | `/units/{id}/rate-plan` |
-| GET/POST/PATCH/DELETE | `/units/{id}/seasons[/{seasonId}]` |
+| GET/POST/PATCH/DELETE | `/units/{id}/seasons[/{seasonId}]` (le risposte di `GET`, `POST` e `PATCH` contengono `warnings`: `{ code: "SEASON_OVERLAP_SAME_PRIORITY", priority, seasons: [{ id, name, first_night, last_night }] }`, ADR-0010) |
 | POST | `/units/{id}/price-preview` (stesso calcolo della pubblica) |
 
 ### Calendario

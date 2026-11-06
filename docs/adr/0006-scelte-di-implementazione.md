@@ -40,6 +40,7 @@ La specifica fissa lo stack (Laravel 13, PHP 8.4, PostgreSQL con RLS, Redis, Rea
 | Traduzioni | `react-i18next` (frontend), file di lingua Laravel (email e messaggi API) |
 | Errori | Sentry, regione UE |
 | Email | Resend (verificare in M6 la regione di invio e il trasferimento dati, 09) |
+| Immagini | `intervention/image` v3 con driver GD (integrazione di M2, vedi sotto) |
 
 ### Frontend
 - Due applicazioni React nella stessa build Vite: **pannello** su `/app` (solo italiano) e **pagina ospite** su `/p/{tenantSlug}/{propertySlug}` (italiano e inglese).
@@ -53,6 +54,11 @@ Server in UE gestiti con Laravel Forge; staging e produzione separati; PostgreSQ
 - Un branch per milestone (`m1-modello-dati`, …), una issue GitHub per attività, commit che chiudono le issue (`closes #N`).
 - Merge su `main` con pull request solo quando la CI è verde e la "Definition of Done" della milestone è soddisfatta.
 - Messaggi di commit in italiano.
+
+### Integrazioni successive
+| Data | Milestone | Libreria | Motivo |
+|---|---|---|---|
+| 2026-11-23 | M2 (attività 2.2) | `intervention/image` v3, driver GD (estensioni PHP `gd` ed `exif`) | **Privacy delle foto**: ogni immagine caricata dal gestore si decodifica e si ricodifica in WebP (1600 px e miniatura 400 px), eliminando tutti i metadati EXIF, compresa la posizione GPS che spesso rivela l'indirizzo di casa o le abitudini di chi scatta (09). L'originale non si conserva. GD è già disponibile in Herd e nella CI, senza dipendenze di sistema come Imagick. |
 
 ## Alternative considerate
 

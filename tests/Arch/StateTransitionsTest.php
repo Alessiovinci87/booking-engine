@@ -8,7 +8,9 @@
  *   setAttribute('status', ...) e l'assegnazione ->status = ...;
  * - consente letture, regole di validazione e API Resource ('status' => $this->status);
  * - eccezioni: app/Domain/<Area>/StateMachines e InventoryService, unico scrittore delle occupazioni
- *   (che non hanno una macchina a stati propria, 03).
+ *   (che non hanno una macchina a stati propria, 03);
+ * - eccezioni esplicite di M2 (11, attività 2.5; ADR-0009): gli stati di tenant, struttura e unità non
+ *   sono macchine a stati di 03 e si cambiano solo dai rispettivi servizi, elencati in STATUS_WRITERS.
  *
  * La protezione a runtime è nel trait GuardsStatusWrites dei modelli con macchina a stati.
  */
@@ -20,6 +22,14 @@ const STATUS_WRITE_PATTERNS = [
     '/setAttribute\(\s*[\'"]status[\'"]/',
     // metodi di scrittura con un array letterale che contiene la chiave status
     '/\b(?:update|fill|forceFill|create|forceCreate|make|insert|insertOrIgnore|insertGetId|upsert|updateOrInsert|firstOrCreate|firstOrNew|updateOrCreate|createQuietly|updateQuietly|saveQuietly)\s*\(\s*(?:\[[^\[\]]*\]\s*,\s*)?\[[^\[\]]*[\'"]status[\'"]\s*=>/s',
+];
+
+/** File autorizzati a scrivere status oltre alle macchine a stati. */
+const STATUS_WRITERS = [
+    'app/Domain/Inventory/InventoryService.php',
+    'app/Domain/Inventory/UnitService.php',
+    'app/Domain/Inventory/PropertySetupService.php',
+    'app/Domain/Tenancy/TenantLifecycleService.php',
 ];
 
 function containsStatusWrite(string $code): bool
@@ -44,7 +54,7 @@ it('nessuna scrittura di status fuori da app/Domain/*/StateMachines', function (
 
         if ($file->getExtension() !== 'php'
             || preg_match('#^app/Domain/[^/]+/StateMachines/#', $relative)
-            || $relative === 'app/Domain/Inventory/InventoryService.php') {
+            || in_array($relative, STATUS_WRITERS, true)) {
             continue;
         }
 
@@ -56,6 +66,14 @@ it('nessuna scrittura di status fuori da app/Domain/*/StateMachines', function (
     expect($offenders)->toBeEmpty(
         "Scrittura diretta dello stato fuori dalle macchine a stati:\n- ".implode("\n- ", $offenders)
     );
+});
+
+it('le eccezioni esplicite esistono e sono solo i servizi previsti', function () {
+    foreach (STATUS_WRITERS as $file) {
+        expect(file_exists(dirname(__DIR__, 2).'/'.$file))->toBeTrue($file);
+    }
+
+    expect(STATUS_WRITERS)->toHaveCount(4);
 });
 
 it('riconosce le scritture dello stato', function (string $code) {

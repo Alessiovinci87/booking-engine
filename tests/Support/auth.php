@@ -72,3 +72,28 @@ function panelGet(TestCase $test, string $uri): TestResponse
 {
     return $test->withHeader('Referer', TEST_PANEL_ORIGIN.'/app')->getJson($uri);
 }
+
+/** PATCH del pannello con If-Match (07); senza versione l'header non viene inviato. */
+function panelPatch(TestCase $test, string $uri, array $data = [], ?int $version = null): TestResponse
+{
+    $headers = ['Referer' => TEST_PANEL_ORIGIN.'/app'];
+
+    if ($version !== null) {
+        $headers['If-Match'] = '"'.$version.'"';
+    }
+
+    return $test->withHeaders($headers)->patchJson($uri, $data);
+}
+
+/**
+ * Proprietario con sessione completa nel tenant indicato (o in un tenant nuovo).
+ *
+ * @return array{user: User, tenant: string, secret: string|null}
+ */
+function signedInOwner(TestCase $test, ?string $tenantId = null): array
+{
+    $owner = panelUser($tenantId);
+    actingAsPanelUser($test, $owner['user']);
+
+    return $owner;
+}
