@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\Admin\Auth\MfaVerifyController;
 use App\Http\Controllers\Api\V1\Admin\Auth\SessionController;
 use App\Http\Controllers\Api\V1\Admin\MeController;
 use App\Http\Controllers\Api\V1\Admin\PropertyController;
+use App\Http\Controllers\Api\V1\Admin\RatePlanController;
 use App\Http\Controllers\Api\V1\Admin\UnitController;
 use App\Http\Controllers\Api\V1\Admin\UnitPhotoController;
 use Illuminate\Support\Facades\Route;
@@ -54,5 +55,12 @@ Route::prefix('admin')->group(function (): void {
         Route::post('units/{unit}/photos', [UnitPhotoController::class, 'store'])->name('admin.units.photos.store');
         Route::put('units/{unit}/photos/order', [UnitPhotoController::class, 'reorder'])->name('admin.units.photos.order');
         Route::delete('units/{unit}/photos/{photo}', [UnitPhotoController::class, 'destroy'])->name('admin.units.photos.destroy');
+
+        Route::get('units/{unit}/rate-plan', [RatePlanController::class, 'show'])->name('admin.units.rate-plan.show');
+        Route::patch('units/{unit}/rate-plan', [RatePlanController::class, 'update'])->name('admin.units.rate-plan.update');
+        Route::get('units/{unit}/seasons', [RatePlanController::class, 'seasons'])->name('admin.units.seasons.index');
+        Route::post('units/{unit}/seasons', [RatePlanController::class, 'storeSeason'])->name('admin.units.seasons.store');
+        Route::patch('units/{unit}/seasons/{season}', [RatePlanController::class, 'updateSeason'])->name('admin.units.seasons.update');
+        Route::delete('units/{unit}/seasons/{season}', [RatePlanController::class, 'destroySeason'])->name('admin.units.seasons.destroy');
     });
 });

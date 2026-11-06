@@ -135,3 +135,16 @@ function twoTenantsWithUnits(): array
 
     return $result;
 }
+
+function createRatePlanRow(string $tenantId, string $unitId, int $baseNightlyCents = 12000): string
+{
+    $id = uuid7();
+
+    inTenant($tenantId, fn () => DB::table('rate_plans')->insert([
+        'id' => $id, 'tenant_id' => $tenantId, 'unit_id' => $unitId, 'name' => 'Tariffa base',
+        'base_nightly_cents' => $baseNightlyCents, 'currency' => 'EUR', 'active' => true,
+        'created_at' => now(), 'updated_at' => now(),
+    ]));
+
+    return $id;
+}

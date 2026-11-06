@@ -24,6 +24,8 @@ return [
     'date' => 'Il campo :attribute deve essere una data valida.',
     'date_format' => 'Il campo :attribute deve avere il formato :format.',
     'after' => 'Il campo :attribute deve essere successivo a :date.',
+    'after_or_equal' => 'Il campo :attribute deve essere uguale o successivo a :date.',
+    'before' => 'Il campo :attribute deve essere precedente a :date.',
     'gte' => [
         'numeric' => 'Il campo :attribute deve essere almeno :value.',
     ],
@@ -69,6 +71,9 @@ return [
         'extra_guest_fee_cents' => 'supplemento ospite extra',
         'base_nightly_cents' => 'prezzo base',
         'nightly_cents' => 'prezzo per notte',
+        'first_night' => 'prima notte',
+        'last_night' => 'ultima notte',
+        'priority' => 'priorità',
         'check_in' => 'arrivo',
         'check_out' => 'partenza',
         'adults' => 'adulti',
