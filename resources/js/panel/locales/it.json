@@ -74,7 +74,14 @@
         "PAYMENTS_NOT_ENABLED": "I pagamenti online non sono attivi: collega l'account Stripe per pubblicare.",
         "MIN_NIGHTS_NOT_MET": "Il soggiorno è più corto del minimo di notti.",
         "OCCUPANCY_EXCEEDED": "Troppi ospiti per questa unità.",
-        "AMOUNT_BELOW_MINIMUM": "L'importo è inferiore al minimo pagabile online (0,50 €)."
+        "AMOUNT_BELOW_MINIMUM": "L'importo è inferiore al minimo pagabile online (0,50 €).",
+        "DATES_UNAVAILABLE": "Le date selezionate non sono più disponibili.",
+        "UNIT_NOT_BOOKABLE": "Questa unità al momento non è prenotabile.",
+        "PRICE_CHANGED": "Il prezzo è cambiato: controlla il nuovo totale.",
+        "IDEMPOTENCY_KEY_REUSED": "Richiesta già inviata con dati diversi. Ricarica la pagina e riprova.",
+        "CONFLICT_OPEN": "Ci sono conflitti aperti sulle date: risolvili prima di approvare.",
+        "PRIVACY_POLICY_MISSING": "Manca il link all'informativa privacy della struttura.",
+        "PAYMENT_PROVIDER_UNAVAILABLE": "Il servizio di pagamento non risponde. Riprova tra poco."
     },
     "properties": {
         "title": "Strutture",

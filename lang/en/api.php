@@ -26,5 +26,12 @@ return [
         'MIN_NIGHTS_NOT_MET' => 'The stay does not reach the minimum number of nights.',
         'OCCUPANCY_EXCEEDED' => 'The number of guests exceeds the capacity.',
         'AMOUNT_BELOW_MINIMUM' => 'The amount is below the minimum that can be paid online.',
+        'DATES_UNAVAILABLE' => 'The selected dates are no longer available.',
+        'UNIT_NOT_BOOKABLE' => 'This unit cannot be booked at the moment.',
+        'PRICE_CHANGED' => 'The price has changed: please check the new total.',
+        'IDEMPOTENCY_KEY_REUSED' => 'This request was already sent with different data. Reload the page and try again.',
+        'CONFLICT_OPEN' => 'There are open conflicts on these dates: resolve them before approving.',
+        'PRIVACY_POLICY_MISSING' => 'The link to the property\'s privacy policy is missing.',
+        'PAYMENT_PROVIDER_UNAVAILABLE' => 'The payment service is not responding. Please try again shortly.',
     ],
 ];
