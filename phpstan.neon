@@ -10,3 +10,9 @@ parameters:
         - database
         - routes
     tmpDir: storage/framework/cache/phpstan
+    ignoreErrors:
+        # Il trait dei job tenant-aware sarà usato dai job di dominio (M3+); oggi solo dai test.
+        -
+            identifier: trait.unused
+            path: app/Domain/Tenancy/Jobs/InteractsWithTenant.php
+            reportUnmatched: false
