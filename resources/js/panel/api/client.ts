@@ -35,9 +35,14 @@ type Method = 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE';
 export interface RequestOptions {
     /** Versione per If-Match (07, concorrenza ottimistica): risposta 412 VERSION_MISMATCH se diversa. */
     version?: number;
+    /** Idempotency-Key (07, I9): generata per ogni POST e riusata nel nuovo tentativo dopo CSRF_TOKEN_EXPIRED. */
+    idempotencyKey?: string;
 }
 
-export async function apiRequest<T>(method: Method, path: string, body?: unknown, options: RequestOptions = {}): Promise<T> {
+export async function apiRequest<T>(method: Method, path: string, body?: unknown, requestOptions: RequestOptions = {}): Promise<T> {
+    const options: RequestOptions =
+        method === 'POST' ? { ...requestOptions, idempotencyKey: requestOptions.idempotencyKey ?? crypto.randomUUID() } : requestOptions;
+
     try {
         return await send<T>(method, path, body, options);
     } catch (error) {
@@ -64,6 +69,10 @@ async function send<T>(method: Method, path: string, body: unknown, options: Req
 
     if (xsrf !== null) {
         headers['X-XSRF-TOKEN'] = xsrf;
+    }
+
+    if (options.idempotencyKey !== undefined) {
+        headers['Idempotency-Key'] = options.idempotencyKey;
     }
 
     if (options.version !== undefined) {

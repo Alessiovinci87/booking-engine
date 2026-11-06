@@ -33,5 +33,9 @@ return [
         'CONFLICT_OPEN' => 'There are open conflicts on these dates: resolve them before approving.',
         'PRIVACY_POLICY_MISSING' => 'The link to the property\'s privacy policy is missing.',
         'PAYMENT_PROVIDER_UNAVAILABLE' => 'The payment service is not responding. Please try again shortly.',
+        'IDEMPOTENCY_KEY_IN_USE' => 'The same request is still in progress. Wait a few seconds and try again.',
+    ],
+    'idempotency' => [
+        'key_required' => 'Missing or invalid Idempotency-Key header (UUID).',
     ],
 ];

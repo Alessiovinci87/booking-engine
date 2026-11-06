@@ -151,3 +151,19 @@ it('impedisce di togliere a una struttura pubblicata ciò che la pubblicazione r
         ->assertStatus(400)
         ->assertJsonStructure(['error' => ['details' => ['fields' => ['translations.it']]]]);
 });
+
+it('richiede la Idempotency-Key e restituisce la stessa risposta per la stessa chiave (I9)', function () {
+    publishReady($this->tenant, $this->property);
+
+    $this->withHeaders(['Referer' => TEST_PANEL_ORIGIN.'/app'])->postJson($this->publishUrl)
+        ->assertStatus(400)
+        ->assertJsonPath('error.code', 'VALIDATION_FAILED');
+
+    $key = uuid7();
+    $first = panelPost($this, $this->publishUrl, [], $key)->assertOk();
+    panelPost($this, $this->publishUrl, [], $key)->assertOk()->assertHeader('Idempotent-Replayed', 'true');
+    panelPost($this, $this->publishUrl, ['x' => 1], $key)->assertStatus(422)->assertJsonPath('error.code', 'IDEMPOTENCY_KEY_REUSED');
+
+    expect($first->json('status'))->toBe('PUBLISHED')
+        ->and(inTenant($this->tenant, fn () => AuditLog::query()->where('action', 'property.published')->count()))->toBe(1);
+});

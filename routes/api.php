@@ -41,13 +41,17 @@ Route::prefix('admin')->group(function (): void {
         });
     });
 
+    // L'Idempotency-Key (07, I9) precede il middleware tenant: la risposta si salva dopo il commit.
+    Route::middleware(['auth:sanctum', 'panel.fresh', 'mfa', 'throttle:admin', 'idempotent', 'tenant'])->group(function (): void {
+        Route::post('properties/{property}/publish', [PropertyController::class, 'publish'])->name('admin.properties.publish');
+    });
+
     Route::middleware(['auth:sanctum', 'panel.fresh', 'mfa', 'throttle:admin', 'tenant'])->group(function (): void {
         Route::get('me', MeController::class)->name('admin.me');
         Route::get('properties', [PropertyController::class, 'index'])->name('admin.properties.index');
         Route::post('properties', [PropertyController::class, 'store'])->name('admin.properties.store');
         Route::get('properties/{property}', [PropertyController::class, 'show'])->name('admin.properties.show');
         Route::patch('properties/{property}', [PropertyController::class, 'update'])->name('admin.properties.update');
-        Route::post('properties/{property}/publish', [PropertyController::class, 'publish'])->name('admin.properties.publish');
 
         Route::get('properties/{property}/units', [UnitController::class, 'index'])->name('admin.units.index');
         Route::post('properties/{property}/units', [UnitController::class, 'store'])->name('admin.units.store');

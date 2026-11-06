@@ -33,5 +33,9 @@ return [
         'CONFLICT_OPEN' => 'Ci sono conflitti aperti sulle date: risolvili prima di approvare.',
         'PRIVACY_POLICY_MISSING' => 'Manca il link all\'informativa privacy della struttura.',
         'PAYMENT_PROVIDER_UNAVAILABLE' => 'Il servizio di pagamento non risponde. Riprova tra poco.',
+        'IDEMPOTENCY_KEY_IN_USE' => 'La stessa richiesta è ancora in corso. Attendi qualche secondo e riprova.',
+    ],
+    'idempotency' => [
+        'key_required' => 'Header Idempotency-Key mancante o non valido (UUID).',
     ],
 ];

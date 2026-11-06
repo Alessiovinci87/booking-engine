@@ -3,6 +3,7 @@
 use App\Domain\Tenancy\Exceptions\BusinessRuleViolation;
 use App\Domain\Tenancy\Http\WithTenantContext;
 use App\Http\Api\ApiError;
+use App\Http\Middleware\EnforceIdempotencyKey;
 use App\Http\Middleware\EnsureMfaVerified;
 use App\Http\Middleware\EnsurePanelSessionIsFresh;
 use App\Http\Middleware\RequirePasswordConfirmation;
@@ -37,6 +38,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'mfa' => EnsureMfaVerified::class,
             'reauth' => RequirePasswordConfirmation::class,
             'guest.locale' => SetGuestLocale::class,
+            // Idempotency-Key obbligatoria (07, I9): sempre prima di `tenant`.
+            'idempotent' => EnforceIdempotencyKey::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

@@ -63,9 +63,10 @@ function actingAsPanelUser(TestCase $test, User $user, bool $mfaVerified = true)
         ->withHeader('Referer', TEST_PANEL_ORIGIN.'/app');
 }
 
-function panelPost(TestCase $test, string $uri, array $data = []): TestResponse
+/** POST del pannello: come il client del pannello, una Idempotency-Key nuova per ogni chiamata (07, I9). */
+function panelPost(TestCase $test, string $uri, array $data = [], ?string $idempotencyKey = null): TestResponse
 {
-    return $test->withHeader('Referer', TEST_PANEL_ORIGIN.'/app')->postJson($uri, $data);
+    return $test->withHeaders(['Referer' => TEST_PANEL_ORIGIN.'/app', 'Idempotency-Key' => $idempotencyKey ?? uuid7()])->postJson($uri, $data);
 }
 
 function panelGet(TestCase $test, string $uri): TestResponse

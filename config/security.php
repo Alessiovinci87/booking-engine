@@ -34,4 +34,11 @@ return [
     // API pubblica in lettura (struttura, calcolo prezzo): 120 richieste al minuto per IP (07).
     'public_read_rate_limit_per_minute' => 120,
 
+    // Creazione di prenotazioni dalla pagina ospite: 10 richieste ogni 10 minuti per IP e per email (07).
+    'public_booking_rate_limit' => ['attempts' => 10, 'minutes' => 10],
+
+    // Store della cache per le risposte dell'Idempotency-Key (07, I9): null = store predefinito
+    // (Redis in sviluppo e produzione, array nei test).
+    'idempotency_store' => env('IDEMPOTENCY_CACHE_STORE'),
+
 ];
