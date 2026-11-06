@@ -9,7 +9,8 @@ use Illuminate\Validation\Validator;
 
 /**
  * Corpo di POST /admin/units/{id}/price-preview e POST /public/{t}/{p}/quote-price (07): date di
- * soggiorno [check_in, check_out), adulti e bambini. Al massimo un anno di notti.
+ * soggiorno [check_in, check_out), adulti e bambini. Al massimo un anno di notti. Nella richiesta
+ * pubblica l'unità arriva nel corpo (unit_id).
  */
 final class PriceQuoteRequest extends FormRequest
 {
@@ -21,6 +22,7 @@ final class PriceQuoteRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'unit_id' => $this->route('tenantSlug') === null ? ['prohibited'] : ['required', 'uuid'],
             'check_in' => ['required', 'date_format:Y-m-d', 'after_or_equal:2000-01-01', 'before:2100-01-01'],
             'check_out' => ['required', 'date_format:Y-m-d', 'after:check_in', 'before:2100-01-01'],
             'adults' => ['required', 'integer', 'between:1,50'],

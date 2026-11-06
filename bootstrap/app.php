@@ -6,6 +6,7 @@ use App\Http\Api\ApiError;
 use App\Http\Middleware\EnsureMfaVerified;
 use App\Http\Middleware\EnsurePanelSessionIsFresh;
 use App\Http\Middleware\RequirePasswordConfirmation;
+use App\Http\Middleware\SetGuestLocale;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Application;
@@ -35,6 +36,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'panel.fresh' => EnsurePanelSessionIsFresh::class,
             'mfa' => EnsureMfaVerified::class,
             'reauth' => RequirePasswordConfirmation::class,
+            'guest.locale' => SetGuestLocale::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

@@ -2,6 +2,7 @@
 
 namespace App\Domain\Tenancy\Http;
 
+use App\Domain\Tenancy\PublicSlugTenantResolver;
 use App\Domain\Tenancy\TenantContext;
 use App\Domain\Tenancy\TenantResolver;
 use Closure;
@@ -12,6 +13,9 @@ use Symfony\Component\HttpFoundation\Response;
  * Middleware delle richieste admin e pubbliche: risolve il tenant da fonti verificate e gestisce
  * l'intera richiesta dentro TenantContext::run(). Senza tenant risolto risponde 404, mai 403 (08).
  *
+ * `tenant` usa il risolutore del pannello (membership); `tenant:public` ricava il tenant dallo slug
+ * nel percorso (API pubblica, 07).
+ *
  * Laravel trasforma in risposta le eccezioni del controller già dentro la pipeline, quindi qui
  * arriverebbe una risposta normale e la transazione verrebbe confermata con le scritture parziali.
  * Se la risposta porta un'eccezione, la transazione si annulla e si restituisce la stessa risposta.
@@ -21,14 +25,16 @@ final class WithTenantContext
     public function __construct(
         private readonly TenantContext $tenantContext,
         private readonly TenantResolver $resolver,
+        private readonly PublicSlugTenantResolver $publicResolver,
     ) {}
 
     /**
      * @param  Closure(Request): Response  $next
      */
-    public function handle(Request $request, Closure $next): Response
+    public function handle(Request $request, Closure $next, string $surface = 'panel'): Response
     {
-        $tenantId = $this->resolver->resolve($request);
+        $resolver = $surface === 'public' ? $this->publicResolver : $this->resolver;
+        $tenantId = $resolver->resolve($request);
 
         if ($tenantId === null) {
             abort(404);

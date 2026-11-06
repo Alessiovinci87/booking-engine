@@ -23,7 +23,7 @@ class AppServiceProvider extends ServiceProvider
 
         // Pannello: tenant dalla membership dell'utente autenticato (08). Senza utente o membership
         // il risolutore restituisce null e il middleware risponde 404 (fail-closed). La superficie
-        // pubblica (slug) avrà un proprio risolutore in M3.
+        // pubblica usa PublicSlugTenantResolver tramite il middleware tenant:public.
         $this->app->scoped(TenantResolver::class, MembershipTenantResolver::class);
 
         // Dispatcher dell'outbox: lettura cross-tenant degli ID con app_admin_ops (08).
@@ -46,5 +46,9 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinute((int) config('security.admin_rate_limit_per_minute'))
                 ->by('admin:'.(is_string($id) ? $id : 'ip:'.$request->ip()));
         });
+
+        // API pubblica in lettura: 120 richieste al minuto per IP (07).
+        RateLimiter::for('public-read', fn (Request $request): Limit => Limit::perMinute((int) config('security.public_read_rate_limit_per_minute'))
+            ->by('public-read:'.$request->ip()));
     }
 }

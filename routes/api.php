@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\V1\Admin\PropertyController;
 use App\Http\Controllers\Api\V1\Admin\RatePlanController;
 use App\Http\Controllers\Api\V1\Admin\UnitController;
 use App\Http\Controllers\Api\V1\Admin\UnitPhotoController;
+use App\Http\Controllers\Api\V1\Public\PropertyController as PublicPropertyController;
 use Illuminate\Support\Facades\Route;
 
 // Identificativi UUID nei percorsi: un valore diverso non trova la rotta (404) e non arriva mai al database.
@@ -68,3 +69,15 @@ Route::prefix('admin')->group(function (): void {
         Route::post('units/{unit}/price-preview', PricePreviewController::class)->name('admin.units.price-preview');
     });
 });
+
+/*
+ * API pubblica (07): nessuna autenticazione, tenant dallo slug nel percorso, lingua da locale o
+ * Accept-Language, 120 richieste al minuto per IP.
+ */
+Route::prefix('public/{tenantSlug}/{propertySlug}')
+    ->where(['tenantSlug' => '[a-z0-9-]{1,63}', 'propertySlug' => '[a-z0-9-]{1,100}'])
+    ->middleware(['throttle:public-read', 'guest.locale', 'tenant:public'])
+    ->group(function (): void {
+        Route::get('/', [PublicPropertyController::class, 'show'])->name('public.property.show');
+        Route::post('quote-price', [PublicPropertyController::class, 'quotePrice'])->name('public.property.quote-price');
+    });
