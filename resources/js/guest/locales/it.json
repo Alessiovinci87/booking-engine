@@ -1,0 +1,11 @@
+{
+    "home": {
+        "title": "Benvenuto",
+        "subtitle": "Pagina di prova della prenotazione diretta."
+    },
+    "language": {
+        "label": "Lingua",
+        "it": "Italiano",
+        "en": "English"
+    }
+}

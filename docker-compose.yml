@@ -1,0 +1,46 @@
+# Servizi locali di sviluppo (ADR-0006). PHP e Node girano su Windows tramite Laravel Herd.
+# Le password vengono lette da .env (mai committato); i valori segnaposto sono in .env.example.
+name: booking-engine
+
+services:
+  postgres:
+    image: postgres:18
+    restart: unless-stopped
+    ports:
+      # Porta host configurabile per non entrare in conflitto con PostgreSQL di altri progetti.
+      - "127.0.0.1:${DB_HOST_PORT:-5434}:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_SUPERUSER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_SUPERUSER_PASSWORD:?Imposta POSTGRES_SUPERUSER_PASSWORD in .env}
+      POSTGRES_DB: ${DB_DATABASE:-booking_engine}
+      APP_TEST_DATABASE: ${DB_TEST_DATABASE:-booking_engine_test}
+      APP_MIGRATOR_PASSWORD: ${DB_MIGRATOR_PASSWORD:-}
+      APP_RUNTIME_PASSWORD: ${DB_PASSWORD:-}
+      APP_ADMIN_OPS_PASSWORD: ${DB_ADMIN_OPS_PASSWORD:-}
+    volumes:
+      # Da PostgreSQL 18 il volume va montato su /var/lib/postgresql (non più .../data).
+      - pgdata:/var/lib/postgresql
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  redis:
+    image: redis:8
+    restart: unless-stopped
+    ports:
+      # Porta host configurabile per non entrare in conflitto con Redis di altri progetti.
+      - "127.0.0.1:${REDIS_HOST_PORT:-6380}:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  pgdata:
+  redisdata:

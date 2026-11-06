@@ -1,0 +1,13 @@
+{
+    "app": {
+        "name": "Booking Engine"
+    },
+    "home": {
+        "title": "Pannello del gestore",
+        "subtitle": "Ambiente di prova: il pannello è pronto per le prossime funzionalità."
+    },
+    "notFound": {
+        "title": "Pagina non trovata",
+        "back": "Torna alla home del pannello"
+    }
+}

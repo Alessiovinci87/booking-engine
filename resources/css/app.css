@@ -1,0 +1,10 @@
+@import 'tailwindcss';
+
+@source '../**/*.blade.php';
+@source '../js/**/*.{ts,tsx}';
+
+@theme {
+    /* Font di sistema: nessuna risorsa esterna (CSP default-src 'self', 08). */
+    --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif, 'Apple Color Emoji',
+        'Segoe UI Emoji';
+}

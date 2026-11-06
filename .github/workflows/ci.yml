@@ -1,0 +1,137 @@
+name: CI
+
+on:
+  push:
+    branches: [main, 'm[0-9]*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Lint, analisi, test e build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ci-superuser
+          POSTGRES_DB: booking_engine
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d booking_engine"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+      redis:
+        image: redis:8
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    env:
+      # Credenziali usa e getta, valide solo dentro il job (servizi effimeri).
+      APP_ENV: testing
+      DB_CONNECTION: pgsql
+      DB_HOST: 127.0.0.1
+      DB_PORT: 5432
+      DB_DATABASE: booking_engine
+      DB_TEST_DATABASE: booking_engine_test
+      DB_USERNAME: app_runtime
+      DB_PASSWORD: ci-runtime
+      DB_MIGRATOR_USERNAME: app_migrator
+      DB_MIGRATOR_PASSWORD: ci-migrator
+      DB_ADMIN_OPS_USERNAME: app_admin_ops
+      DB_ADMIN_OPS_PASSWORD: ci-admin-ops
+      REDIS_HOST: 127.0.0.1
+      REDIS_PORT: 6379
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Ruoli ed estensioni PostgreSQL (stessi script di docker/postgres/init)
+        env:
+          PGHOST: 127.0.0.1
+          PGPORT: 5432
+          PGPASSWORD: ci-superuser
+          POSTGRES_USER: postgres
+          POSTGRES_DB: booking_engine
+          APP_TEST_DATABASE: booking_engine_test
+          APP_MIGRATOR_PASSWORD: ci-migrator
+          APP_RUNTIME_PASSWORD: ci-runtime
+          APP_ADMIN_OPS_PASSWORD: ci-admin-ops
+        run: |
+          for script in docker/postgres/init/*.sh; do
+            echo "::group::$script"
+            bash "$script"
+            echo "::endgroup::"
+          done
+          psql -U postgres -d booking_engine -c "SELECT rolname, rolsuper, rolbypassrls FROM pg_roles WHERE rolname LIKE 'app_%' ORDER BY 1"
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: pdo_pgsql, pgsql, redis, intl, mbstring, bcmath, zip
+          coverage: none
+          tools: composer:v2
+
+      - name: Cache Composer
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/composer
+          key: composer-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-
+
+      - name: Dipendenze PHP
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Configurazione
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      - name: Audit dipendenze PHP
+        run: composer audit
+
+      - name: Stile (Pint)
+        run: composer lint
+
+      - name: Analisi statica (Larastan)
+        run: composer analyse
+
+      - name: Migration con app_migrator
+        run: php artisan migrate --database=pgsql_migrator --force
+
+      - name: Test (Pest, come app_runtime)
+        run: composer test
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Dipendenze JavaScript
+        run: npm ci
+
+      - name: Audit dipendenze JavaScript
+        run: npm audit --audit-level=high
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Build frontend
+        run: npm run build

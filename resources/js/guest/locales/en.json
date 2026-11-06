@@ -1,0 +1,11 @@
+{
+    "home": {
+        "title": "Welcome",
+        "subtitle": "Direct booking test page."
+    },
+    "language": {
+        "label": "Language",
+        "it": "Italiano",
+        "en": "English"
+    }
+}

@@ -1,6 +1,6 @@
 # 10 — Matrice di tracciabilità
 
-Versione: 1.1 · Data: 06/11/2026
+Versione: 1.2 · Data: 06/11/2026 · Modifiche: percorsi reali dei test di catalogo, test dei controlli statici, stato dell'implementazione a fine M0
 
 Ogni requisito (criteri di accettazione `AC` da 01, invarianti `I` da 02) è collegato a servizio, tabelle, endpoint e test. I nomi di servizi e test sono quelli da usare nel codice; Claude Code aggiorna questa matrice quando li crea o li rinomina.
 
@@ -50,7 +50,7 @@ Convenzioni dei test: `Unit/…` (Pest, senza database), `Feature/…` (Pest con
 | AC8 | Preventivo con sconto accettato; scaduto non pagabile | `QuoteService` | `quotes`, `reservations` | `POST /admin/quotes`, `POST /public/quotes/{token}/accept` | `Feature/QuoteAcceptTest`, `Feature/QuoteExpiredTest` |
 | AC9 | Cancellazione: date libere, rimborso avviato e completato separatamente | `ReservationStateMachine`, `RefundService` | `reservations`, `refunds`, `inventory_occupancies`, `outbox_messages` | `POST /admin/reservations/{id}/cancel` | `Stripe/CancelRefundTest`, `Feature/RefundEmailTimingTest` |
 | AC10 | Webhook duplicato senza effetti doppi | `StripeWebhookHandler` | `webhook_events`, `payments` | `POST /webhooks/stripe` | `Feature/WebhookIdempotencyTest` |
-| AC11 | Isolamento tra tenant via API e via database | `TenantContext`, policy | tutte le tabelle tenant-scoped | tutti `/admin/*` | `Feature/TenantIsolationApiTest`, `Feature/RlsCatalogTest` |
+| AC11 | Isolamento tra tenant via API e via database | `TenantContext`, policy | tutte le tabelle tenant-scoped | tutti `/admin/*` | `Feature/TenantIsolationApiTest`, `Feature/Architecture/RlsCatalogTest` |
 | AC12 | Ripristino di un backup verificato | — (operazioni) | — | — | `Ops/BackupRestoreCheck` (mensile) |
 | AC13 | Propagazione Booking → feed Airbnb; echi non riesportati | `IcsFeedBuilder`, `EchoClassifier` | `ics_feeds`, `external_calendar_events` | `GET /ical/{token}.ics` | `Feature/FeedMatrixTest`, `Feature/EchoLoopTest` |
 | AC14 | Capture fallita: date occupate, recupero, rilascio a 24 h | `ReservationStateMachine`, `CheckoutService` | `reservations`, `payments`, `inventory_occupancies` | `POST /admin/reservations/{id}/recovery-link`, `…/release-dates` | `Stripe/CaptureFailureRecoveryTest`, `Feature/CaptureFailedTimeoutTest` |
@@ -68,7 +68,7 @@ Convenzioni dei test: `Unit/…` (Pest, senza database), `Feature/…` (Pest con
 | I2 | Nessuna conferma dal solo redirect | `StripeWebhookHandler` | `payments` | `GET /public/reservations/{code}` | `Feature/NoConfirmOnRedirectTest` |
 | I3 | Webhook idempotenti | `StripeWebhookHandler` | `webhook_events` (unico `provider, event_id`) | `POST /webhooks/stripe` | `Feature/WebhookIdempotencyTest` |
 | I4 | Pagamento tardivo non conferma | `ReservationStateMachine` (T7) | `reservations`, `refunds` | — | `Stripe/LatePaymentRefundTest` |
-| I5 | Isolamento tra tenant | `TenantContext` | RLS su tutte le tabelle | `/admin/*` | `Feature/TenantIsolationApiTest`, `Feature/RlsCatalogTest` |
+| I5 | Isolamento tra tenant | `TenantContext` | RLS su tutte le tabelle | `/admin/*` | `Feature/TenantIsolationApiTest`, `Feature/Architecture/RlsCatalogTest` |
 | I6 | Errore di sync non libera date | `IcalImportService` | `external_calendar_events` | — | `Feature/SyncErrorKeepsDatesTest`, `Feature/AntiWipeSafeguardTest` |
 | I7 | Storico conservato alla cancellazione | `ReservationStateMachine`, `AuditLogger` | `audit_log`, `payment_events` | `…/cancel` | `Feature/CancelHistoryTest` |
 | I8 | Preventivo scaduto non avvia checkout | `QuoteService` | `quotes` | `…/accept` | `Feature/QuoteExpiredTest` |
@@ -80,7 +80,7 @@ Convenzioni dei test: `Unit/…` (Pest, senza database), `Feature/…` (Pest con
 | I14 | Prezzi congelati (prenotazioni e preventivi) | `PriceCalculator`, `QuoteService` | `reservation_price_lines`, `quotes.price_lines` | — | `Feature/PriceSnapshotTest`, `Feature/QuoteFrozenPriceTest` |
 | I15 | Stato occupante ⇔ una occupazione attiva | `InventoryService`, `ReservationStateMachine`, `PaymentReconciler` | `reservations`, `inventory_occupancies` (indice unico per prenotazione) | — | `Feature/OccupancyConsistencyTest` (dopo ogni transizione) |
 | I16 | Rilascio solo a sessione chiusa o verificata | `OccupancyReleaseJob` | `inventory_occupancies`, `payments` | — | `Stripe/ReleaseJobCompletedSessionTest`, `Stripe/CheckoutCrashRecoveryTest` |
-| I17 | Nessun riferimento tra tenant | migration | FK composite, `UNIQUE (tenant_id, id)` | — | `Feature/CompositeFkCatalogTest`, `Feature/CrossTenantInsertRejectedTest` |
+| I17 | Nessun riferimento tra tenant | migration | FK composite, `UNIQUE (tenant_id, id)` | — | `Feature/Architecture/CompositeFkCatalogTest`, `Feature/CrossTenantInsertRejectedTest` |
 | I18 | Feed per X senza eventi di X né echi | `IcsFeedBuilder`, `EchoClassifier` | `ics_feeds`, `external_calendar_events` | `GET /ical/{token}.ics` | `Feature/FeedMatrixTest`, `Feature/EchoLoopTest` |
 | I19 | Feed disattivato mai vuoto | `IcsFeedLifecycle` | `ics_feeds.status` | `GET /ical/{token}.ics` | `Feature/FrozenFeedNeverEmptyTest`, `Feature/RetiredFeed410Test` |
 | I20 | Rimborso non comunicato prima dell'esito | `RefundService` | `refunds`, `outbox_messages` | `…/cancel` | `Feature/RefundEmailTimingTest` |
@@ -89,11 +89,27 @@ Convenzioni dei test: `Unit/…` (Pest, senza database), `Feature/…` (Pest con
 
 ## Controlli statici in CI
 
-| Controllo | Protegge |
-|---|---|
-| Nessuna scrittura su `inventory_occupancies` fuori da `InventoryService` | I1, I15 |
-| Nessun `update(['status' => …])` sui modelli con macchina a stati | 03 |
-| Nessuna chiamata HTTP verso URL utente fuori da `SafeHttpFetcher` | 06, 08 |
-| Tabelle con `tenant_id` senza RLS forzata | I5 |
-| FK tra tabelle tenant-scoped senza `tenant_id` | I17 |
-| Campi `#[PersonalData]` presenti in log o payload di audit | I22 |
+| Controllo | Protegge | Test | Stato |
+|---|---|---|---|
+| Nessuna scrittura su `inventory_occupancies` fuori da `InventoryService` | I1, I15 | `Arch/InventoryWritesTest` | attivo da M0 (modello e tabella non ancora esistenti) |
+| Nessun `update(['status' => …])` sui modelli con macchina a stati | 03 | `Arch/StateTransitionsTest` | attivo da M0, segnaposto: vieta `'status' =>` fuori da `app/Domain/*/StateMachines` |
+| Nessuna chiamata HTTP verso URL utente fuori da `SafeHttpFetcher` | 06, 08 | `Arch/ExternalHttpTest` | attivo da M0; eccezione: `App\Domain\Payments\Stripe` |
+| Tabelle con `tenant_id` senza RLS forzata | I5 | `Feature/Architecture/RlsCatalogTest` | attivo da M0 |
+| FK tra tabelle tenant-scoped senza `tenant_id` | I17 | `Feature/Architecture/CompositeFkCatalogTest` | attivo da M0 |
+| Campi `#[PersonalData]` presenti in log o payload di audit | I22 | `Feature/AuditLogNoPersonalDataTest` | da M1 (1.3, 1.6) |
+
+## Stato dell'implementazione
+
+Aggiornato a fine M0 (06/11/2026). Solo fondamenta: nessuna tabella di dominio, nessun endpoint `/api/v1`.
+
+| Elemento | Classe / file | Test |
+|---|---|---|
+| `TenantContext` | `App\Domain\Tenancy\TenantContext` | `Feature/Tenancy/TenantContextTest` |
+| Funzione `app_current_tenant()` | `database/migrations/2026_11_06_100000_create_app_current_tenant_function.php` | `Feature/Tenancy/TenantContextTest` |
+| Middleware tenant delle richieste | `App\Domain\Tenancy\Http\WithTenantContext` (alias `tenant`), `App\Domain\Tenancy\TenantResolver` | `Feature/Tenancy/TenantMiddlewareTest` |
+| Contesto tenant dei job | `App\Domain\Tenancy\Jobs\{TenantAwareJob, InteractsWithTenant, SetTenantContextForJob}` | `Feature/Tenancy/TenantJobTest` |
+| Ruoli PostgreSQL | `docker/postgres/init/02-roles.sh`, connessioni `pgsql`, `pgsql_migrator`, `pgsql_admin_ops` | `Feature/Database/DatabaseRolesTest` |
+| `InventoryService` | `App\Domain\Inventory\InventoryService` (segnaposto fino a 3.1) | `Arch/InventoryWritesTest` |
+| `SafeHttpFetcher` | `App\Domain\Calendar\SafeHttpFetcher` (segnaposto fino a 5.1) | `Arch/ExternalHttpTest` |
+| Struttura del codice (ADR-0006) | `app/Domain/<Area>`, `app/Http/Controllers/Api/V1/{Admin,Public}` | `Arch/DomainStructureTest` |
+| SPA pannello e ospite | `resources/js/panel/main.tsx` su `/app`, `resources/js/guest/main.tsx` su `/p/{t}/{p}` | `Feature/Frontend/SpaRoutesTest` |
