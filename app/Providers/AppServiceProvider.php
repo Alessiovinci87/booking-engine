@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Domain\Payments\Gateway\Fake\FakePaymentGateway;
+use App\Domain\Payments\Gateway\PaymentGateway;
 use App\Domain\Tenancy\Auth\PwnedPasswordsVerifier;
 use App\Domain\Tenancy\MembershipTenantResolver;
 use App\Domain\Tenancy\Outbox\AdminOpsPendingOutboxMessages;
@@ -14,6 +16,7 @@ use Illuminate\Foundation\Console\ServeCommand;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
+use LogicException;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -29,6 +32,15 @@ class AppServiceProvider extends ServiceProvider
 
         // Dispatcher dell'outbox: lettura cross-tenant degli ID con app_admin_ops (08).
         $this->app->bind(PendingOutboxMessages::class, AdminOpsPendingOutboxMessages::class);
+
+        // Fornitore di pagamento (05). Il gateway finto rifiuta di partire fuori da local e testing;
+        // StripePaymentGateway arriva in M4 (attività 4.2).
+        $this->app->singleton(PaymentGateway::class, function ($app): PaymentGateway {
+            return match (config('payments.gateway')) {
+                'fake' => new FakePaymentGateway($app['cache']->store(), $app->environment(), (string) config('app.url')),
+                default => throw new LogicException('Gateway di pagamento non disponibile: '.var_export(config('payments.gateway'), true).'.'),
+            };
+        });
 
         // Solo sviluppo: `php artisan serve` passa al server PHP un elenco chiuso di variabili e su
         // Windows, senza TEMP/TMP, il server non riesce a creare i file temporanei degli upload
