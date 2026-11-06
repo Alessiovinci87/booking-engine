@@ -17,6 +17,7 @@ use App\Domain\Tenancy\Audit\AuditLogger;
 use App\Domain\Tenancy\Exceptions\BusinessRuleViolation;
 use Carbon\CarbonImmutable;
 use Closure;
+use Illuminate\Database\ConnectionInterface;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Database\QueryException;
@@ -266,6 +267,41 @@ final class InventoryService
             ->orderBy('expires_at')
             ->limit($limit)
             ->get();
+    }
+
+    /**
+     * Prenotazioni con occupazione temporanea scaduta per i motivi indicati, nel tenant corrente
+     * (job di rilascio, 05): solo ID e scadenza, il modello non esce da questo servizio.
+     *
+     * @param  list<OccupancyTempReason>  $reasons
+     * @return list<array{reservation_id: string, expires_at: CarbonImmutable}>
+     */
+    public function expiredReservations(CarbonImmutable $now, array $reasons, int $limit = 100): array
+    {
+        return $this->expiredTemporary($now, $reasons, $limit)
+            ->filter(fn (InventoryOccupancy $o): bool => $o->reservation_id !== null && $o->expires_at !== null)
+            ->map(fn (InventoryOccupancy $o): array => ['reservation_id' => (string) $o->reservation_id, 'expires_at' => $o->expires_at ?? $now])
+            ->values()->all();
+    }
+
+    /**
+     * Tenant con occupazioni temporanee scadute (dispatcher del rilascio, 08 "Job cross-tenant"): la
+     * connessione è quella di app_admin_ops e si leggono solo gli ID dei tenant.
+     *
+     * @param  list<OccupancyTempReason>  $reasons
+     * @return list<string>
+     */
+    public static function tenantsWithExpiredTemporary(ConnectionInterface $connection, CarbonImmutable $now, array $reasons, int $limit = 500): array
+    {
+        $placeholders = implode(',', array_fill(0, count($reasons), '?'));
+        $rows = $connection->select(
+            "select distinct tenant_id::text as tenant_id from inventory_occupancies
+             where status = 'ACTIVE' and phase = 'TEMPORARY' and temp_reason in ({$placeholders}) and expires_at < ?
+             limit ?",
+            [...array_map(fn (OccupancyTempReason $r): string => $r->value, $reasons), $now->toIso8601ZuluString('microsecond'), $limit],
+        );
+
+        return array_map(fn (object $row): string => (string) $row->tenant_id, $rows);
     }
 
     /**

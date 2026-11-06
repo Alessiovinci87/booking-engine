@@ -22,4 +22,9 @@ return [
     // (1–48 h) non ha ancora un campo nel modello di 02 (ADR-0011).
     'approval_window_hours' => 12,
 
+    // Job di rilascio delle occupazioni (05, ogni minuto): il dispatcher legge gli ID dei tenant con
+    // app_admin_ops; ogni tenant elabora al massimo questo numero di prenotazioni per motivo e giro.
+    'release_dispatcher_connection' => 'pgsql_admin_ops',
+    'release_batch_size' => 100,
+
 ];
