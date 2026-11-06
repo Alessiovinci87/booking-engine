@@ -1,0 +1,74 @@
+<?php
+
+use App\Domain\Tenancy\Models\User;
+use Illuminate\Contracts\Hashing\Hasher;
+use Illuminate\Testing\TestResponse;
+use PragmaRX\Google2FA\Google2FA;
+use Tests\TestCase;
+
+/*
+ * Utenti del pannello per i test di autenticazione. Password e segreti inventati.
+ */
+
+const TEST_PANEL_PASSWORD = 'Password-di-prova-2026!';
+
+/** Origine del pannello: Sanctum avvia la sessione solo per le richieste dal dominio stateful. */
+const TEST_PANEL_ORIGIN = 'http://localhost';
+
+/**
+ * Utente con password nota e membership nel tenant; con $mfa la MFA è già attiva.
+ *
+ * @return array{user: User, tenant: string, secret: string|null}
+ */
+function panelUser(?string $tenantId = null, bool $mfa = true, string $role = 'OWNER'): array
+{
+    $tenantId ??= createTenantRow();
+    $userId = createUserRow();
+    createMemberRow($tenantId, $userId, $role);
+
+    $user = User::query()->findOrFail($userId);
+    $user->forceFill(['password_hash' => app(Hasher::class)->make(TEST_PANEL_PASSWORD)]);
+
+    $secret = null;
+
+    if ($mfa) {
+        $secret = app(Google2FA::class)->generateSecretKey(32);
+        $user->forceFill(['mfa_secret_encrypted' => $secret, 'mfa_enabled_at' => now()]);
+    }
+
+    $user->save();
+
+    return ['user' => $user->refresh(), 'tenant' => $tenantId, 'secret' => $secret];
+}
+
+function currentOtp(string $secret): string
+{
+    return app(Google2FA::class)->getCurrentOtp($secret);
+}
+
+/**
+ * Sessione del pannello già completa (login e MFA verificata), senza passare dalle API di accesso.
+ */
+function actingAsPanelUser(TestCase $test, User $user, bool $mfaVerified = true): TestCase
+{
+    $now = now()->getTimestamp();
+    $session = ['panel.authenticated_at' => $now, 'panel.last_activity_at' => $now];
+
+    if ($mfaVerified) {
+        $session['panel.mfa_verified_at'] = $now;
+    }
+
+    return $test->actingAs($user, 'web')
+        ->withSession($session)
+        ->withHeader('Referer', TEST_PANEL_ORIGIN.'/app');
+}
+
+function panelPost(TestCase $test, string $uri, array $data = []): TestResponse
+{
+    return $test->withHeader('Referer', TEST_PANEL_ORIGIN.'/app')->postJson($uri, $data);
+}
+
+function panelGet(TestCase $test, string $uri): TestResponse
+{
+    return $test->withHeader('Referer', TEST_PANEL_ORIGIN.'/app')->getJson($uri);
+}

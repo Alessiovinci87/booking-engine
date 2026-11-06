@@ -1,22 +1,81 @@
 <?php
 
 use App\Domain\Tenancy\Http\WithTenantContext;
+use App\Http\Api\ApiError;
+use App\Http\Middleware\EnsureMfaVerified;
+use App\Http\Middleware\EnsurePanelSessionIsFresh;
+use App\Http\Middleware\RequirePasswordConfirmation;
+use Illuminate\Auth\AuthenticationException;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Exceptions\ThrottleRequestsException;
+use Illuminate\Http\Request;
+use Illuminate\Session\TokenMismatchException;
+use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
+        api: __DIR__.'/../routes/api.php',
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
+        apiPrefix: 'api/v1',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        // Contesto tenant per le richieste admin e pubbliche (08): Route::middleware('tenant').
+        // Sanctum SPA: le richieste dal dominio del pannello usano sessione e CSRF (08).
+        $middleware->statefulApi();
+
         $middleware->alias([
+            // Contesto tenant per le richieste admin e pubbliche (08): Route::middleware('tenant').
             'tenant' => WithTenantContext::class,
+            'panel.fresh' => EnsurePanelSessionIsFresh::class,
+            'mfa' => EnsureMfaVerified::class,
+            'reauth' => RequirePasswordConfirmation::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        // Errori dell'API nel formato di 07, senza dettagli interni.
+        $isApi = fn (Request $request): bool => $request->is('api/*');
+
+        $exceptions->render(function (ValidationException $e, Request $request) use ($isApi) {
+            return $isApi($request) ? ApiError::response(400, 'VALIDATION_FAILED', ['fields' => $e->errors()]) : null;
+        });
+
+        $exceptions->render(function (AuthenticationException $e, Request $request) use ($isApi) {
+            return $isApi($request) ? ApiError::response(401, 'UNAUTHENTICATED') : null;
+        });
+
+        $exceptions->render(function (ThrottleRequestsException $e, Request $request) use ($isApi) {
+            if (! $isApi($request)) {
+                return null;
+            }
+
+            $retryAfter = $e->getHeaders()['Retry-After'] ?? null;
+
+            return ApiError::response(429, 'RATE_LIMITED', [], $retryAfter === null ? [] : ['Retry-After' => (string) $retryAfter]);
+        });
+
+        $exceptions->render(function (TokenMismatchException $e, Request $request) use ($isApi) {
+            return $isApi($request) ? ApiError::response(419, 'UNAUTHENTICATED') : null;
+        });
+
+        $exceptions->render(function (ModelNotFoundException|NotFoundHttpException $e, Request $request) use ($isApi) {
+            return $isApi($request) ? ApiError::response(404, 'NOT_FOUND') : null;
+        });
+
+        $exceptions->render(function (HttpExceptionInterface $e, Request $request) use ($isApi) {
+            if (! $isApi($request)) {
+                return null;
+            }
+
+            return match ($e->getStatusCode()) {
+                403 => ApiError::response(403, 'FORBIDDEN'),
+                404 => ApiError::response(404, 'NOT_FOUND'),
+                default => null,
+            };
+        });
     })->create();
