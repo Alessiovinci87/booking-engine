@@ -1,6 +1,6 @@
 # 10 — Matrice di tracciabilità
 
-Versione: 1.5 · Data: 06/11/2026 · Modifiche: servizi, tabelle, endpoint e test di M1; stato dell'implementazione a fine M1; decisioni dopo la verifica di M1 (ADR-0008, ADR-0009); servizi, endpoint e test di M2 e stato a fine M2 (ADR-0010, proposta)
+Versione: 1.6 · Data: 06/11/2026 · Modifiche: servizi, tabelle, endpoint e test di M1; stato dell'implementazione a fine M1; decisioni dopo la verifica di M1 (ADR-0008, ADR-0009); servizi, endpoint e test di M2 e stato a fine M2; 1.6: decisioni dopo la verifica di M2 (ADR-0010 accettata), primo test E2E
 
 Ogni requisito (criteri di accettazione `AC` da 01, invarianti `I` da 02) è collegato a servizio, tabelle, endpoint e test. I nomi di servizi e test sono quelli da usare nel codice; Claude Code aggiorna questa matrice quando li crea o li rinomina.
 
@@ -50,7 +50,7 @@ Convenzioni dei test: `Unit/…` (Pest, senza database), `Feature/…` (Pest con
 
 | ID | Requisito | Servizio | Tabelle | Endpoint | Test |
 |---|---|---|---|---|---|
-| AC1 | Configurazione e pubblicazione della struttura IT/EN | `PropertySetupService`, `UnitService`, `RatePlanService`, `UnitPhotoService`, `PublicCatalog` | `properties`, `property_translations`, `units`, `unit_translations`, `unit_photos`, `rate_plans`, `season_rules` | `GET/POST /admin/properties`, `GET/PATCH /admin/properties/{id}`, `POST /admin/properties/{id}/publish`, `/admin/units/*`, `GET /public/{t}/{p}` | `Feature/PropertyPublishTest`, `Feature/Admin/{PropertyApiTest, UnitApiTest, UnitPhotoApiTest, RatePlanApiTest}`, `Feature/Public/PublicPropertyApiTest`, `E2E/setup-property.spec` (M6) |
+| AC1 | Configurazione e pubblicazione della struttura IT/EN | `PropertySetupService`, `UnitService`, `RatePlanService`, `UnitPhotoService`, `PublicCatalog` | `properties`, `property_translations`, `units`, `unit_translations`, `unit_photos`, `rate_plans`, `season_rules` | `GET/POST /admin/properties`, `GET/PATCH /admin/properties/{id}`, `POST /admin/properties/{id}/publish`, `/admin/units/*`, `GET /public/{t}/{p}` | `Feature/PropertyPublishTest`, `Feature/Admin/{PropertyApiTest, UnitApiTest, UnitPhotoApiTest, RatePlanApiTest}`, `Feature/Public/PublicPropertyApiTest`, `E2E/m2-panel.spec` (in locale da M2), `E2E/setup-property.spec` (M6) |
 | AC2 | Prenotazione `INSTANT` pagata e confermata, UID stabile in tutti i feed | `CheckoutService`, `ReservationStateMachine`, `IcsFeedBuilder` | `reservations`, `inventory_occupancies`, `payments`, `ics_feeds` | `POST /public/{t}/{p}/reservations`, `GET /ical/{token}.ics` | `Stripe/InstantBookingFlowTest`, `Feature/IcsUidStabilityTest`, `E2E/instant-booking.spec` |
 | AC3 | Richiesta pre-autorizzata, approvata e incassata | `CheckoutService`, `CapturePaymentJob` | `reservations`, `payments`, `inventory_occupancies` | `POST /admin/reservations/{id}/approve` | `Stripe/RequestApproveCaptureTest`, `E2E/request-approve.spec` |
 | AC4 | Richiesta rifiutata o scaduta, autorizzazione annullata | `ReservationStateMachine`, `OccupancyReleaseJob` | `reservations`, `payments` | `POST /admin/reservations/{id}/reject` | `Stripe/RequestRejectTest`, `Feature/ApprovalDeadlineTest` |
@@ -138,12 +138,12 @@ Aggiornato a fine M2 (06/11/2026). Tutte le tabelle di 02 con RLS forzata e FK c
 | I12 e stati di tenant, struttura, unità (2.5) | `UnitService`, `TenantLifecycleService`, `2026_11_23_000300_enforce_instant_without_external_calendars.php` | `Feature/InstantWithCalendarRejectedTest`, `Feature/Admin/UnitSalesTest`, `Arch/StateTransitionsTest` |
 | Pubblicazione (2.6) | `PropertySetupService::publish`, `POST /admin/properties/{id}/publish` | `Feature/PropertyPublishTest` |
 | API pubblica (2.7) | `Public\PropertyController`, `PublicCatalog`, `App\Domain\Tenancy\PublicSlugTenantResolver` (middleware `tenant:public`), `App\Http\Middleware\SetGuestLocale`, limite `public-read` | `Feature/Public/PublicPropertyApiTest` |
-| Pannello: struttura, unità, foto, tariffe, anteprima (2.8) | `resources/js/panel/pages/{PropertiesPage, PropertyPage, UnitPage}.tsx`, `resources/js/panel/pages/unit/*`, `resources/js/panel/api/admin.ts`, `resources/js/panel/money.ts` | `Feature/Frontend/SpaRoutesTest`, `npm run typecheck`; E2E in M6 |
+| Pannello: struttura, unità, foto, tariffe, anteprima (2.8) | `resources/js/panel/pages/{PropertiesPage, PropertyPage, UnitPage}.tsx`, `resources/js/panel/pages/unit/*`, `resources/js/panel/api/admin.ts`, `resources/js/panel/money.ts` | `Feature/Frontend/SpaRoutesTest`, `npm run typecheck`, `tests/E2E/m2-panel.spec.ts` (`npm run test:e2e`, solo in locale; in CI da M6) |
 | `tenant:create` (1.5) | `App\Console\Commands\CreateTenantCommand`, `App\Domain\Tenancy\TenantProvisioning` | `Feature/Tenancy/CreateTenantCommandTest` |
 | `AuditLogger` (1.6) | `App\Domain\Tenancy\Audit\{AuditLogger, AuditChanges}` | `Feature/AuditLogNoPersonalDataTest` |
 | Outbox (1.6) | `App\Domain\Tenancy\Outbox\*`, `App\Domain\Tenancy\StateMachines\OutboxMessageStateMachine`, job `DispatchOutboxJob` (ogni minuto) e `DeliverOutboxMessageJob` | `Feature/Tenancy/OutboxTest` |
 | Pannello: accesso e layout (1.7) | `resources/js/panel/{api,auth,components,pages}` | `Feature/Frontend/SpaRoutesTest` |
-| Seeder demo (1.8, 2.8) | `Database\Seeders\DemoSeeder` (due stagioni per unità) | `Feature/DemoSeederTest` |
+| Seeder demo (1.8, 2.8) | `Database\Seeders\DemoSeeder` (due stagioni per unità, account Stripe finto `acct_demo_…`, mai in produzione) | `Feature/DemoSeederTest` |
 | `InventoryService` | `App\Domain\Inventory\InventoryService` (segnaposto fino a 3.1) | `Arch/InventoryWritesTest` |
 | `SafeHttpFetcher` | `App\Domain\Calendar\SafeHttpFetcher` (segnaposto fino a 5.1) | `Arch/ExternalHttpTest` |
 | Struttura del codice (ADR-0006) | `app/Domain/<Area>`, `app/Http/Controllers/Api/V1/{Admin,Public}` | `Arch/DomainStructureTest` |

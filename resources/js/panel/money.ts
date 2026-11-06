@@ -34,7 +34,8 @@ export function formatMoney(money: Money): string {
     let formatter = formatters.get(money.currency);
 
     if (formatter === undefined) {
-        formatter = new Intl.NumberFormat('it-IT', { style: 'currency', currency: money.currency });
+        // useGrouping true = "always": in it-IT il default ("auto") non separa le migliaia sotto 10.000 ("1585,00 €").
+        formatter = new Intl.NumberFormat('it-IT', { style: 'currency', currency: money.currency, useGrouping: true });
         formatters.set(money.currency, formatter);
     }
 

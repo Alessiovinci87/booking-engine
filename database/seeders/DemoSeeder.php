@@ -6,6 +6,7 @@ use App\Domain\Inventory\Models\Property;
 use App\Domain\Inventory\Models\PropertyTranslation;
 use App\Domain\Inventory\Models\Unit;
 use App\Domain\Inventory\Models\UnitTranslation;
+use App\Domain\Payments\Models\StripeAccount;
 use App\Domain\Pricing\Models\RatePlan;
 use App\Domain\Pricing\Models\SeasonRule;
 use App\Domain\Reservations\Enums\CancellationPolicyCode;
@@ -23,6 +24,10 @@ use RuntimeException;
  * ciascuna con tariffa base e due stagioni (alta stagione e Ferragosto) per l'anteprima prezzo.
  * Tutti i dati sono inventati; l'email usa il dominio riservato example.test. Mai in produzione.
  *
+ * Il tenant ha un account Stripe finto (acct_demo_…, livemode false, incassi e bonifici abilitati)
+ * perché la guardia dei pagamenti di 07 (ADR-0010) permetta di pubblicare le strutture demo. Non
+ * corrisponde a nessun account reale e nessuna chiamata a Stripe lo usa.
+ *
  * La password del proprietario è casuale e si mostra una sola volta; la MFA si configura al primo
  * accesso come per ogni altro proprietario.
  */
@@ -31,6 +36,8 @@ final class DemoSeeder extends Seeder
     public const TENANT_SLUG = 'demo-alghero';
 
     public const OWNER_EMAIL = 'proprietario.demo@example.test';
+
+    public const STRIPE_ACCOUNT_PREFIX = 'acct_demo_';
 
     public function run(TenantProvisioning $provisioning, TenantContext $tenantContext): void
     {
@@ -48,6 +55,7 @@ final class DemoSeeder extends Seeder
         $created = $provisioning->create(self::TENANT_SLUG, 'Demo Alghero', self::OWNER_EMAIL, $password);
 
         $tenantContext->run($created['tenant']->id, function (): void {
+            $this->stripeAccount();
             $property = $this->property();
 
             $this->unit($property, base: 2, max: 3, nightly: 9500, cleaning: 4000, names: [
@@ -63,6 +71,17 @@ final class DemoSeeder extends Seeder
 
         $this->command?->warn(__('demo.created', ['slug' => self::TENANT_SLUG, 'email' => self::OWNER_EMAIL]));
         $this->command?->line(__('demo.password_once', ['password' => $password]));
+    }
+
+    private function stripeAccount(): void
+    {
+        (new StripeAccount)->forceFill([
+            'stripe_account_id' => self::STRIPE_ACCOUNT_PREFIX.Str::lower(Str::random(16)),
+            'livemode' => false,
+            'charges_enabled' => true,
+            'payouts_enabled' => true,
+            'details_submitted' => true,
+        ])->save();
     }
 
     private function property(): Property

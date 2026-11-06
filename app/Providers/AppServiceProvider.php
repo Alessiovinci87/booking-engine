@@ -10,6 +10,7 @@ use App\Domain\Tenancy\TenantContext;
 use App\Domain\Tenancy\TenantResolver;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Contracts\Validation\UncompromisedVerifier;
+use Illuminate\Foundation\Console\ServeCommand;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
@@ -28,6 +29,13 @@ class AppServiceProvider extends ServiceProvider
 
         // Dispatcher dell'outbox: lettura cross-tenant degli ID con app_admin_ops (08).
         $this->app->bind(PendingOutboxMessages::class, AdminOpsPendingOutboxMessages::class);
+
+        // Solo sviluppo: `php artisan serve` passa al server PHP un elenco chiuso di variabili e su
+        // Windows, senza TEMP/TMP, il server non riesce a creare i file temporanei degli upload
+        // ("unable to create a temporary file"): le foto non si caricherebbero.
+        if ($this->app->runningInConsole() && $this->app->environment('local')) {
+            ServeCommand::$passthroughVariables = array_values(array_unique([...ServeCommand::$passthroughVariables, 'TEMP', 'TMP']));
+        }
     }
 
     public function boot(): void

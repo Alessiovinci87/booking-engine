@@ -1,6 +1,6 @@
 # 11 — Piano di sviluppo a milestone
 
-Versione: 1.1 · Data: 06/11/2026 · Scelte tecniche: [ADR-0006](adr/0006-scelte-di-implementazione.md) · Calendario: [ADR-0007](adr/0007-sviluppo-anticipato.md) (sviluppo anticipato)
+Versione: 1.2 · Data: 06/11/2026 · Modifiche 1.2: criterio di uscita della demo di M2, attività 3.2 e 3.7 dopo la verifica di M2 (ADR-0010) · Scelte tecniche: [ADR-0006](adr/0006-scelte-di-implementazione.md) · Calendario: [ADR-0007](adr/0007-sviluppo-anticipato.md) (sviluppo anticipato)
 
 Questo documento è **vincolante**: lo sviluppo procede una milestone alla volta, nell'ordine indicato, e si passa alla successiva solo quando i criteri di uscita sono soddisfatti. Le decisioni tecniche sono già prese (specifica 01–10 e ADR-0006). Durante lo sviluppo non si discutono scelte, salvo i casi elencati in "Quando ci si ferma".
 
@@ -138,7 +138,7 @@ Alla fine apri la pull request e scrivi il rapporto di fine milestone.
 | 2.7 | API pubblica: `GET` struttura e `POST quote-price` |
 | 2.8 | Pannello: struttura, unità, foto, tariffe, stagioni, anteprima prezzo |
 
-**Criteri di uscita:** test golden verde; I12 e I14 (parte prezzi) verdi; demo con la struttura di un pilota configurata con i suoi prezzi veri.
+**Criteri di uscita:** test golden verde; I12 e I14 (parte prezzi) verdi; demo con la struttura di un pilota configurata con i suoi prezzi veri. *Alla verifica di M2 la demo del pilota è sostituita dalla demo con i dati del test golden (`tests/E2E/m2-panel.spec.ts`), perché nessun pilota è ancora disponibile; i prezzi reali si inseriranno dal pannello quando la Fase 0 porterà il primo gestore.*
 **Requisiti coperti:** AC1 (parte pannello), I12, I14.
 
 ---
@@ -151,12 +151,12 @@ Alla fine apri la pull request e scrivi il rapporto di fine milestone.
 | # | Attività |
 |---|---|
 | 3.1 | `InventoryService`: `acquire`, `promoteToFirm`, `setTemporaryReason`, `move`, `release`, con lock sull'unità |
-| 3.2 | `AvailabilityService` sulle tre fonti e `GET availability` |
+| 3.2 | `AvailabilityService` sulle tre fonti e `GET availability`. `quote-price` e `availability` su un'unità con vendite sospese o non attiva: `409 UNIT_NOT_BOOKABLE` (ADR-0010) |
 | 3.3 | Interfaccia `PaymentGateway` e `FakePaymentGateway` |
 | 3.4 | `ReservationStateMachine` con tutte le transizioni T1–T18 di 03, test per riga e test property-based sulle transizioni vietate |
 | 3.5 | Prenotazioni manuali (T2, `UNPAID`), pagamenti offline, blocchi manuali, modifica (T18), cancellazione (T17) con rimborso sul gateway finto |
 | 3.6 | Job di rilascio delle occupazioni (con gateway finto) |
-| 3.7 | Pagina ospite IT/EN per telefono: struttura, foto, calendario, prezzo, dati dell'ospite; si ferma prima del pagamento. CSP di base per pannello e pagina ospite (08, "Header e frontend"): `default-src 'self'`, `frame-ancestors 'none'` per il pannello e solo i domini registrati dal gestore per la vista embed (ADR-0009) |
+| 3.7 | Pagina ospite IT/EN per telefono: struttura, foto, calendario, prezzo, dati dell'ospite; si ferma prima del pagamento. CSP di base per pannello e pagina ospite (08, "Header e frontend"): `default-src 'self'`, `frame-ancestors 'none'` per il pannello e solo i domini registrati dal gestore per la vista embed (ADR-0009). API pubblica senza cookie di sessione: niente CSRF sulle rotte `public/*`; protezione con rate limit, `Idempotency-Key` sulle `POST` e controllo dell'header `Origin` rispetto agli `embed_allowed_origins` del tenant per le chiamate dalla vista incorporata. Struttura pubblicata senza unità attive: la pagina ospite mostra "Nessuna disponibilità al momento" (chiave IT/EN) e il pannello avvisa quando si disattiva l'ultima unità attiva, senza impedirlo (ADR-0010) |
 | 3.8 | Pannello: calendario, elenco e dettaglio prenotazioni, prenotazione manuale, blocchi |
 
 **Criteri di uscita:** I1, I7, I11, I15 verdi; 20 acquisizioni parallele → una sola occupazione; AC5 e AC17 verdi.

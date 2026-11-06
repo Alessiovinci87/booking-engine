@@ -103,9 +103,13 @@ export function PricePreviewSection({ unitId }: { unitId: string }) {
                             {formatMoney(quote.total)}
                         </dd>
                         <dt className="text-slate-600">{t('preview.deposit')}</dt>
-                        <dd className="text-right">{formatMoney(quote.deposit)}</dd>
+                        <dd className="text-right" data-testid="price-deposit">
+                            {formatMoney(quote.deposit)}
+                        </dd>
                         <dt className="text-slate-600">{t('preview.balance')}</dt>
-                        <dd className="text-right">{formatMoney(quote.balance)}</dd>
+                        <dd className="text-right" data-testid="price-balance">
+                            {formatMoney(quote.balance)}
+                        </dd>
                         <dt className="text-slate-600">{t('unit.booking_mode')}</dt>
                         <dd className="text-right">{t(`unit.bookingModes.${quote.booking_mode}`)}</dd>
                     </dl>

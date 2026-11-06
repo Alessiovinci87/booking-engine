@@ -3,7 +3,7 @@
 Data: 06/11/2026 · Branch: `m2-strutture-tariffe` · PR verso `main` senza merge
 
 ## Esito
-Completata con eccezioni:
+Completata con eccezioni (alla stesura; dopo la verifica vedi "Decisioni dopo la verifica" in fondo):
 - **Guardia dei pagamenti alla pubblicazione** (ADR-0010, punto 5): va decisa. Finché resta restrittiva, nessuna struttura si pubblica senza Stripe, cioè prima di M4.
 - **Demo con la struttura di un pilota e i suoi prezzi veri**: non l'ho preparata, perché non ho i dati del pilota. Il pannello per inserirli è pronto (vedi "Problemi aperti").
 
@@ -81,3 +81,66 @@ Tutti nell'**ADR-0010 (Proposta)**:
 
 ## Ore impiegate (stima) rispetto al previsto
 Previsto: sprint 2, dal 23 novembre al 4 dicembre 2026 (10 giorni lavorativi). Svolta in anticipo, entro il 6 novembre 2026, in più sessioni. Le ore non sono state misurate con precisione, ma sono ben sotto la stima: nessun rischio per la regola del +50%.
+
+## Decisioni dopo la verifica
+Verifica del 06/11/2026: **M2 approvata**, con le decisioni seguenti, applicate sul branch prima del merge.
+
+1. **ADR-0010 accettata.** I punti 1–4 sono accettati come scritti. Punto 5: resta la guardia restrittiva, cioè si pubblica solo con un `StripeAccount` che ha `charges_enabled = true`. Le modifiche a 07 (versione 1.3):
+   - tolta l'alternativa "o solo unità con prenotazione manuale";
+   - aggiunti i codici, le rotte, la forma di `warnings` e la nota sull'`Idempotency-Key` della pubblicazione.
+
+   La checklist dell'ADR è completa.
+2. **Account Stripe finto nel seeder demo.** Per `demo-alghero` il seeder crea un account con:
+   - `stripe_account_id` `acct_demo_…`;
+   - `livemode = false`;
+   - `charges_enabled` e `payouts_enabled` a `true`.
+
+   Con `APP_ENV=production` si ferma, come già faceva. I test in `Feature/DemoSeederTest`:
+   - "crea un account Stripe finto con cui la struttura demo si pubblica";
+   - "in produzione si ferma senza scrivere nulla".
+3. **Prova nel browser con Playwright** (`tests/E2E/m2-panel.spec.ts`, script `npm run test:e2e`, solo in locale; in CI da M6). Il global setup rigenera il database di sviluppo (`migrate:fresh` e seeder demo) e legge la password demo dall'output del seeder. Il test esegue nell'ordine:
+   - accesso con password, configurazione della MFA con il codice TOTP calcolato dal segreto mostrato (`tests/E2E/support/totp.ts`, solo per i test);
+   - creazione di una struttura con testi IT/EN e politica predefinita;
+   - creazione di un'unità con i valori del test golden e caricamento di una foto di prova;
+   - stagioni Agosto e Ferragosto;
+   - anteprima dal 10 al 17 agosto con 5 ospiti;
+   - pubblicazione e lettura di `GET /api/v1/public/demo-alghero/casa-golden-e2e`.
+
+   **Esito: verde** (1 test, circa 14 s, Chromium headless):
+   - anteprima: 1.585,00 €, caparra 475,50 €, saldo 1.109,50 €;
+   - struttura "Pubblicata";
+   - l'API pubblica restituisce la struttura in IT ed EN con l'unità e la sua foto.
+
+   Screenshot in `storage/e2e-screenshots/`, esclusi da git:
+   - `01-login.png`
+   - `02-mfa-configurazione.png`
+   - `03-struttura-salvata.png`
+   - `04-unita-con-foto.png`
+   - `05-stagioni.png`
+   - `06-anteprima-golden.png`
+   - `07-struttura-pubblicata.png`
+   - `08-api-pubblica.png`
+
+   La prova nel browser ha trovato due difetti, ora corretti:
+   - **Importi sotto 10.000 € senza separatore delle migliaia.** Il pannello mostrava "1585,00 €": in `it-IT` `Intl.NumberFormat` usa per default il raggruppamento "auto". Ora `formatMoney` usa `useGrouping: true` e mostra "1.585,00 €". Il valore era già corretto, cambia solo come viene mostrato.
+   - **Foto non caricabili con `php artisan serve` su Windows.** Il comando passa al server PHP un elenco chiuso di variabili d'ambiente, senza `TEMP` e `TMP`, così PHP non riusciva a creare il file temporaneo dell'upload. Ora `AppServiceProvider` aggiunge `TEMP` e `TMP` all'elenco, solo con `APP_ENV=local`. Riguarda solo lo sviluppo: staging e produzione non usano `artisan serve`. L'ho annotato in `docs/dev/SETUP-WINDOWS.md`.
+4. **11-MILESTONES (1.2) e issue di M3 aggiornate** (#28, #33; decisioni registrate anche nell'ADR-0010, punti 6–8):
+   - API pubblica senza cookie di sessione: niente CSRF. La protezione è affidata a tre misure:
+     - rate limit;
+     - `Idempotency-Key` sulle `POST`;
+     - controllo dell'header `Origin` rispetto agli `embed_allowed_origins` del tenant, per la vista incorporata (3.7).
+   - `quote-price` e `availability` su un'unità con vendite sospese o non attiva rispondono `409 UNIT_NOT_BOOKABLE` (3.2). Il codice è già in 07.
+   - Disattivare l'ultima unità di una struttura pubblicata è consentito. Il pannello mostra un avviso; la pagina ospite mostra "Nessuna disponibilità al momento", con chiave di traduzione IT/EN (3.7).
+5. **Criterio di uscita "demo con i prezzi veri di un pilota"**: sostituito dalla demo con i dati del test golden (punto 3), perché nessun pilota è ancora disponibile. I prezzi reali si inseriranno dal pannello quando la Fase 0 porterà il primo gestore. Annotato anche in `11-MILESTONES.md`.
+
+Altre modifiche:
+- `10-TRACEABILITY.md` aggiornato alla 1.6.
+- Nuove dipendenze di sviluppo `@playwright/test` (prevista da ADR-0006) e `@types/node` (solo per controllare i tipi dei test E2E).
+- `npm run typecheck` controlla anche `tests/E2E`.
+- `.gitignore` esclude gli screenshot, `playwright-report/` e `test-results/`.
+
+Verifiche in locale dopo le modifiche, tutte verdi:
+- `composer test`: 401 test, 1612 asserzioni;
+- `composer lint` e `composer analyse`;
+- `npm run typecheck` e `npm run build`;
+- `npm run test:e2e`.
