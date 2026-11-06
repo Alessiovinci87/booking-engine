@@ -1,23 +1,27 @@
 # 11 — Piano di sviluppo a milestone
 
-Versione: 1.0 · Data: 06/11/2026 · Scelte tecniche: [ADR-0006](adr/0006-scelte-di-implementazione.md)
+Versione: 1.1 · Data: 06/11/2026 · Scelte tecniche: [ADR-0006](adr/0006-scelte-di-implementazione.md) · Calendario: [ADR-0007](adr/0007-sviluppo-anticipato.md) (sviluppo anticipato)
 
 Questo documento è **vincolante**: lo sviluppo procede una milestone alla volta, nell'ordine indicato, e si passa alla successiva solo quando i criteri di uscita sono soddisfatti. Le decisioni tecniche sono già prese (specifica 01–10 e ADR-0006). Durante lo sviluppo non si discutono scelte, salvo i casi elencati in "Quando ci si ferma".
+
+**Sviluppo e Fase 0 (ADR-0007).** Lo sviluppo non aspetta la decisione della Fase 0. Interviste, piloti e verifica dei calendari proseguono in parallelo: il loro esito positivo è la condizione per avviare il pilota (gate prima di M6), non per sviluppare. Restano due condizioni:
+- accordo preliminare tra i soci (riservatezza e titolarità del codice) entro il **27/11/2026**;
+- risultati della verifica dei calendari reali **prima di M5**. Se mancano, M5 procede con la specifica e la verifica passa in M6.
 
 ## Panoramica
 
 | M | Nome | Periodo | Contiene | Dipende da | Demo a Giuseppe |
 |---|---|---|---|---|---|
-| M0 | Fondazioni tecniche | 16 nov – 18 dic 2026 | ambiente, progetto vuoto, sicurezza di base, CI | — | no |
-| — | **Gate: decisione Fase 0** | 18 dic 2026 | si parte con M1 solo se la Fase 0 è positiva | | |
-| M1 | Modello dati, accesso e audit | 11 – 22 gen 2027 | tutte le tabelle, RLS, login con MFA | M0 | accesso al pannello |
-| M2 | Strutture, tariffe e prezzi | 25 gen – 5 feb | configurazione struttura, calcolo prezzi | M1 | struttura pilota con prezzi veri |
-| M3 | Inventario, prenotazioni e pagina ospite | 8 – 19 feb | anti-overbooking, macchina a stati, prenotazioni manuali, pagina ospite senza pagamento | M2 | un ospite sceglie le date e vede il prezzo |
-| M4 | Pagamenti Stripe | 22 feb – 5 mar | checkout, pre-autorizzazione, approvazione, rimborsi | M3 | prenotazione pagata in modalità test |
-| M5 | Calendari iCal e preventivi | 8 – 19 mar | import, export per destinazione, conflitti, preventivi | M4 | data presa su Airbnb che si blocca da noi |
-| M6 | Comunicazioni, privacy e rilascio | 22 mar – 2 apr (+ 1 settimana di margine) | email, metriche, privacy, staging e produzione, collaudo | M5 | collaudo completo |
-| — | **Gate: pilota online** | 5 apr 2027 | | | |
-| M7 | Completamento durante il pilota | apr – mag 2027 | uscita del cliente, conservazione automatica, correzioni | M6 | — |
+| M0 | Fondazioni tecniche | completata il 6 nov 2026 | ambiente, progetto vuoto, sicurezza di base, CI | — | no |
+| M1 | Modello dati, accesso e audit | 9 – 20 nov 2026 | tutte le tabelle, RLS, login con MFA | M0 | accesso al pannello |
+| M2 | Strutture, tariffe e prezzi | 23 nov – 4 dic 2026 | configurazione struttura, calcolo prezzi | M1 | struttura pilota con prezzi veri |
+| M3 | Inventario, prenotazioni e pagina ospite | 7 – 18 dic 2026 | anti-overbooking, macchina a stati, prenotazioni manuali, pagina ospite senza pagamento | M2 | un ospite sceglie le date e vede il prezzo |
+| M4 | Pagamenti Stripe | 21 dic 2026 – 15 gen 2027 (comprese le festività) | checkout, pre-autorizzazione, approvazione, rimborsi | M3 | prenotazione pagata in modalità test |
+| M5 | Calendari iCal e preventivi | 18 – 29 gen 2027 | import, export per destinazione, conflitti, preventivi | M4 | data presa su Airbnb che si blocca da noi |
+| — | **Gate pilota: esito Fase 0 positivo** | prima di M6 | M6 (staging, produzione, attivazione dei piloti) parte solo con la Fase 0 positiva (ADR-0007) | | |
+| M6 | Comunicazioni, privacy e rilascio | 1 – 19 feb 2027 | email, metriche, privacy, staging e produzione, collaudo | M5 | collaudo completo |
+| — | **Gate: pilota online** | aprile 2027 (invariato) | margine tra la fine di M6 e il pilota per Fase 0, collaudo e correzioni | | |
+| M7 | Completamento durante il pilota | apr – 31 mag 2027 | uscita del cliente, conservazione automatica, correzioni | M6 | — |
 
 Le milestone dopo il pilota (abbonamenti, channel manager, adempimenti) si pianificano a giugno 2027 con lo stesso formato.
 
@@ -71,7 +75,7 @@ Alla fine apri la pull request e scrivi il rapporto di fine milestone.
 
 ## M0 — Fondazioni tecniche
 
-**Periodo:** 16 novembre – 18 dicembre 2026, in parallelo alla Fase 0. **Nessuna logica di business.**
+**Periodo:** previsto 16 novembre – 18 dicembre 2026, completata il 6 novembre 2026, in parallelo alla Fase 0. **Nessuna logica di business.**
 **Documenti:** ADR-0006, 08, 10 (controlli statici).
 **Obiettivo:** un progetto Laravel vuoto ma con l'ambiente, la sicurezza di base e la CI che impediranno errori strutturali nelle milestone successive.
 
@@ -99,7 +103,7 @@ Alla fine apri la pull request e scrivi il rapporto di fine milestone.
 
 ## M1 — Modello dati, accesso e audit
 
-**Periodo:** 11 – 22 gennaio 2027 (sprint 1). **Documenti:** 02, 08, 09 (campi personali).
+**Periodo:** 9 – 20 novembre 2026 (sprint 1, scadenza 2026-11-20). **Documenti:** 02, 08, 09 (campi personali).
 **Obiettivo:** tutte le tabelle della specifica, protette, e l'accesso sicuro al pannello.
 
 | # | Attività |
@@ -120,7 +124,7 @@ Alla fine apri la pull request e scrivi il rapporto di fine milestone.
 
 ## M2 — Strutture, tariffe e prezzi
 
-**Periodo:** 25 gennaio – 5 febbraio 2027 (sprint 2). **Documenti:** 01, 04, 07.
+**Periodo:** 23 novembre – 4 dicembre 2026 (sprint 2, scadenza 2026-12-04). **Documenti:** 01, 04, 07.
 **Obiettivo:** il gestore configura la struttura e il sistema calcola i prezzi esatti.
 
 | # | Attività |
@@ -141,7 +145,7 @@ Alla fine apri la pull request e scrivi il rapporto di fine milestone.
 
 ## M3 — Inventario, prenotazioni e pagina ospite
 
-**Periodo:** 8 – 19 febbraio 2027 (sprint 3). **Documenti:** 02, 03, 07.
+**Periodo:** 7 – 18 dicembre 2026 (sprint 3, scadenza 2026-12-18). **Documenti:** 02, 03, 07.
 **Obiettivo:** il cuore anti-overbooking e la macchina a stati, ancora con un gateway di pagamento finto.
 
 | # | Attività |
@@ -162,7 +166,7 @@ Alla fine apri la pull request e scrivi il rapporto di fine milestone.
 
 ## M4 — Pagamenti Stripe
 
-**Periodo:** 22 febbraio – 5 marzo 2027 (sprint 4). **Documenti:** 03, 05.
+**Periodo:** 21 dicembre 2026 – 15 gennaio 2027 (sprint 4 con le festività, scadenza 2027-01-15). **Documenti:** 03, 05.
 **Prerequisiti esterni:** account Stripe piattaforma in modalità test con Connect attivo; Stripe CLI installata (Claude Code si ferma e chiede se mancano).
 **Obiettivo:** soldi veri, in modalità test, con tutte le garanzie di 05.
 
@@ -186,8 +190,8 @@ Alla fine apri la pull request e scrivi il rapporto di fine milestone.
 
 ## M5 — Calendari iCal e preventivi
 
-**Periodo:** 8 – 19 marzo 2027 (sprint 5). **Documenti:** 03, 06.
-**Prerequisito:** risultati della verifica di Fase 0 sui feed reali di Booking e Airbnb. Se non disponibili, si procede con la specifica e si aggiunge un'attività di verifica in M6.
+**Periodo:** 18 – 29 gennaio 2027 (sprint 5, scadenza 2027-01-29). **Documenti:** 03, 06.
+**Prerequisito (ADR-0007):** risultati della verifica di Fase 0 sui feed reali di Booking e Airbnb, attesi prima dell'avvio di M5. Se non disponibili, si procede con la specifica e si aggiunge un'attività di verifica in M6.
 **Obiettivo:** il calendario allineato con le OTA in topologia a stella, e i preventivi.
 
 | # | Attività |
@@ -207,7 +211,8 @@ Alla fine apri la pull request e scrivi il rapporto di fine milestone.
 
 ## M6 — Comunicazioni, privacy e rilascio del pilota
 
-**Periodo:** 22 marzo – 2 aprile 2027 (sprint 6), con una settimana di margine fino al 9 aprile (Pasqua 28–29 marzo).
+**Periodo:** 1 – 19 febbraio 2027 (sprint 6, scadenza 2027-02-19).
+**Gate pilota (ADR-0007):** M6 parte solo con l'esito positivo della Fase 0 (interviste, piloti, verifica dei calendari).
 **Documenti:** 01, 08, 09.
 **Prerequisiti esterni:** account Resend, Sentry, hosting e dominio (Claude Code si ferma e chiede).
 **Obiettivo:** il sistema online, sicuro e collaudato, pronto per i gestori pilota.
@@ -224,13 +229,13 @@ Alla fine apri la pull request e scrivi il rapporto di fine milestone.
 | 6.8 | Procedura di attivazione dei piloti e guida rapida per i gestori, insieme a Giuseppe |
 
 **Criteri di uscita:** tutti i criteri di accettazione tranne AC18 verdi su staging; backup ripristinato; prima struttura pilota configurata in produzione.
-**Gate:** pilota online entro il 5 aprile (al più tardi il 12 aprile usando il margine).
+**Gate:** pilota online ad aprile 2027 (invariato); tra la fine di M6 e il pilota c'è un margine di circa sei settimane.
 
 ---
 
 ## M7 — Completamento durante il pilota
 
-**Periodo:** aprile – maggio 2027.
+**Periodo:** aprile – maggio 2027 (scadenza 2027-05-31).
 **Perché dopo il pilota:** nessun cliente esce nei primi due mesi, e le prime scadenze di conservazione arrivano dopo 90 giorni. Restano comunque nel perimetro della 1.0.
 
 | # | Attività |

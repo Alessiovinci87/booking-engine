@@ -3,7 +3,7 @@
 Guida passo passo per far partire `booking-engine` su Windows 11, dalla macchina pulita al primo `composer test` verde.
 Scelte di riferimento: [ADR-0006](../adr/0006-scelte-di-implementazione.md).
 
-- Repository: `D:\booking-engine`
+- Repository: `C:\dev\booking-engine` (percorso consigliato, su disco **NTFS**). Un disco exFAT, come il `D:` esterno usato in M0, funziona ma è più lento e ha limiti: vedi "Note sul disco D: (exFAT)" in fondo.
 - PHP, Composer, Node: **Laravel Herd** (PHP 8.4) e Node LTS
 - PostgreSQL 18 e Redis 8: **Docker Desktop** con `docker-compose.yml`
 - Code in locale: `php artisan queue:work`. **Horizon non si usa su Windows** (richiede l'estensione `pcntl`): solo in staging e produzione.
@@ -106,21 +106,33 @@ XAMPP non va disinstallato: basta che il suo PHP non sia nel PATH.
 
 ## 3. Clonare la repository
 
-Cartella: `D:\`
+Cartella: qualsiasi. Crea la cartella `C:\dev` (se esiste già il comando non fa nulla):
 
 ```powershell
-git clone https://github.com/Alessiovinci87/booking-engine.git D:\booking-engine
+New-Item -ItemType Directory -Force C:\dev
 ```
 
-Tutti i passi seguenti si eseguono in `D:\booking-engine`:
+```powershell
+git clone https://github.com/Alessiovinci87/booking-engine.git C:\dev\booking-engine
+```
+
+Se arrivi da una copia precedente (es. `D:\booking-engine`), copia il tuo `.env` nella nuova cartella invece di crearne uno nuovo: le password dei ruoli PostgreSQL sono già impostate nel volume Docker, che non dipende dalla cartella della repository.
 
 ```powershell
-Set-Location D:\booking-engine
+Copy-Item D:\booking-engine\.env C:\dev\booking-engine\.env
+```
+
+Il nome del progetto Docker è fisso (`booking-engine` in `docker-compose.yml`), quindi la nuova cartella usa gli stessi volumi e gli stessi dati.
+
+Tutti i passi seguenti si eseguono in `C:\dev\booking-engine`:
+
+```powershell
+Set-Location C:\dev\booking-engine
 ```
 
 ## 4. File `.env`
 
-Cartella: `D:\booking-engine`
+Cartella: `C:\dev\booking-engine`
 
 ```powershell
 Copy-Item .env.example .env
@@ -165,7 +177,7 @@ docker ps --format "table {{.Names}}\t{{.Ports}}"
 
 ### 5.1 Avvio
 
-Cartella: `D:\booking-engine`
+Cartella: `C:\dev\booking-engine`
 
 ```powershell
 docker compose up -d --wait
@@ -213,7 +225,7 @@ docker compose stop
 
 ## 6. Dipendenze PHP e JavaScript
 
-Cartella: `D:\booking-engine`
+Cartella: `C:\dev\booking-engine`
 
 ```powershell
 composer install
@@ -231,7 +243,7 @@ npm ci
 
 Le migration girano **sempre** con il ruolo `app_migrator` (connessione `pgsql_migrator`), mai con il ruolo dell'applicazione.
 
-Cartella: `D:\booking-engine`
+Cartella: `C:\dev\booking-engine`
 
 ```powershell
 php artisan migrate --database=pgsql_migrator
@@ -239,7 +251,7 @@ php artisan migrate --database=pgsql_migrator
 
 ## 8. Verifiche di qualità
 
-Cartella: `D:\booking-engine`
+Cartella: `C:\dev\booking-engine`
 
 ```powershell
 composer test
@@ -258,7 +270,7 @@ npm run build
 
 ## 9. Avvio dell'applicazione in sviluppo
 
-Tre finestre di PowerShell, tutte in `D:\booking-engine`.
+Tre finestre di PowerShell, tutte in `C:\dev\booking-engine`.
 
 Server PHP:
 

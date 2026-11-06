@@ -24,7 +24,7 @@ Questo repository implementa la specifica in `docs/`. La specifica è la fonte d
 
 ## Comandi
 
-Guida completa dell'ambiente: `docs/dev/SETUP-WINDOWS.md`. Tutti i comandi si eseguono in `D:\booking-engine`.
+Guida completa dell'ambiente: `docs/dev/SETUP-WINDOWS.md`. Tutti i comandi si eseguono in `C:\dev\booking-engine`.
 
 - Servizi locali: `docker compose up -d --wait` (PostgreSQL 18 su `127.0.0.1:5434`, Redis 8 su `127.0.0.1:6380`; porte da `DB_HOST_PORT`/`REDIS_HOST_PORT` in `.env`)
 - Migration: `php artisan migrate --database=pgsql_migrator` (sempre con `app_migrator`; con la connessione predefinita `app_runtime` le migration falliscono per scelta)

@@ -26,6 +26,7 @@ Questa cartella è la fonte di verità del comportamento del sistema. Il codice 
 | — | [ADR-0004](docs/adr/0004-ciclo-di-vita-pagamenti.md) | Scadenze del checkout, recupero capture, rimborsi, prenotazioni manuali |
 | — | [ADR-0005](docs/adr/0005-fk-composite-tenant.md) | Chiavi esterne composite per l'integrità tra tenant |
 | — | [ADR-0006](docs/adr/0006-scelte-di-implementazione.md) | Scelte di implementazione: ambiente Windows, librerie, struttura del codice |
+| — | [ADR-0007](docs/adr/0007-sviluppo-anticipato.md) | Sviluppo anticipato: lo sviluppo non attende la decisione della Fase 0, nuove scadenze M1–M7 |
 | — | [ADR template](docs/adr/0000-template.md) | Modello per le decisioni successive |
 | — | [CLAUDE.md](CLAUDE.md) | Istruzioni per Claude Code |
 
