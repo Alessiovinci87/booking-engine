@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\V1\Admin\Auth\MfaSetupController;
 use App\Http\Controllers\Api\V1\Admin\Auth\MfaVerifyController;
 use App\Http\Controllers\Api\V1\Admin\Auth\SessionController;
 use App\Http\Controllers\Api\V1\Admin\MeController;
+use App\Http\Controllers\Api\V1\Admin\PricePreviewController;
 use App\Http\Controllers\Api\V1\Admin\PropertyController;
 use App\Http\Controllers\Api\V1\Admin\RatePlanController;
 use App\Http\Controllers\Api\V1\Admin\UnitController;
@@ -62,5 +63,6 @@ Route::prefix('admin')->group(function (): void {
         Route::post('units/{unit}/seasons', [RatePlanController::class, 'storeSeason'])->name('admin.units.seasons.store');
         Route::patch('units/{unit}/seasons/{season}', [RatePlanController::class, 'updateSeason'])->name('admin.units.seasons.update');
         Route::delete('units/{unit}/seasons/{season}', [RatePlanController::class, 'destroySeason'])->name('admin.units.seasons.destroy');
+        Route::post('units/{unit}/price-preview', PricePreviewController::class)->name('admin.units.price-preview');
     });
 });

@@ -148,3 +148,39 @@ function createRatePlanRow(string $tenantId, string $unitId, int $baseNightlyCen
 
     return $id;
 }
+
+/**
+ * Unità con i valori del test golden di 04: base 4, max 6, pulizie 60 €, extra 15 €/notte, minimo 3
+ * notti, base 120 €; Agosto 180 € (priorità 10, minimo 5), Ferragosto 13–17/08 220 € (priorità 20).
+ *
+ * @return array{property: string, unit: string, plan: string, seasons: array{agosto: string, ferragosto: string}}
+ */
+function goldenUnitRows(string $tenantId, ?string $propertyId = null): array
+{
+    $propertyId ??= createPropertyRow($tenantId, 'casa-golden-'.substr(uuid7(), -6));
+    $unitId = uuid7();
+
+    inTenant($tenantId, fn () => DB::table('units')->insert([
+        'id' => $unitId, 'tenant_id' => $tenantId, 'property_id' => $propertyId, 'name' => 'Unità golden',
+        'base_occupancy' => 4, 'max_occupancy' => 6, 'min_nights' => 3,
+        'cleaning_fee_cents' => 6000, 'extra_guest_fee_cents' => 1500, 'payment_mode' => 'DEPOSIT_30',
+        'created_at' => now(), 'updated_at' => now(),
+    ]));
+
+    $plan = createRatePlanRow($tenantId, $unitId, 12000);
+    $seasons = [];
+
+    foreach ([
+        'agosto' => ['Agosto', '[2027-08-01,2027-09-01)', 18000, 10, 5],
+        'ferragosto' => ['Ferragosto', '[2027-08-13,2027-08-18)', 22000, 20, null],
+    ] as $key => [$name, $range, $cents, $priority, $min]) {
+        $seasons[$key] = uuid7();
+        inTenant($tenantId, fn () => DB::table('season_rules')->insert([
+            'id' => $seasons[$key], 'tenant_id' => $tenantId, 'rate_plan_id' => $plan, 'name' => $name,
+            'date_range' => $range, 'nightly_cents' => $cents, 'priority' => $priority, 'min_nights' => $min,
+            'created_at' => now(), 'updated_at' => now(),
+        ]));
+    }
+
+    return ['property' => $propertyId, 'unit' => $unitId, 'plan' => $plan, 'seasons' => $seasons];
+}
