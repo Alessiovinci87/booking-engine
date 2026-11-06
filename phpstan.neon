@@ -1,0 +1,12 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+
+parameters:
+    # Livello 6 all'inizio, 8 entro M6 (ADR-0006; attività 7.4).
+    level: 6
+    paths:
+        - app
+        - bootstrap/app.php
+        - database
+        - routes
+    tmpDir: storage/framework/cache/phpstan
