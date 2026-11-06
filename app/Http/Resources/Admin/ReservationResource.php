@@ -6,11 +6,16 @@ use App\Domain\Payments\Models\Payment;
 use App\Domain\Payments\Models\PaymentEvent;
 use App\Domain\Payments\Models\Refund;
 use App\Domain\Pricing\Money;
+use App\Domain\Reservations\CancellationRefund;
+use App\Domain\Reservations\Enums\ReservationEvent;
+use App\Domain\Reservations\Enums\ReservationStatus;
 use App\Domain\Reservations\Models\Reservation;
 use App\Domain\Reservations\Models\ReservationChange;
 use App\Domain\Reservations\Models\ReservationPriceLine;
 use App\Domain\Reservations\ReservationEconomics;
+use App\Domain\Reservations\StateMachines\ReservationTransitions;
 use App\Domain\Tenancy\Models\AuditLog;
+use Carbon\CarbonImmutable;
 
 /**
  * Prenotazione nel pannello (07). `summary()` per l'elenco, `detail()` per il dettaglio con righe di
@@ -85,6 +90,8 @@ final class ReservationResource
             'confirmed_at' => $r->confirmed_at?->toIso8601ZuluString(),
             'cancelled_at' => $r->cancelled_at?->toIso8601ZuluString(),
             'cancel_reason' => $r->cancel_reason,
+            'actions' => self::actions($r, $economics),
+            'cancellation_refund' => $r->status === ReservationStatus::CONFIRMED ? self::cancellationRefund($r) : null,
             'price_lines' => $r->priceLines()->orderBy('position')->get()->map(fn (ReservationPriceLine $l): array => [
                 'kind' => $l->kind->value,
                 'date' => $l->night_date?->toDateString(),
@@ -141,6 +148,46 @@ final class ReservationResource
                     'changes' => $a->changes,
                     'occurred_at' => $a->occurred_at->toIso8601ZuluString(),
                 ])->all(),
+        ];
+    }
+
+    /**
+     * Azioni del pannello ammesse nello stato attuale, dalla tabella delle transizioni (03): il
+     * pannello mostra solo queste e non replica le regole. `offline_payment` richiede un residuo.
+     *
+     * @return list<string>
+     */
+    private static function actions(Reservation $r, ReservationEconomics $economics): array
+    {
+        $events = [
+            'approve' => ReservationEvent::APPROVE,
+            'reject' => ReservationEvent::REJECT,
+            'cancel' => ReservationEvent::CANCEL,
+            'modify' => ReservationEvent::MODIFY,
+            'recovery_link' => ReservationEvent::SEND_RECOVERY_LINK,
+            'release_dates' => ReservationEvent::RELEASE_DATES,
+        ];
+        $actions = array_keys(array_filter($events, fn (ReservationEvent $e): bool => ReservationTransitions::find($r->status, $e) !== null));
+
+        if ($r->status === ReservationStatus::CONFIRMED && $economics->outstandingCents() > 0) {
+            $actions[] = 'offline_payment';
+        }
+
+        return $actions;
+    }
+
+    /**
+     * Rimborso proposto dalla politica congelata e massimo rimborsabile online (07, cancel).
+     *
+     * @return array<string, mixed>
+     */
+    private static function cancellationRefund(Reservation $r): array
+    {
+        $max = CancellationRefund::refundableOnline($r);
+
+        return [
+            'proposed' => Money::json(CancellationRefund::proposed($r, $max, CarbonImmutable::now()), $r->currency),
+            'max' => Money::json($max, $r->currency),
         ];
     }
 }

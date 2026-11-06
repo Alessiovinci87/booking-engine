@@ -20,10 +20,18 @@ export function PanelLayout() {
                             {me.data?.tenant.name ?? '…'}
                         </p>
                     </div>
-                    <div className="flex items-center gap-4 text-sm">
-                        <Link to="/" className="font-medium text-blue-700 hover:underline">
-                            {t('layout.properties')}
-                        </Link>
+                    <div className="flex flex-wrap items-center gap-4 text-sm">
+                        <nav className="flex items-center gap-4">
+                            <Link to="/" className="font-medium text-blue-700 hover:underline">
+                                {t('layout.properties')}
+                            </Link>
+                            <Link to="/calendario" className="font-medium text-blue-700 hover:underline">
+                                {t('layout.calendar')}
+                            </Link>
+                            <Link to="/prenotazioni" className="font-medium text-blue-700 hover:underline">
+                                {t('layout.reservations')}
+                            </Link>
+                        </nav>
                         {me.data && <span className="hidden text-slate-600 sm:inline">{me.data.user.email}</span>}
                         <LogoutButton className="rounded-md border border-slate-300 px-3 py-1.5 text-slate-700 hover:bg-slate-50" />
                     </div>

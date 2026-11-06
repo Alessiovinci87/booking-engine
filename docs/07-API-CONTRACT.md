@@ -169,7 +169,7 @@ Tutte richiedono utente autenticato con MFA verificata nella sessione e membersh
 | Metodo | Percorso | Note |
 |---|---|---|
 | GET | `/reservations?status=&from=&to=&unit_id=` | |
-| GET | `/reservations/{id}` | dettaglio, righe, pagamenti, rimborsi, storico, audit |
+| GET | `/reservations/{id}` | dettaglio, righe, pagamenti, rimborsi, storico, audit; `actions` (azioni ammesse nello stato attuale, dalla tabella delle transizioni) e, se `CONFIRMED`, `cancellation_refund` con rimborso proposto e massimo (ADR-0011) |
 | POST | `/reservations` | manuale, confermata anche senza pagamento (stato economico `UNPAID`) · Idempotency-Key |
 | POST | `/reservations/{id}/approve` | Idempotency-Key; `409 CONFLICT_OPEN` se ci sono conflitti sulle date |
 | POST | `/reservations/{id}/reject` | Idempotency-Key, `reason` opzionale |

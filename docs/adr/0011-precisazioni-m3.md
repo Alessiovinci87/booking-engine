@@ -40,6 +40,13 @@ L'implementazione di M3 (inventario, macchina a stati, checkout con gateway fint
 22. **Prezzo cambiato durante la compilazione**: `409 PRICE_CHANGED` con `details.price` (stesso formato di `quote-price`); la pagina aggiorna il riepilogo e chiede una nuova conferma con una nuova Idempotency-Key, perché il corpo è cambiato.
 23. **Ultima unità attiva**: il pannello chiede conferma prima di disattivarla su una struttura pubblicata (ADR-0010 punto 8).
 
+### Pannello (3.8)
+
+24. **Azioni dal server.** Il dettaglio della prenotazione elenca in `actions` le azioni ammesse (`approve`, `reject`, `cancel`, `modify`, `recovery_link`, `release_dates`, `offline_payment`), ricavate dalla tabella delle transizioni di 03; `offline_payment` compare solo con un residuo da incassare. Il pannello mostra solo quei pulsanti e non replica le regole.
+25. **Rimborso proposto visibile prima di cancellare.** Per le prenotazioni `CONFIRMED` il dettaglio include `cancellation_refund` (`proposed` dalla politica congelata, `max` = incassato online ancora rimborsabile), gli stessi valori che `POST /cancel` usa se `refund_cents` manca.
+26. **Calendario mensile per unità** con una griglia di 6 settimane da lunedì; ogni notte mostra l'occupazione che la copre (colore per stato, bordo tratteggiato per le occupazioni temporanee), gli eventi esterni e un bordo rosso per i conflitti aperti. Clic su una notte libera: nuovo blocco da quella data; clic su un blocco: rimozione.
+27. **Seeder demo con prenotazioni** create con i flussi veri (checkout con gateway finto, macchina a stati, pagamenti offline), date relative al giorno dell'esecuzione; struttura demo pubblicata, Bilocale immediato e Trilocale su richiesta. Richiede `PAYMENT_GATEWAY=fake`.
+
 ## Alternative considerate
 
 | Alternativa | Perché scartata |

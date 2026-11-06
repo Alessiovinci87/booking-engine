@@ -53,11 +53,16 @@ it('approva e rifiuta le richieste REQUEST', function () {
     $a = reservationIn($fx, ReservationStatus::AWAITING_APPROVAL, '[2027-07-01,2027-07-04)');
     $b = reservationIn($fx, ReservationStatus::AWAITING_APPROVAL, '[2027-07-10,2027-07-14)');
 
-    panelGet($this, "/api/v1/admin/reservations/{$a->id}")->assertJsonPath('economic_status', 'AUTHORIZED');
+    panelGet($this, "/api/v1/admin/reservations/{$a->id}")->assertJsonPath('economic_status', 'AUTHORIZED')
+        ->assertJsonPath('actions', ['approve', 'reject'])->assertJsonPath('cancellation_refund', null);
 
     // La risposta precede la capture (job dopo il commit); il dettaglio successivo mostra l'esito.
     panelPost($this, "/api/v1/admin/reservations/{$a->id}/approve")->assertOk()->assertJsonPath('status', 'CAPTURING');
-    panelGet($this, "/api/v1/admin/reservations/{$a->id}")->assertJsonPath('status', 'CONFIRMED')->assertJsonPath('economic_status', 'DEPOSIT_PAID');
+    $confirmed = panelGet($this, "/api/v1/admin/reservations/{$a->id}")->assertJsonPath('status', 'CONFIRMED')->assertJsonPath('economic_status', 'DEPOSIT_PAID')
+        ->assertJsonPath('actions', ['cancel', 'modify', 'offline_payment']);
+    // Azioni dalla tabella delle transizioni; rimborso massimo = incassato online.
+    expect($confirmed->json('cancellation_refund.max.amount_cents'))->toBe($confirmed->json('collected.amount_cents'))
+        ->and($confirmed->json('cancellation_refund.proposed.amount_cents'))->toBeLessThanOrEqual($confirmed->json('cancellation_refund.max.amount_cents'));
 
     panelPost($this, "/api/v1/admin/reservations/{$b->id}/reject", ['reason' => 'Date non gestibili'])
         ->assertOk()->assertJsonPath('status', 'REJECTED')->assertJsonPath('cancel_reason', 'Date non gestibili');
