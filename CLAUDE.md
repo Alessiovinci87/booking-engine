@@ -22,10 +22,23 @@ Questo repository implementa la specifica in `docs/`. La specifica è la fonte d
 16. I feed iCal sono per destinazione e non servono mai un calendario vuoto per "spegnersi".
 17. Nessun valore personale nell'audit log; durate di conservazione solo da `RetentionPolicy`.
 
-## Comandi (da completare al bootstrap)
+## Comandi
 
-- Test: `composer test` (Pest) / `npx playwright test`
-- Stile: `composer lint` (Pint)
-- Analisi statica: `composer analyse` (Larastan)
+Guida completa dell'ambiente: `docs/dev/SETUP-WINDOWS.md`. Tutti i comandi si eseguono in `D:\booking-engine`.
+
+- Servizi locali: `docker compose up -d --wait` (PostgreSQL 18 su `127.0.0.1:5434`, Redis 8 su `127.0.0.1:6380`; porte da `DB_HOST_PORT`/`REDIS_HOST_PORT` in `.env`)
+- Migration: `php artisan migrate --database=pgsql_migrator` (sempre con `app_migrator`; con la connessione predefinita `app_runtime` le migration falliscono per scelta)
+- Test: `composer test` (Pest: suite `Unit`, `Feature` su PostgreSQL reale come `app_runtime`, `Arch`) / `npx playwright test` (da M6)
+- Stile: `composer lint` (Pint `--test`); correzione automatica: `vendor/bin/pint`
+- Analisi statica: `composer analyse` (Larastan livello 6)
+- Frontend: `npm run dev`, `npm run build`, `npm run typecheck`
+- Server di sviluppo: `php artisan serve` (pannello `/app`, ospite `/p/{tenantSlug}/{propertySlug}`)
 - Code: `php artisan queue:work` in locale su Windows; Horizon solo in staging e produzione
-- Servizi locali: `docker compose up -d` (PostgreSQL, Redis)
+- CI: `.github/workflows/ci.yml` (stessi script di `docker/postgres/init` per ruoli ed estensioni)
+
+## Dove stanno le cose
+
+- Dominio: `app/Domain/<Area>/` (Inventory, Reservations, Pricing, Payments, Calendar, Quotes, Privacy, Tenancy)
+- Controller API: `app/Http/Controllers/Api/V1/{Admin,Public}`
+- Contesto tenant: `App\Domain\Tenancy\TenantContext`, middleware `tenant`, job con `TenantAwareJob` + `InteractsWithTenant`
+- Test di catalogo RLS e FK composite: `tests/Feature/Architecture/`; controlli architetturali: `tests/Arch/`

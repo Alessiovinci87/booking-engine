@@ -291,3 +291,16 @@ Indirizzi:
 | `password authentication failed for user "app_..."` | password cambiate dopo il primo avvio: passo 5.2 |
 | `failed to connect to the docker API` | Docker Desktop non è avviato |
 | `pcntl` richiesta da Horizon | in locale non si usa Horizon: `php artisan queue:work` |
+| `composer install` molto lento (minuti per pochi pacchetti) | disco esterno exFAT e scansione antivirus: attendi, oppure esegui di nuovo il comando (riprende dalla cache di Composer) |
+| `detected dubious ownership ... git config --global --add safe.directory D:/booking-engine/vendor/...` | exFAT non registra il proprietario dei file: Composer ha ripiegato sul clone git di un pacchetto. Esegui di nuovo `composer install --prefer-dist`; non serve aggiungere eccezioni `safe.directory` per `vendor` |
+| `php artisan storage:link` fallisce | exFAT non supporta i collegamenti simbolici; in sviluppo non serve finché non si usano file pubblici (foto da M2, con URL firmati) |
+
+### Note sul disco D: (exFAT)
+
+Il disco `D:` è formattato exFAT: niente proprietario dei file né collegamenti simbolici, e operazioni su molti piccoli file più lente. Solo se git segnala `detected dubious ownership` sulla repository stessa (non su `vendor`), aggiungi una volta l'eccezione:
+
+```powershell
+git config --global --add safe.directory D:/booking-engine
+```
+
+Le differenze di filesystem con Linux (permessi, maiuscole/minuscole nei nomi) le intercetta la CI, che gira su Ubuntu.
