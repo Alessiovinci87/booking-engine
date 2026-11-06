@@ -2,12 +2,65 @@
     "app": {
         "name": "Booking Engine"
     },
+    "common": {
+        "loading": "Caricamento…",
+        "wait": "Attendere…"
+    },
+    "login": {
+        "title": "Accedi al pannello",
+        "email": "Email",
+        "password": "Password",
+        "submit": "Accedi"
+    },
+    "mfa": {
+        "code": "Codice a 6 cifre",
+        "recoveryCode": "Codice di recupero"
+    },
+    "mfaSetup": {
+        "title": "Configura la verifica in due passaggi",
+        "step1": "Installa un'app di autenticazione sul telefono (ad esempio un'app TOTP).",
+        "step2": "Inquadra il codice QR, oppure inserisci a mano la chiave indicata sotto.",
+        "step3": "Scrivi il codice a 6 cifre mostrato dall'app.",
+        "qrAlt": "Codice QR per l'app di autenticazione",
+        "manualKey": "Chiave da inserire a mano",
+        "submit": "Attiva",
+        "recoveryTitle": "Codici di recupero",
+        "recoveryIntro": "Conserva questi codici in un posto sicuro: ognuno permette un solo accesso se non hai il telefono. Non verranno mostrati di nuovo.",
+        "recoverySaved": "Ho salvato i codici di recupero",
+        "continue": "Vai al pannello"
+    },
+    "mfaVerify": {
+        "title": "Verifica in due passaggi",
+        "intro": "Inserisci il codice mostrato dall'app di autenticazione.",
+        "recoveryIntro": "Inserisci uno dei codici di recupero. Ogni codice vale una sola volta.",
+        "submit": "Verifica",
+        "useRecovery": "Usa un codice di recupero",
+        "useTotp": "Usa l'app di autenticazione"
+    },
+    "layout": {
+        "logout": "Esci"
+    },
     "home": {
         "title": "Pannello del gestore",
-        "subtitle": "Ambiente di prova: il pannello è pronto per le prossime funzionalità."
+        "subtitle": "Le funzioni di gestione arriveranno con le prossime versioni."
     },
     "notFound": {
         "title": "Pagina non trovata",
         "back": "Torna alla home del pannello"
+    },
+    "errors": {
+        "VALIDATION_FAILED": "Controlla i dati inseriti.",
+        "UNAUTHENTICATED": "Sessione scaduta: accedi di nuovo.",
+        "MFA_REQUIRED": "Verifica in due passaggi richiesta.",
+        "MFA_SETUP_REQUIRED": "Configura la verifica in due passaggi per continuare.",
+        "MFA_ALREADY_ENABLED": "La verifica in due passaggi è già attiva.",
+        "INVALID_CREDENTIALS": "Email o password non corrette.",
+        "INVALID_MFA_CODE": "Codice non valido.",
+        "REAUTH_REQUIRED": "Conferma la password per continuare.",
+        "FORBIDDEN": "Operazione non consentita.",
+        "NOT_FOUND": "Risorsa non trovata.",
+        "RATE_LIMITED": "Troppi tentativi. Riprova tra qualche minuto.",
+        "CSRF_TOKEN_EXPIRED": "La pagina è rimasta aperta troppo a lungo: riprova.",
+        "SERVER_ERROR": "Si è verificato un errore. Riprova più tardi."
     }
 }

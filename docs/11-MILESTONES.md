@@ -133,8 +133,8 @@ Alla fine apri la pull request e scrivi il rapporto di fine milestone.
 | 2.2 | Upload foto con URL firmati (disco locale in sviluppo) |
 | 2.3 | API tariffe e stagioni, con avviso di sovrapposizione a parità di priorità |
 | 2.4 | `PriceCalculator` puro: test golden di 04 (1.585,00 €) e tutti i casi limite elencati |
-| 2.5 | `UnitService`: modalità di prenotazione con vincolo I12 (applicazione + trigger), sospensione vendite |
-| 2.6 | Pubblicazione della struttura con le guardie di 07 |
+| 2.5 | `UnitService`: modalità di prenotazione con vincolo I12 (applicazione + trigger), sospensione vendite. Gli stati di tenant, struttura e unità (non sono macchine a stati di 03) si cambiano solo tramite i rispettivi servizi (`UnitService`, `PropertySetupService`, servizio del tenant); `Arch/StateTransitionsTest` ammette quelle classi come eccezione esplicita (ADR-0009) |
+| 2.6 | Pubblicazione della struttura con le guardie di 07, compresa la politica di cancellazione predefinita (`422 CANCELLATION_POLICY_MISSING`, ADR-0009); lo stato della struttura cambia solo tramite `PropertySetupService` |
 | 2.7 | API pubblica: `GET` struttura e `POST quote-price` |
 | 2.8 | Pannello: struttura, unità, foto, tariffe, stagioni, anteprima prezzo |
 
@@ -156,7 +156,7 @@ Alla fine apri la pull request e scrivi il rapporto di fine milestone.
 | 3.4 | `ReservationStateMachine` con tutte le transizioni T1–T18 di 03, test per riga e test property-based sulle transizioni vietate |
 | 3.5 | Prenotazioni manuali (T2, `UNPAID`), pagamenti offline, blocchi manuali, modifica (T18), cancellazione (T17) con rimborso sul gateway finto |
 | 3.6 | Job di rilascio delle occupazioni (con gateway finto) |
-| 3.7 | Pagina ospite IT/EN per telefono: struttura, foto, calendario, prezzo, dati dell'ospite; si ferma prima del pagamento |
+| 3.7 | Pagina ospite IT/EN per telefono: struttura, foto, calendario, prezzo, dati dell'ospite; si ferma prima del pagamento. CSP di base per pannello e pagina ospite (08, "Header e frontend"): `default-src 'self'`, `frame-ancestors 'none'` per il pannello e solo i domini registrati dal gestore per la vista embed (ADR-0009) |
 | 3.8 | Pannello: calendario, elenco e dettaglio prenotazioni, prenotazione manuale, blocchi |
 
 **Criteri di uscita:** I1, I7, I11, I15 verdi; 20 acquisizioni parallele → una sola occupazione; AC5 e AC17 verdi.
@@ -241,7 +241,7 @@ Alla fine apri la pull request e scrivi il rapporto di fine milestone.
 | # | Attività |
 |---|---|
 | 7.1 | `OffboardingService` e procedura di uscita completa (06, 09) |
-| 7.2 | `RetentionPolicy` configurabile e job di conservazione, con le durate validate dal professionista |
+| 7.2 | `RetentionPolicy` configurabile e job di conservazione, con le durate validate dal professionista. Ruolo PostgreSQL dedicato `app_retention`, con `DELETE` solo sulle tabelle soggette a conservazione (compresi `audit_log` e `payment_events`, append-only per `app_runtime`), usato solo dal job di conservazione (ADR-0009) |
 | 7.3 | Correzioni e miglioramenti emersi dal pilota, in ordine di gravità |
 | 7.4 | Larastan a livello 8 |
 

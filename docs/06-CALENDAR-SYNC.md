@@ -1,6 +1,6 @@
 # 06 — Sincronizzazione calendari (iCal)
 
-Versione: 1.1 · Data: 06/11/2026 · Modifiche: ADR-0003, [CHANGELOG-v1.1](CHANGELOG-v1.1.md)
+Versione: 1.2 · Data: 06/11/2026 · Modifiche: ADR-0003, [CHANGELOG-v1.1](CHANGELOG-v1.1.md); 1.2: ADR-0009
 
 ## Principi
 
@@ -132,7 +132,7 @@ Un feed non viene mai "spento" restituendo un calendario vuoto: per l'OTA un cal
 | Stato feed | Cosa serve all'OTA | Quando |
 |---|---|---|
 | `ACTIVE` | occupazioni correnti | normale |
-| `FROZEN` | ultima versione congelata, aggiornata solo con le prenotazioni già esistenti (cancellazioni e modifiche incluse), nessuna nuova vendita | durante l'offboarding |
+| `FROZEN` | ultima versione congelata, aggiornata solo con le prenotazioni già esistenti (cancellazioni e modifiche incluse), nessuna nuova vendita | durante l'offboarding; per 7 giorni dopo la rotazione del token |
 | `RETIRED` | `410 Gone` | solo dopo conferma esplicita del gestore che l'OTA non usa più il feed, oppure dopo la rotazione del token |
 
 Procedura di uscita (dettagli contrattuali in 09):
@@ -142,7 +142,7 @@ Procedura di uscita (dettagli contrattuali in 09):
 4. Solo dopo la conferma, oppure 30 giorni dopo l'inizio dell'offboarding se l'OTA ha smesso di leggere il feed da almeno 7 giorni, i feed passano a `RETIRED`.
 5. Se un'OTA continua a leggere un feed dopo 30 giorni, il feed resta `FROZEN` e si contatta il gestore; non si ritira in silenzio.
 
-Rotazione del token di un feed: il vecchio token resta `FROZEN` per 7 giorni (per dare tempo di aggiornare l'URL sull'OTA), poi `RETIRED`.
+Rotazione del token di un feed: il vecchio token resta `FROZEN` per 7 giorni (per dare tempo di aggiornare l'URL sull'OTA), poi `RETIRED`. Nel frattempo il nuovo feed è `ACTIVE`: per ogni unità e destinazione può esistere **un solo feed `ACTIVE`**, mentre i feed `FROZEN` possono essere più di uno (ADR-0009).
 
 ## Interfaccia per il channel manager (fase 3)
 

@@ -7,10 +7,13 @@ use Illuminate\Database\Seeder;
 class DatabaseSeeder extends Seeder
 {
     /**
-     * Nessun dato di dominio in M0: il seeder demo arriva in M1 (attività 1.8).
+     * Solo in locale: dati demo inventati (1.8). In staging e produzione i tenant si creano con
+     * tenant:create.
      */
     public function run(): void
     {
-        //
+        if (app()->environment('local')) {
+            $this->call(DemoSeeder::class);
+        }
     }
 }

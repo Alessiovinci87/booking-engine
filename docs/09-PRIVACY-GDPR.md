@@ -1,6 +1,6 @@
 # 09 — Privacy e GDPR
 
-Versione: 1.1 · Data: 06/11/2026 · Modifiche: ADR-0003, [CHANGELOG-v1.1](CHANGELOG-v1.1.md)
+Versione: 1.2 · Data: 06/11/2026 · Modifiche: ADR-0003, [CHANGELOG-v1.1](CHANGELOG-v1.1.md); 1.2: ADR-0009
 
 > Questo documento è una specifica tecnica e organizzativa, **non** un parere legale. DPA, informative, registro e condizioni di prenotazione vanno redatti o verificati da un professionista prima del pilota con ospiti reali.
 
@@ -71,6 +71,7 @@ Anonimizzare un ospite significa togliere i suoi dati da **tutte** le copie che 
 |---|---|
 | `guests` | nome, cognome, email, telefono, note sostituiti con valori neutri; `anonymized_at` valorizzato; paese mantenuto |
 | `reservations`, `quotes` | campi ospite copiati (es. `guest_name`, `guest_email` del preventivo) sostituiti |
+| Testi liberi (`reservations.cancel_reason`, `reservation_changes.note`, `inventory_occupancies.note`, `inventory_conflicts.resolution_notes`, `refunds.reason`, `external_calendar_events.summary_redacted`) | sostituiti con `"[rimosso]"` (ADR-0009): possono contenere dati dell'ospite scritti dal gestore o arrivati dalle OTA |
 | `audit_log` | non contiene mai valori personali (02): nessun intervento necessario, verificato da test |
 | `outbox_messages` | payload già svuotati dopo 30 giorni; quelli più recenti dell'ospite vengono svuotati subito |
 | Export generati (CSV, JSON, PDF) | scadono e vengono cancellati dopo 30 giorni; quelli ancora attivi che contengono l'ospite vengono cancellati |

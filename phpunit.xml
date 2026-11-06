@@ -25,6 +25,10 @@
         <env name="APP_ENV" value="testing" force="true"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
+        <!-- Argon2id con parametri minimi: in produzione restano quelli di config/hashing.php. -->
+        <env name="ARGON_MEMORY" value="1024" force="true"/>
+        <env name="ARGON_TIME" value="1" force="true"/>
+        <env name="ARGON_THREADS" value="1" force="true"/>
         <env name="BROADCAST_CONNECTION" value="null" force="true"/>
         <env name="CACHE_STORE" value="array" force="true"/>
         <!-- PostgreSQL reale con RLS (10, convenzione Feature/...), sempre sul database di test. -->
