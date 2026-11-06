@@ -4,7 +4,13 @@
     },
     "common": {
         "loading": "Caricamento…",
-        "wait": "Attendere…"
+        "wait": "Attendere…",
+        "save": "Salva",
+        "saved": "Salvato.",
+        "cancel": "Annulla",
+        "edit": "Modifica",
+        "invalidAmount": "Importo non valido: usa il formato 120,00.",
+        "conflictReloaded": "Qualcuno ha modificato questi dati nel frattempo: abbiamo ricaricato la versione più recente. Controlla e salva di nuovo."
     },
     "login": {
         "title": "Accedi al pannello",
@@ -38,11 +44,8 @@
         "useTotp": "Usa l'app di autenticazione"
     },
     "layout": {
-        "logout": "Esci"
-    },
-    "home": {
-        "title": "Pannello del gestore",
-        "subtitle": "Le funzioni di gestione arriveranno con le prossime versioni."
+        "logout": "Esci",
+        "properties": "Strutture"
     },
     "notFound": {
         "title": "Pagina non trovata",
@@ -68,9 +71,160 @@
         "NO_ACTIVE_UNITS": "Serve almeno un'unità attiva.",
         "TRANSLATION_IT_MISSING": "Manca il testo in italiano della struttura.",
         "CANCELLATION_POLICY_MISSING": "Scegli la politica di cancellazione predefinita.",
-        "PAYMENTS_NOT_ENABLED": "I pagamenti online non sono attivi: collega Stripe o usa solo la prenotazione su richiesta.",
+        "PAYMENTS_NOT_ENABLED": "I pagamenti online non sono attivi: collega l'account Stripe per pubblicare.",
         "MIN_NIGHTS_NOT_MET": "Il soggiorno è più corto del minimo di notti.",
         "OCCUPANCY_EXCEEDED": "Troppi ospiti per questa unità.",
         "AMOUNT_BELOW_MINIMUM": "L'importo è inferiore al minimo pagabile online (0,50 €)."
+    },
+    "properties": {
+        "title": "Strutture",
+        "list": "Le tue strutture",
+        "empty": "Non hai ancora strutture.",
+        "create": "Nuova struttura",
+        "createSubmit": "Crea struttura",
+        "status": {
+            "DRAFT": "Bozza",
+            "PUBLISHED": "Pubblicata",
+            "ARCHIVED": "Archiviata"
+        }
+    },
+    "property": {
+        "details": "Dati della struttura",
+        "name": "Nome interno",
+        "slug": "Indirizzo della pagina (slug)",
+        "slugHint": "Lettere minuscole, cifre e trattini: compare nell'indirizzo della pagina ospite.",
+        "address_line1": "Indirizzo",
+        "address_line2": "Indirizzo (seconda riga)",
+        "postal_code": "CAP",
+        "city": "Città",
+        "province": "Provincia",
+        "country_code": "Paese (codice ISO, es. IT)",
+        "cin_code": "Codice CIN",
+        "timezone": "Fuso orario",
+        "contact_email": "Email di contatto",
+        "contact_phone": "Telefono di contatto",
+        "checkin_time": "Check-in dalle",
+        "checkout_time": "Check-out entro le",
+        "privacy_policy_url": "Indirizzo dell'informativa privacy (https)",
+        "terms_url": "Indirizzo delle condizioni (https)",
+        "defaultPolicy": "Politica di cancellazione predefinita",
+        "defaultPolicyHint": "Obbligatoria per pubblicare; ogni unità può sceglierne un'altra.",
+        "noPolicy": "Nessuna"
+    },
+    "policies": {
+        "FLEXIBLE_7D": "Flessibile (7 giorni)",
+        "NON_REFUNDABLE": "Non rimborsabile"
+    },
+    "translations": {
+        "it": "Italiano",
+        "en": "Inglese",
+        "name": "Nome mostrato all'ospite",
+        "description": "Descrizione",
+        "houseRules": "Regole della casa"
+    },
+    "publish": {
+        "title": "Pubblicazione",
+        "intro": "La struttura è in bozza: gli ospiti non la vedono finché non la pubblichi.",
+        "submit": "Pubblica",
+        "missing": "Prima di pubblicare manca:"
+    },
+    "units": {
+        "title": "Unità",
+        "empty": "Nessuna unità.",
+        "create": "Nuova unità",
+        "createSubmit": "Crea unità",
+        "status": {
+            "ACTIVE": "Attiva",
+            "INACTIVE": "Disattivata"
+        },
+        "salesSuspended": "Vendite sospese",
+        "salesOpen": "Vendite aperte"
+    },
+    "unit": {
+        "backToProperty": "Torna alla struttura",
+        "details": "Dati dell'unità",
+        "name": "Nome interno",
+        "base_occupancy": "Ospiti inclusi nel prezzo",
+        "baseOccupancyHint": "Oltre questo numero si applica il supplemento per ospite.",
+        "max_occupancy": "Ospiti massimi",
+        "min_nights": "Notti minime",
+        "cleaning_fee": "Pulizie finali (€)",
+        "extra_guest_fee": "Supplemento per ospite in più (€ a notte)",
+        "extraGuestHint": "Bambini compresi: ogni ospite oltre quelli inclusi.",
+        "booking_mode": "Modalità di prenotazione",
+        "bookingModes": {
+            "REQUEST": "Su richiesta",
+            "INSTANT": "Immediata"
+        },
+        "payment_mode": "Pagamento online",
+        "paymentModes": {
+            "DEPOSIT_30": "Caparra del 30%",
+            "FULL": "Intero importo"
+        },
+        "policy": "Politica di cancellazione",
+        "propertyPolicy": "Quella predefinita della struttura",
+        "salesTitle": "Vendite e stato",
+        "suspendSales": "Sospendi le vendite",
+        "resumeSales": "Riapri le vendite",
+        "deactivate": "Disattiva l'unità",
+        "activate": "Riattiva l'unità"
+    },
+    "photos": {
+        "title": "Foto",
+        "add": "Aggiungi foto",
+        "uploading": "Caricamento…",
+        "hint": "JPEG, PNG o WebP fino a 10 MB. La prima foto è la copertina. Posizione e dati della fotocamera vengono rimossi.",
+        "empty": "Nessuna foto.",
+        "cover": "Copertina",
+        "alt": "Foto {{position}}",
+        "moveUp": "Sposta prima",
+        "moveDown": "Sposta dopo",
+        "remove": "Rimuovi la foto",
+        "confirmRemove": "Rimuovere questa foto?"
+    },
+    "rates": {
+        "title": "Tariffe",
+        "baseNightly": "Prezzo base a notte (€)"
+    },
+    "seasons": {
+        "title": "Stagioni",
+        "add": "Aggiungi stagione",
+        "edit": "Modifica stagione",
+        "empty": "Nessuna stagione: vale il prezzo base.",
+        "name": "Nome",
+        "firstNight": "Prima notte",
+        "lastNight": "Ultima notte",
+        "lastNightHint": "Compresa: è la notte prima dell'ultimo check-out.",
+        "nightly": "Prezzo a notte (€)",
+        "priority": "Priorità",
+        "priorityHint": "Se due stagioni coprono la stessa notte vince la priorità più alta.",
+        "minNights": "Notti minime",
+        "minNightsHint": "Facoltativo: sostituisce il minimo dell'unità.",
+        "remove": "Elimina stagione",
+        "confirmRemove": "Eliminare questa stagione?",
+        "overlapWarning": "Stagioni sovrapposte con la stessa priorità ({{priority}}): {{seasons}}. Vince la più breve, poi la più recente."
+    },
+    "preview": {
+        "title": "Anteprima prezzo",
+        "checkIn": "Check-in",
+        "checkOut": "Check-out",
+        "adults": "Adulti",
+        "children": "Bambini",
+        "submit": "Calcola",
+        "line": "Voce",
+        "date": "Notte",
+        "quantity": "Quantità",
+        "amount": "Importo",
+        "nights": "Notti",
+        "total": "Totale",
+        "deposit": "Da pagare alla prenotazione",
+        "balance": "Saldo",
+        "minNights": "Servono almeno {{required}} notti (richieste: {{nights}}).",
+        "kinds": {
+            "NIGHT": "Notte",
+            "EXTRA_GUEST": "Ospiti in più",
+            "CLEANING": "Pulizie finali",
+            "DISCOUNT": "Sconto"
+        }
     }
 }

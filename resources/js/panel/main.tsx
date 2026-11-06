@@ -10,11 +10,13 @@ import { AuthGate } from './auth/AuthGate';
 import { sessionQueryKey } from './auth/session';
 import { PanelLayout } from './components/PanelLayout';
 import { i18n } from './i18n';
-import { HomePage } from './pages/HomePage';
 import { LoginPage } from './pages/LoginPage';
 import { MfaSetupPage } from './pages/MfaSetupPage';
 import { MfaVerifyPage } from './pages/MfaVerifyPage';
 import { NotFoundPage } from './pages/NotFoundPage';
+import { PropertiesPage } from './pages/PropertiesPage';
+import { PropertyPage } from './pages/PropertyPage';
+import { UnitPage } from './pages/UnitPage';
 
 const queryClient: QueryClient = new QueryClient({
     defaultOptions: {
@@ -79,7 +81,9 @@ createRoot(container).render(
                                 </AuthGate>
                             }
                         >
-                            <Route index element={<HomePage />} />
+                            <Route index element={<PropertiesPage />} />
+                            <Route path="strutture/:propertyId" element={<PropertyPage />} />
+                            <Route path="unita/:unitId" element={<UnitPage />} />
                             <Route path="*" element={<NotFoundPage />} />
                         </Route>
                     </Routes>

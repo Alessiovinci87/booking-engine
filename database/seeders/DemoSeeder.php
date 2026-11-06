@@ -7,8 +7,10 @@ use App\Domain\Inventory\Models\PropertyTranslation;
 use App\Domain\Inventory\Models\Unit;
 use App\Domain\Inventory\Models\UnitTranslation;
 use App\Domain\Pricing\Models\RatePlan;
+use App\Domain\Pricing\Models\SeasonRule;
 use App\Domain\Reservations\Enums\CancellationPolicyCode;
 use App\Domain\Reservations\Models\CancellationPolicy;
+use App\Domain\Reservations\StayRange;
 use App\Domain\Tenancy\Enums\Locale;
 use App\Domain\Tenancy\TenantContext;
 use App\Domain\Tenancy\TenantProvisioning;
@@ -17,7 +19,8 @@ use Illuminate\Support\Str;
 use RuntimeException;
 
 /**
- * Dati demo (11, attività 1.8): tenant "demo-alghero" con una struttura finta e due unità.
+ * Dati demo (11, attività 1.8 e 2.8): tenant "demo-alghero" con una struttura finta e due unità,
+ * ciascuna con tariffa base e due stagioni (alta stagione e Ferragosto) per l'anteprima prezzo.
  * Tutti i dati sono inventati; l'email usa il dominio riservato example.test. Mai in produzione.
  *
  * La password del proprietario è casuale e si mostra una sola volta; la MFA si configura al primo
@@ -133,11 +136,27 @@ final class DemoSeeder extends Seeder
             ])->save();
         }
 
-        (new RatePlan)->forceFill([
+        $plan = new RatePlan;
+        $plan->forceFill([
             'unit_id' => $unit->id,
             'name' => 'Tariffa base',
             'base_nightly_cents' => $nightly,
             'currency' => 'EUR',
         ])->save();
+
+        // Alta stagione +40% (luglio-agosto, minimo 5 notti) e Ferragosto +80% con priorità maggiore.
+        foreach ([
+            ['Alta stagione', '2027-07-01', '2027-09-01', intdiv($nightly * 140, 100), 10, 5],
+            ['Ferragosto', '2027-08-13', '2027-08-18', intdiv($nightly * 180, 100), 20, null],
+        ] as [$name, $from, $to, $cents, $priority, $minNights]) {
+            (new SeasonRule)->forceFill([
+                'rate_plan_id' => $plan->id,
+                'name' => $name,
+                'date_range' => StayRange::of($from, $to),
+                'nightly_cents' => $cents,
+                'priority' => $priority,
+                'min_nights' => $minNights,
+            ])->save();
+        }
     }
 }

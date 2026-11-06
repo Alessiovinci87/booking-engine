@@ -30,21 +30,28 @@ export function ensureCsrfCookie(): Promise<void> {
     return csrfReady;
 }
 
-export async function apiRequest<T>(method: 'GET' | 'POST', path: string, body?: unknown): Promise<T> {
+type Method = 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE';
+
+export interface RequestOptions {
+    /** Versione per If-Match (07, concorrenza ottimistica): risposta 412 VERSION_MISMATCH se diversa. */
+    version?: number;
+}
+
+export async function apiRequest<T>(method: Method, path: string, body?: unknown, options: RequestOptions = {}): Promise<T> {
     try {
-        return await send<T>(method, path, body);
+        return await send<T>(method, path, body, options);
     } catch (error) {
         // CSRF_TOKEN_EXPIRED (ADR-0008): nuovo cookie CSRF e un solo nuovo tentativo.
         if (error instanceof ApiError && error.code === 'CSRF_TOKEN_EXPIRED') {
             csrfReady = null;
 
-            return send<T>(method, path, body);
+            return send<T>(method, path, body, options);
         }
         throw error;
     }
 }
 
-async function send<T>(method: 'GET' | 'POST', path: string, body?: unknown): Promise<T> {
+async function send<T>(method: Method, path: string, body: unknown, options: RequestOptions): Promise<T> {
     if (method !== 'GET') {
         await ensureCsrfCookie();
     }
@@ -59,7 +66,14 @@ async function send<T>(method: 'GET' | 'POST', path: string, body?: unknown): Pr
         headers['X-XSRF-TOKEN'] = xsrf;
     }
 
-    if (body !== undefined) {
+    if (options.version !== undefined) {
+        headers['If-Match'] = `"${options.version}"`;
+    }
+
+    // FormData (upload delle foto): il browser imposta Content-Type con il boundary.
+    const isForm = body instanceof FormData;
+
+    if (body !== undefined && !isForm) {
         headers['Content-Type'] = 'application/json';
     }
 
@@ -67,7 +81,7 @@ async function send<T>(method: 'GET' | 'POST', path: string, body?: unknown): Pr
         method,
         headers,
         credentials: 'same-origin',
-        body: body === undefined ? undefined : JSON.stringify(body),
+        body: body === undefined ? undefined : isForm ? body : JSON.stringify(body),
     });
 
     if (response.status === 204) {
@@ -107,3 +121,16 @@ export const api = {
         apiRequest<{ recovery_codes_remaining: number }>('POST', '/auth/mfa/verify', input),
     me: () => apiRequest<Me>('GET', '/me'),
 };
+
+/** Errori per campo di VALIDATION_FAILED (07: details.fields). */
+export function fieldErrors(error: unknown): Record<string, string[]> {
+    if (error instanceof ApiError && error.code === 'VALIDATION_FAILED') {
+        const fields = error.details.fields;
+
+        if (fields !== null && typeof fields === 'object') {
+            return fields as Record<string, string[]>;
+        }
+    }
+
+    return {};
+}

@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\DB;
 
 /*
  * 1.8: seeder demo con dati inventati (tenant demo-alghero, Casa Demo Alghero it/en, due unità,
- * una tariffa base per unità).
+ * una tariffa base per unità con due stagioni).
  */
 
 function demoTenantId(): ?string
@@ -34,7 +34,9 @@ it('crea tenant, struttura con traduzioni, due unità e le tariffe base', functi
         expect($units)->toHaveCount(2)
             ->and(DB::table('unit_translations')->count())->toBe(4)
             ->and(DB::table('rate_plans')->where('active', true)->count())->toBe(2)
-            ->and(DB::table('rate_plans')->pluck('base_nightly_cents')->sort()->values()->all())->toBe([9500, 14500]);
+            ->and(DB::table('rate_plans')->pluck('base_nightly_cents')->sort()->values()->all())->toBe([9500, 14500])
+            ->and(DB::table('season_rules')->count())->toBe(4)
+            ->and(DB::table('season_rules')->where('name', 'Ferragosto')->pluck('date_range')->unique()->all())->toBe(['[2027-08-13,2027-08-18)']);
 
         // Politiche standard della struttura, flessibile come predefinita (ADR-0009).
         expect(DB::table('cancellation_policies')->orderBy('code')->pluck('code')->all())->toBe(['FLEXIBLE_7D', 'NON_REFUNDABLE'])
