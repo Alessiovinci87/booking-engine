@@ -89,3 +89,14 @@ Le issue #1–#10 sono referenziate con `closes #N` nei commit e si chiuderanno 
 
 ## Ore impiegate (stima) rispetto al previsto
 Circa 3 ore di lavoro effettivo in una sessione il 06/11/2026, di cui quasi un'ora di attesa per le installazioni sul disco exFAT. Il previsto è il periodo 16 novembre – 18 dicembre 2026, in parallelo alla Fase 0: nessun rischio di superare la stima (regola "Quando ci si ferma", punto 5).
+
+## Decisioni dopo la verifica
+Verifica di M0 completata e approvata da Alessio il 06/11/2026.
+
+- **Regola 3 (stati)**: approvata la sostituzione in M1.3 con:
+  - (a) **protezione a runtime**: i modelli con macchina a stati sollevano un'eccezione se `status` viene scritto fuori da una classe in `app/Domain/*/StateMachines`;
+  - (b) **controllo statico limitato alle scritture** fuori dalle StateMachines: `update`, `fill`, `forceFill`, `create`, `setAttribute('status')` e l'assegnazione `->status =`. Validazioni e API Resource restano consentite.
+
+  Nessuna ADR: la regola resta la stessa, cambia solo la precisione della verifica. Quando la si implementa va aggiornata la riga corrispondente in `docs/10-TRACEABILITY.md` (sezione "Controlli statici in CI").
+- **CI con versioni fisse**: `runs-on: ubuntu-24.04` e `node-version: '24'` al posto di `ubuntu-latest` e `lts/*`. Commit "CI: versioni fisse di runner e Node", CI verde: run [42221298612](https://github.com/Alessiovinci87/booking-engine/actions/runs/42221298612). Supera il rischio della migrazione di `ubuntu-latest` a Ubuntu 26.
+- **Disco D: in exFAT**: consigliato lo spostamento su NTFS prima di M1 (decisione di Alessio).
