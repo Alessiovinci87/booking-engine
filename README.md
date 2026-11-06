@@ -1,4 +1,4 @@
-# Booking Engine — Specifica tecnica v1.0
+# Booking Engine — Specifica tecnica v1.1
 
 Versione: **1.1** · Data: 06/11/2026 · Stato: **decisioni di prodotto chiuse; incoerenze della revisione tecnica v1.0 corrette** · Modifiche: [CHANGELOG-v1.1](docs/CHANGELOG-v1.1.md)
 
