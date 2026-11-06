@@ -1,6 +1,6 @@
 # 07 — Contratto API
 
-Versione: 1.1 · Data: 06/11/2026 · Modifiche: [CHANGELOG-v1.1](CHANGELOG-v1.1.md)
+Versione: 1.2 · Data: 06/11/2026 · Modifiche: [CHANGELOG-v1.1](CHANGELOG-v1.1.md); 1.2: ADR-0008, ADR-0009
 
 REST JSON, prefisso `/api/v1`. Tre superfici con autenticazione diversa:
 
@@ -38,14 +38,15 @@ Il `tenant_id` non viene **mai** accettato dal client.
 
 | HTTP | Codici |
 |---|---|
-| 400 | `VALIDATION_FAILED` |
-| 401 | `UNAUTHENTICATED`, `MFA_REQUIRED` |
-| 403 | `FORBIDDEN` |
+| 400 | `VALIDATION_FAILED` (`details.fields`: errori per campo) |
+| 401 | `UNAUTHENTICATED`, `MFA_REQUIRED`, `MFA_SETUP_REQUIRED`, `INVALID_CREDENTIALS`, `INVALID_MFA_CODE` |
+| 403 | `FORBIDDEN`, `REAUTH_REQUIRED` |
 | 404 | `NOT_FOUND` (anche per risorse di altri tenant: mai `403`) |
-| 409 | `DATES_UNAVAILABLE`, `CHECKOUT_EXPIRED`, `CONFLICT_OPEN`, `ILLEGAL_TRANSITION`, `PRICE_CHANGED` |
+| 409 | `DATES_UNAVAILABLE`, `CHECKOUT_EXPIRED`, `CONFLICT_OPEN`, `ILLEGAL_TRANSITION`, `PRICE_CHANGED`, `MFA_ALREADY_ENABLED` |
+| 419 | `CSRF_TOKEN_EXPIRED` (la SPA richiede un nuovo cookie CSRF e ripete una volta) |
 | 410 | `QUOTE_EXPIRED`, `QUOTE_REVOKED`, `QUOTE_EXHAUSTED`, `FEED_RETIRED` |
 | 412 | `VERSION_MISMATCH` |
-| 422 | `MIN_NIGHTS_NOT_MET`, `OCCUPANCY_EXCEEDED`, `AMOUNT_BELOW_MINIMUM`, `PAYMENTS_NOT_ENABLED`, `IDEMPOTENCY_KEY_REUSED`, `INVALID_ICAL_URL` |
+| 422 | `MIN_NIGHTS_NOT_MET`, `OCCUPANCY_EXCEEDED`, `AMOUNT_BELOW_MINIMUM`, `PAYMENTS_NOT_ENABLED`, `IDEMPOTENCY_KEY_REUSED`, `INVALID_ICAL_URL`, `CANCELLATION_POLICY_MISSING` |
 | 429 | `RATE_LIMITED` |
 | 502/503 | `PAYMENT_PROVIDER_UNAVAILABLE` |
 
@@ -105,15 +106,30 @@ Se esiste già un tentativo attivo (`IN_CHECKOUT`) ancora valido, restituisce `2
 
 ## API pannello (`/admin`)
 
+### Accesso (ADR-0008)
+Sotto `/admin/auth/`, con sessione Sanctum e CSRF:
+
+| Metodo | Percorso | Note |
+|---|---|---|
+| POST | `/auth/login` | email e password; risponde `{ mfa_setup_required }`; limite 5 tentativi/15 min per account e per IP |
+| GET | `/auth/session` | `{ mfa_enabled, mfa_verified }` |
+| POST | `/auth/logout` | |
+| GET/POST | `/auth/mfa/setup` | solo con la MFA non ancora attiva: QR (SVG generato in locale) e chiave; la conferma restituisce 10 codici di recupero, una sola volta |
+| POST | `/auth/mfa/verify` | `code` TOTP oppure `recovery_code`; stesso limite di tentativi del login |
+| POST | `/auth/confirm-password` | ri-autenticazione valida 15 minuti per le azioni sensibili (`403 REAUTH_REQUIRED` senza) |
+
+Ogni altra rotta `/admin/*` richiede, nell'ordine: sessione valida (2 h di inattività, 12 h assolute), MFA verificata nella sessione, limite di 300 richieste/min per utente, tenant dalla membership.
+
+
 Tutte richiedono utente autenticato con MFA verificata nella sessione e membership `OWNER` nel tenant attivo (nella 1.0 c'è un solo tenant per utente; header `X-Tenant` riservato per il futuro, validato contro le membership).
 
 ### Struttura e unità
 | Metodo | Percorso | Note |
 |---|---|---|
 | GET/PATCH | `/properties/{id}` | incluse traduzioni |
-| POST | `/properties/{id}/publish` | richiede ≥ 1 unità attiva, traduzione `it`, Stripe `charges_enabled` o solo unità con prenotazione manuale |
+| POST | `/properties/{id}/publish` | richiede ≥ 1 unità attiva, traduzione `it`, politica di cancellazione predefinita della struttura (`422 CANCELLATION_POLICY_MISSING`, ADR-0009), Stripe `charges_enabled` o solo unità con prenotazione manuale |
 | GET/POST | `/properties/{id}/units` | |
-| GET/PATCH | `/units/{id}` | cambio a `INSTANT` rifiutato se ci sono calendari esterni attivi (`409`) |
+| GET/PATCH | `/units/{id}` | cambio a `INSTANT` rifiutato se ci sono calendari esterni attivi (`409`); `cancellation_policy_id` facoltativa, solo tra le politiche della stessa struttura |
 | POST/DELETE | `/units/{id}/photos` | upload con URL firmato |
 | GET/POST | `/units/{id}/ics-feeds` | un feed per destinazione (`BOOKING`, `AIRBNB`, `OTHER`), accoppiato al calendario importato dallo stesso canale; restituisce URL e ultima lettura |
 | POST | `/ics-feeds/{id}/rotate` | nuovo token; il vecchio resta `FROZEN` 7 giorni |

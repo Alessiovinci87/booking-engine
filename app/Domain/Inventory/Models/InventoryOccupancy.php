@@ -6,6 +6,7 @@ use App\Domain\Inventory\Enums\OccupancyKind;
 use App\Domain\Inventory\Enums\OccupancyPhase;
 use App\Domain\Inventory\Enums\OccupancyStatus;
 use App\Domain\Inventory\Enums\OccupancyTempReason;
+use App\Domain\Privacy\PersonalData;
 use App\Domain\Reservations\Casts\StayRangeCast;
 use App\Domain\Reservations\Models\Reservation;
 use App\Domain\Reservations\StayRange;
@@ -32,6 +33,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $ics_uid
  * @property string|null $note
  */
+#[PersonalData('note')]
 class InventoryOccupancy extends TenantModel
 {
     protected function casts(): array

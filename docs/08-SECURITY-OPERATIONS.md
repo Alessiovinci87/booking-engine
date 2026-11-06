@@ -1,6 +1,6 @@
 # 08 — Sicurezza e operatività
 
-Versione: 1.1 · Data: 06/11/2026 · Modifiche: ADR-0005, [CHANGELOG-v1.1](CHANGELOG-v1.1.md)
+Versione: 1.2 · Data: 06/11/2026 · Modifiche: ADR-0005, [CHANGELOG-v1.1](CHANGELOG-v1.1.md); 1.2: ADR-0008, ADR-0009
 
 ## Multi-tenancy: due livelli
 
@@ -50,10 +50,10 @@ Solo `InventoryService` scrive `inventory_occupancies` (02). Un controllo static
 
 ## Autenticazione e accesso
 
-- Pannello: Laravel Sanctum con cookie SPA, `SameSite=Lax`, `Secure`, `HttpOnly`; CSRF attivo.
-- Password: minimo 12 caratteri, controllo contro liste di password compromesse, hash Argon2id.
-- **MFA obbligatoria** (TOTP) per ogni utente del pannello, con codici di recupero monouso. Nessuna operazione admin senza MFA verificata nella sessione.
-- Sessione: scadenza per inattività 2 h, assoluta 12 h; ri-autenticazione per azioni sensibili (rimborsi, cambio account Stripe, export completo, cambio email).
+- Pannello: Laravel Sanctum con cookie SPA, `SameSite=Lax`, `Secure`, `HttpOnly`; CSRF attivo (token mancante o scaduto → `419 CSRF_TOKEN_EXPIRED`, ADR-0008). Rotte di accesso sotto `/api/v1/admin/auth/*` (07).
+- Password: minimo 12 caratteri, controllo contro liste di password compromesse (Have I Been Pwned, solo il prefisso di 5 caratteri dello SHA-1; fail-open con avviso nel log a ogni mancata risposta, senza password né email; ADR-0009), hash Argon2id.
+- **MFA obbligatoria** (TOTP) per ogni utente del pannello, con 10 codici di recupero monouso salvati come hash (`user_recovery_codes`, ADR-0008). Un codice TOTP già usato non vale una seconda volta. Nessuna operazione admin senza MFA verificata nella sessione; la configurazione è possibile solo finché la MFA non è attiva.
+- Sessione: scadenza per inattività 2 h, assoluta 12 h; ri-autenticazione per azioni sensibili (rimborsi, cambio account Stripe, export completo, cambio email), valida 15 minuti.
 - Ruoli: `OWNER` attivo nella 1.0; `MANAGER` e `STAFF` definiti nelle policy ma non assegnabili da UI.
 - Accesso di supporto al tenant di un cliente: solo con ruolo `app_admin_ops`, motivazione obbligatoria, durata limitata, `AuditLog` visibile al cliente.
 
@@ -84,7 +84,7 @@ Vedi 06. Implementazione in un unico client HTTP dedicato (`SafeHttpFetcher`) us
 
 ## Audit log
 
-Scritto per: modifiche a struttura, unità, tariffe, stagioni, politiche; ogni transizione di stato di prenotazioni, pagamenti, preventivi, conflitti; rimborsi; blocchi; calendari esterni; accessi e fallimenti di login; accessi di supporto; export di dati. Append-only (revoca di `UPDATE`/`DELETE` ad `app_runtime`), conservato 24 mesi.
+Scritto per: modifiche a struttura, unità, tariffe, stagioni, politiche; ogni transizione di stato di prenotazioni, pagamenti, preventivi, conflitti; rimborsi; blocchi; calendari esterni; accessi e fallimenti di login; accessi di supporto; export di dati. Append-only (revoca di `UPDATE`/`DELETE` ad `app_runtime`), conservato 24 mesi; la cancellazione a scadenza usa solo il ruolo `app_retention` (11, attività 7.2). Gli eventi senza tenant (es. login con email inesistente) hanno `tenant_id` NULL (ADR-0008). Anche `payment_events` è append-only nel database (ADR-0009).
 
 ## Backup e ripristino
 

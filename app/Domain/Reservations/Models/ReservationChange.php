@@ -2,6 +2,7 @@
 
 namespace App\Domain\Reservations\Models;
 
+use App\Domain\Privacy\PersonalData;
 use App\Domain\Reservations\Casts\StayRangeCast;
 use App\Domain\Reservations\StayRange;
 use App\Domain\Tenancy\Models\TenantModel;
@@ -25,6 +26,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string|null $note
  * @property CarbonImmutable $occurred_at
  */
+#[PersonalData('note')]
 class ReservationChange extends TenantModel
 {
     protected function casts(): array

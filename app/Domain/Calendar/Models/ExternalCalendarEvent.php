@@ -4,6 +4,7 @@ namespace App\Domain\Calendar\Models;
 
 use App\Domain\Calendar\Enums\EchoKind;
 use App\Domain\Calendar\Enums\ExternalEventStatus;
+use App\Domain\Privacy\PersonalData;
 use App\Domain\Reservations\Casts\StayRangeCast;
 use App\Domain\Reservations\StayRange;
 use App\Domain\Tenancy\Models\TenantModel;
@@ -26,6 +27,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string|null $echo_of_ics_uid
  * @property ExternalEventStatus $status
  */
+#[PersonalData('summary_redacted')]
 class ExternalCalendarEvent extends TenantModel
 {
     protected function casts(): array

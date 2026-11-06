@@ -125,5 +125,42 @@ I documenti 02 e 07 non sono ancora stati modificati: si aggiornano dopo la tua 
 12. **E2E del pannello**: Playwright arriva in M6, come da piano. Fino ad allora il flusso è coperto dai test Feature delle API e dalla prova manuale descritta sopra.
 13. **Entità "invariate 1.0"**: se la specifica 1.0 esiste altrove, conviene confrontarla con i campi ricavati (vedi "Scelte minori").
 
+## Decisioni dopo la verifica
+Verifica di M1 completata il 06/11/2026: approvata con le decisioni seguenti, applicate sul branch `m1-modello-dati` prima del merge.
+
+1. **ADR-0008 accettata**, con il codice `CSRF_TOKEN_EXPIRED` per il 419 al posto di `UNAUTHENTICATED`.
+   - Aggiornati codice, traduzioni, pannello e documenti 02, 07 e 08 (versione 1.2). Il pannello, ricevuto `CSRF_TOKEN_EXPIRED`, richiede un nuovo cookie CSRF e ripete la richiesta una volta.
+   - Nel farlo è emerso che il primo gestore del 419 non scattava mai: Laravel trasforma `TokenMismatchException` in `HttpException(419)` prima dei callback. Il 419 della prova manuale aveva quindi il corpo predefinito di Laravel. Ora il 419 è gestito nel callback per stato HTTP.
+   - Nuovo `Feature/Auth/CsrfTest`, con il controllo CSRF applicato davvero (nei test Laravel lo salta).
+2. **ADR-0009 (Accettata)**, precisazioni del modello:
+   1. **Feed iCal**:
+      - unicità solo tra i feed `ACTIVE` (`ics_feeds_one_active_per_destination ... WHERE status = 'ACTIVE'`), con la migration di M1 corretta in place e `migrate:fresh` in locale e nei test;
+      - 02 corretto; 06 reso esplicito sulla rotazione (vecchio `FROZEN` per 7 giorni accanto al nuovo `ACTIVE`);
+      - test `Feature/Database/IcsFeedUniquenessTest`.
+   2. **Politica di cancellazione**:
+      - `properties.default_cancellation_policy_id` (nullable nel database, obbligatoria per pubblicare) e `units.cancellation_policy_id` (facoltativa);
+      - entrambe con FK composite verso una politica della stessa struttura;
+      - politica effettiva in `EffectiveCancellationPolicy`;
+      - testi IT/EN standard in `lang/<locale>/cancellation.php`, colonne `text_it`/`text_en` tolte;
+      - guardia di pubblicazione in 07, con il nuovo codice `422 CANCELLATION_POLICY_MISSING` (implementazione in 2.6);
+      - il seeder demo crea le due politiche e imposta `FLEXIBLE_7D` come predefinita;
+      - test `Feature/Database/CancellationPolicyAssignmentTest`.
+   3. **Testi liberi come dati personali**:
+      - `#[PersonalData]` su `reservations.cancel_reason`, `reservation_changes.note`, `inventory_occupancies.note`, `inventory_conflicts.resolution_notes`, `refunds.reason` e `external_calendar_events.summary_redacted`;
+      - elenco completo dei campi esaminati, marcati e non marcati, nell'ADR;
+      - 09 aggiornato (sostituzione con `"[rimosso]"`) e `AuditLogNoPersonalDataTest` esteso.
+   4. **`payment_events` append-only**: migration `2026_11_09_001100`, test `Feature/Database/PaymentEventsPrivilegesTest`.
+3. **Piano e issue aggiornati**: `11-MILESTONES.md` e issue GitHub.
+   - **M2 2.5 (#23) e 2.6 (#24)**: stati di tenant, struttura e unità solo tramite i rispettivi servizi, con eccezione esplicita nel controllo statico. 2.6 ha anche la guardia sulla politica di cancellazione.
+   - **M3 3.7 (#33)**: CSP di base per pannello e pagina ospite, con `frame-ancestors` per la vista embed.
+   - **M7 7.2 (#63)**: ruolo `app_retention` con `DELETE` solo sulle tabelle soggette a conservazione.
+4. **Password compromesse**: restano fail-open.
+   - `PwnedPasswordsVerifier` sostituisce il verificatore di Laravel e registra un avviso nel log a ogni mancata risposta (connessione fallita o stato non 2xx), senza password, hash, prefisso né email.
+   - È un'eccezione esplicita di `Arch/ExternalHttpTest`, perché chiama solo l'URL fisso di Have I Been Pwned.
+   - Test `Feature/Auth/PwnedPasswordsVerifierTest`.
+5. **Documentazione**: questa sezione; `10-TRACEABILITY.md` aggiornato alla versione 1.4.
+
+Dopo `migrate:fresh` il database locale è stato ricreato e il seeder demo rieseguito: la password del proprietario demo è nuova.
+
 ## Ore impiegate (stima) rispetto al previsto
 Previsto: sprint 1, 9–20 novembre 2026 (due settimane). Svolta in anticipo, in un'unica sessione di lavoro di Claude Code il 06/11/2026; non ho una misura affidabile delle ore. La parte che ha richiesto più iterazioni sono stati RLS e permessi (policy `definer_lookup`, eccezioni del catalogo). Seguono i controlli sugli stati: il builder dedicato serviva per l'analisi statica.

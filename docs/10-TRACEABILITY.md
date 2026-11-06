@@ -1,6 +1,6 @@
 # 10 — Matrice di tracciabilità
 
-Versione: 1.3 · Data: 06/11/2026 · Modifiche: servizi, tabelle, endpoint e test di M1; stato dell'implementazione a fine M1
+Versione: 1.4 · Data: 06/11/2026 · Modifiche: servizi, tabelle, endpoint e test di M1; stato dell'implementazione a fine M1; decisioni dopo la verifica di M1 (ADR-0008, ADR-0009)
 
 Ogni requisito (criteri di accettazione `AC` da 01, invarianti `I` da 02) è collegato a servizio, tabelle, endpoint e test. I nomi di servizi e test sono quelli da usare nel codice; Claude Code aggiorna questa matrice quando li crea o li rinomina.
 
@@ -36,6 +36,8 @@ Convenzioni dei test: `Unit/…` (Pest, senza database), `Feature/…` (Pest con
 | `UnitService` | modalità di prenotazione, sospensione vendite (I12) | 02 |
 | `ConflictService` | presa in carico e chiusura dei conflitti | 03 |
 | `LoginService`, `MfaService`, `RecoveryCodes`, `LoginThrottle`, `PanelSession` | accesso al pannello, MFA TOTP, codici di recupero, limiti ai tentativi, durata della sessione | 08, ADR-0008 |
+| `PwnedPasswordsVerifier` | password compromesse, fail-open con avviso nel log | 08, ADR-0009 |
+| `EffectiveCancellationPolicy` | politica dell'unità, altrimenti quella della struttura | 02, ADR-0009 |
 | `TenantProvisioning` | creazione di tenant e proprietario (`tenant:create`) | 01, 08 |
 | `Outbox`, `OutboxMessageStateMachine`, `DispatchOutboxJob`, `DeliverOutboxMessageJob` | accodamento con `dedupe_key`, consegna per tenant, retry con backoff | 02, 03, ADR-0008 |
 
@@ -96,10 +98,10 @@ Convenzioni dei test: `Unit/…` (Pest, senza database), `Feature/…` (Pest con
 |---|---|---|---|
 | Nessuna scrittura su `inventory_occupancies` fuori da `InventoryService` | I1, I15 | `Arch/InventoryWritesTest` | attivo da M0 (modello e tabella non ancora esistenti) |
 | Nessun `update(['status' => …])` sui modelli con macchina a stati | 03 | `Arch/StateTransitionsTest`, `Feature/Domain/ModelsTest` | da M1 (decisione dopo M0): (a) a runtime, trait `GuardsStatusWrites` e builder `StatusGuardedBuilder` su `Reservation`, `Payment`, `Refund`, `Quote`, `InventoryConflict`, `OutboxMessage`: eccezione `IllegalStatusWrite` se `status` viene scritto fuori da una classe in `app/Domain/*/StateMachines`; (b) controllo statico limitato alle scritture fuori dalle StateMachines (`update`, `fill`, `forceFill`, `create` e varianti con chiave `status`, `setAttribute('status')`, `->status =`); validazioni e API Resource consentite; eccezione `InventoryService` per le occupazioni |
-| Nessuna chiamata HTTP verso URL utente fuori da `SafeHttpFetcher` | 06, 08 | `Arch/ExternalHttpTest` | attivo da M0; eccezione: `App\Domain\Payments\Stripe` |
+| Nessuna chiamata HTTP verso URL utente fuori da `SafeHttpFetcher` | 06, 08 | `Arch/ExternalHttpTest` | attivo da M0; eccezioni verso URL fissi: `App\Domain\Payments\Stripe`, `App\Domain\Tenancy\Auth\PwnedPasswordsVerifier` (ADR-0009) |
 | Tabelle con `tenant_id` senza RLS forzata | I5 | `Feature/Architecture/RlsCatalogTest` | attivo da M0 |
 | FK tra tabelle tenant-scoped senza `tenant_id` | I17 | `Feature/Architecture/CompositeFkCatalogTest` | attivo da M0 |
-| Campi `#[PersonalData]` presenti in log o payload di audit | I22 | `Feature/AuditLogNoPersonalDataTest` | attivo da M1: tutti i modelli con `#[PersonalData]`, modifiche reali di `Guest`, campi nascosti di `User` |
+| Campi `#[PersonalData]` presenti in log o payload di audit | I22 | `Feature/AuditLogNoPersonalDataTest` | attivo da M1: tutti i modelli con `#[PersonalData]` (compresi i testi liberi di ADR-0009), modifiche reali di `Guest` e `Reservation`, campi nascosti di `User` |
 
 ## Stato dell'implementazione
 
@@ -115,10 +117,13 @@ Aggiornato a fine M1 (06/11/2026). Tutte le tabelle di 02 con RLS forzata e FK c
 | Tabelle di 02 (1.1) | `database/migrations/2026_11_09_000100…000800`, helper `App\Domain\Tenancy\Database\TenantTable` | `Feature/Database/SchemaTest`, `Feature/OccupancyExclusionTest`, `Unit/StayRangeTest` |
 | RLS e FK composite (1.1, 1.2) | `TenantTable::create` / `enableRowLevelSecurity`, policy `tenant_isolation` | `Feature/Architecture/RlsCatalogTest`, `Feature/Architecture/CompositeFkCatalogTest`, `Feature/CrossTenantInsertRejectedTest`, `Feature/Database/TenantRowIsolationTest` |
 | `audit_log` append-only (1.2) | `2026_11_09_001000_restrict_audit_log_privileges.php` | `Feature/Database/AuditLogPrivilegesTest` |
+| `payment_events` append-only (ADR-0009) | `2026_11_09_001100_restrict_payment_events_privileges.php` | `Feature/Database/PaymentEventsPrivilegesTest` |
+| Un solo feed `ACTIVE` per destinazione (ADR-0009) | indice `ics_feeds_one_active_per_destination` | `Feature/Database/IcsFeedUniquenessTest` |
+| Politica di cancellazione di struttura e unità (ADR-0009) | `properties.default_cancellation_policy_id`, `units.cancellation_policy_id`, `App\Domain\Reservations\EffectiveCancellationPolicy`, `lang/<locale>/cancellation.php` | `Feature/Database/CancellationPolicyAssignmentTest` |
 | Funzioni `SECURITY DEFINER` | `app_user_tenants(uuid)`, `app_tenant_by_slug(text)` (`2026_11_09_000900`) | `Feature/Database/TenantLookupFunctionsTest` |
 | Modelli, enum, `#[PersonalData]` (1.3) | `app/Domain/<Area>/Models`, `app/Domain/<Area>/Enums`, `App\Domain\Privacy\{PersonalData, PersonalDataRegistry}` | `Feature/Domain/ModelsTest` |
 | Scritture di `status` solo dalle macchine a stati | `GuardsStatusWrites`, `StatusGuardedBuilder`, `StatusWriteGuard` | `Feature/Domain/ModelsTest`, `Arch/StateTransitionsTest` |
-| Accesso al pannello (1.4) | `App\Domain\Tenancy\Auth\*`, middleware `panel.fresh`, `mfa`, `reauth`, `App\Http\Controllers\Api\V1\Admin\Auth\*` | `Feature/Auth/{LoginTest, LoginThrottleTest, MfaTest, SessionExpiryTest, ReauthTest}` |
+| Accesso al pannello (1.4) | `App\Domain\Tenancy\Auth\*`, middleware `panel.fresh`, `mfa`, `reauth`, `App\Http\Controllers\Api\V1\Admin\Auth\*` | `Feature/Auth/{LoginTest, LoginThrottleTest, MfaTest, SessionExpiryTest, ReauthTest, CsrfTest, PwnedPasswordsVerifierTest}` |
 | `GET /api/v1/admin/me`, `GET /api/v1/admin/properties/{id}` | `MeController`, `PropertyController` (lettura di base; M2.1 completa) | `Feature/TenantIsolationApiTest` |
 | `tenant:create` (1.5) | `App\Console\Commands\CreateTenantCommand`, `App\Domain\Tenancy\TenantProvisioning` | `Feature/Tenancy/CreateTenantCommandTest` |
 | `AuditLogger` (1.6) | `App\Domain\Tenancy\Audit\{AuditLogger, AuditChanges}` | `Feature/AuditLogNoPersonalDataTest` |

@@ -1,8 +1,8 @@
 # ADR-0008 — Dettagli di accesso, audit e outbox emersi in M1
 
-- **Stato**: Proposta
+- **Stato**: Accettata (verifica di M1, 06/11/2026), con il codice `CSRF_TOKEN_EXPIRED` per il 419
 - **Data**: 2026-11-06
-- **Autori**: Claude Code (stesura), da verificare con Alessio
+- **Autori**: Claude Code (stesura), Alessio (verifica e accettazione)
 - **Documenti di specifica toccati**: 02-DOMAIN-MODEL (tabella `user_recovery_codes`, `audit_log.tenant_id`), 07-API-CONTRACT (rotte di accesso, codici di errore), 08-SECURITY-OPERATIONS (dettagli della sessione)
 
 ## Contesto
@@ -38,7 +38,7 @@ Sono **aggiunte compatibili**: nessun comportamento concordato cambia. Si regist
    | 401 | `INVALID_MFA_CODE` | codice MFA errato |
    | 403 | `REAUTH_REQUIRED` | serve la conferma della password (15 min) |
    | 409 | `MFA_ALREADY_ENABLED` | la MFA è già configurata |
-   | 419 | `UNAUTHENTICATED` | token CSRF scaduto: la SPA richiede un nuovo cookie CSRF |
+   | 419 | `CSRF_TOKEN_EXPIRED` | token CSRF mancante o scaduto: la SPA richiede un nuovo cookie CSRF e ripete la richiesta una volta |
 
    Gli errori di validazione hanno `details.fields` con l'elenco degli errori per campo.
 3. **Tabella `user_recovery_codes`**, globale come `users`, con:
@@ -83,5 +83,5 @@ Sono **aggiunte compatibili**: nessun comportamento concordato cambia. Si regist
 
 ## Aggiornamento della specifica
 
-- [ ] Documenti aggiornati con riferimento a questa ADR (07: rotte e codici; 02: `user_recovery_codes`, `audit_log.tenant_id`), dopo la verifica
-- [ ] Versione della specifica incrementata
+- [x] Documenti aggiornati con riferimento a questa ADR (02: `user_recovery_codes`, `audit_log.tenant_id`, formato di `changes`; 07: rotte e codici; 08: sessione, CSRF, outbox)
+- [x] Versione della specifica incrementata (02, 07, 08 → 1.2)

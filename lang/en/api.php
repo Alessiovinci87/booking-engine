@@ -14,6 +14,7 @@ return [
         'FORBIDDEN' => 'Operation not allowed.',
         'NOT_FOUND' => 'Resource not found.',
         'RATE_LIMITED' => 'Too many attempts. Please try again later.',
+        'CSRF_TOKEN_EXPIRED' => 'The page session has expired. Please try again.',
         'SERVER_ERROR' => 'Something went wrong. Please try again later.',
     ],
 ];

@@ -1,7 +1,12 @@
 <?php
 
+use App\Domain\Calendar\Models\ExternalCalendarEvent;
+use App\Domain\Inventory\Models\InventoryConflict;
+use App\Domain\Payments\Models\Refund;
 use App\Domain\Privacy\PersonalDataRegistry;
 use App\Domain\Reservations\Models\Guest;
+use App\Domain\Reservations\Models\Reservation;
+use App\Domain\Reservations\Models\ReservationChange;
 use App\Domain\Tenancy\Audit\AuditChanges;
 use App\Domain\Tenancy\Audit\AuditLogger;
 use App\Domain\Tenancy\Models\User;
@@ -106,4 +111,34 @@ it('nasconde i campi segreti del modello', function () {
 
     expect(json_decode($row->changes, true))->toBe(['password_hash' => AuditChanges::HIDDEN])
         ->and($row->changes)->not->toContain('Una-password-segreta-2026');
+});
+
+it('tratta come personali i campi di testo libero (ADR-0009)', function (string $class, string $field) {
+    expect(PersonalDataRegistry::isPersonal($class, $field))->toBeTrue();
+})->with([
+    'reservations.cancel_reason' => [Reservation::class, 'cancel_reason'],
+    'reservation_changes.note' => [ReservationChange::class, 'note'],
+    'inventory_occupancies.note' => ['App\\Domain\\Inventory\\Models\\InventoryOccupancy', 'note'],
+    'inventory_conflicts.resolution_notes' => [InventoryConflict::class, 'resolution_notes'],
+    'refunds.reason' => [Refund::class, 'reason'],
+    'external_calendar_events.summary_redacted' => [ExternalCalendarEvent::class, 'summary_redacted'],
+    'guests.notes' => [Guest::class, 'notes'],
+]);
+
+it('registra il motivo di cancellazione solo come "[personal]"', function () {
+    $t = twoTenantsWithUnits()['a'];
+    $guest = createGuestRow($t['tenant']);
+    $row = reservationRow($t['tenant'], $t['unit'], $guest);
+    inTenant($t['tenant'], fn () => DB::table('reservations')->insert($row));
+
+    inTenant($t['tenant'], function () use ($row) {
+        $reservation = Reservation::query()->findOrFail($row['id']);
+        $reservation->forceFill(['cancel_reason' => 'Motivo con nome Ospite Inventato'])->save();
+        app(AuditLogger::class)->recordModelChange('reservation.updated', $reservation);
+    });
+
+    $changes = inTenant($t['tenant'], fn () => DB::table('audit_log')->where('action', 'reservation.updated')->value('changes'));
+
+    expect(json_decode($changes, true))->toBe(['cancel_reason' => AuditChanges::PERSONAL])
+        ->and($changes)->not->toContain('Ospite Inventato');
 });

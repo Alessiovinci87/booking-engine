@@ -6,6 +6,7 @@ use App\Domain\Inventory\Enums\BookingMode;
 use App\Domain\Inventory\Enums\PaymentMode;
 use App\Domain\Inventory\Models\Unit;
 use App\Domain\Payments\Models\Payment;
+use App\Domain\Privacy\PersonalData;
 use App\Domain\Quotes\Models\Quote;
 use App\Domain\Reservations\Casts\StayRangeCast;
 use App\Domain\Reservations\Enums\ConfirmationKind;
@@ -55,6 +56,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int $version
  */
 #[UseEloquentBuilder(StatusGuardedBuilder::class)]
+#[PersonalData('cancel_reason')]
 class Reservation extends TenantModel
 {
     use GuardsStatusWrites;

@@ -14,6 +14,7 @@ return [
         'FORBIDDEN' => 'Operazione non consentita.',
         'NOT_FOUND' => 'Risorsa non trovata.',
         'RATE_LIMITED' => 'Troppi tentativi. Riprova più tardi.',
+        'CSRF_TOKEN_EXPIRED' => 'La sessione della pagina è scaduta. Riprova.',
         'SERVER_ERROR' => 'Si è verificato un errore. Riprova più tardi.',
     ],
 ];

@@ -4,6 +4,7 @@ namespace App\Domain\Payments\Models;
 
 use App\Domain\Payments\Enums\RefundMethod;
 use App\Domain\Payments\Enums\RefundStatus;
+use App\Domain\Privacy\PersonalData;
 use App\Domain\Tenancy\Models\Concerns\GuardsStatusWrites;
 use App\Domain\Tenancy\Models\Concerns\StatusGuardedBuilder;
 use App\Domain\Tenancy\Models\TenantModel;
@@ -28,6 +29,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property CarbonImmutable|null $completed_at
  */
 #[UseEloquentBuilder(StatusGuardedBuilder::class)]
+#[PersonalData('reason')]
 class Refund extends TenantModel
 {
     use GuardsStatusWrites;

@@ -31,6 +31,20 @@ export function ensureCsrfCookie(): Promise<void> {
 }
 
 export async function apiRequest<T>(method: 'GET' | 'POST', path: string, body?: unknown): Promise<T> {
+    try {
+        return await send<T>(method, path, body);
+    } catch (error) {
+        // CSRF_TOKEN_EXPIRED (ADR-0008): nuovo cookie CSRF e un solo nuovo tentativo.
+        if (error instanceof ApiError && error.code === 'CSRF_TOKEN_EXPIRED') {
+            csrfReady = null;
+
+            return send<T>(method, path, body);
+        }
+        throw error;
+    }
+}
+
+async function send<T>(method: 'GET' | 'POST', path: string, body?: unknown): Promise<T> {
     if (method !== 'GET') {
         await ensureCsrfCookie();
     }
@@ -64,11 +78,6 @@ export async function apiRequest<T>(method: 'GET' | 'POST', path: string, body?:
 
     if (!response.ok) {
         const error = (payload as { error?: { code?: string; details?: Record<string, unknown> } } | null)?.error;
-
-        // Token CSRF scaduto: si richiede di nuovo il cookie alla prossima chiamata.
-        if (response.status === 419) {
-            csrfReady = null;
-        }
 
         throw new ApiError(response.status, error?.code ?? 'SERVER_ERROR', error?.details ?? {});
     }

@@ -1,6 +1,6 @@
 # 02 — Domain model
 
-Versione: 1.1 · Data: 06/11/2026 · Modifiche rispetto alla 1.0: ADR-0002, ADR-0004, ADR-0005, [CHANGELOG-v1.1](CHANGELOG-v1.1.md)
+Versione: 1.2 · Data: 06/11/2026 · Modifiche rispetto alla 1.0: ADR-0002, ADR-0004, ADR-0005, [CHANGELOG-v1.1](CHANGELOG-v1.1.md); 1.2: ADR-0008, ADR-0009
 
 Tutte le tabelle tenant-scoped hanno `tenant_id UUID NOT NULL`, sono protette da RLS (08) e collegate ai genitori con **chiavi esterne composite** (vedi "Integrità tra tenant"). Colonne comuni non ripetute: `id UUID PK (v7)`, `created_at`, `updated_at` (`TIMESTAMPTZ`).
 
@@ -36,18 +36,19 @@ Non ha `tenant_id`; RLS la limita a `id = app.tenant_id`.
 ### User / TenantMember
 `User`: `email` (univoco, case-insensitive), `password_hash`, `mfa_secret_encrypted`, `mfa_enabled_at`, `locale`.
 `TenantMember`: `tenant_id`, `user_id`, `role` (`OWNER`, `MANAGER`, `STAFF`). Nella 1.0 si crea solo `OWNER`. Unicità `(tenant_id, user_id)`.
+`UserRecoveryCode` (globale, come `User`; ADR-0008): `user_id`, `code_hash` (HMAC-SHA256 con la chiave dell'applicazione), `used_at`. 10 codici MFA monouso per utente.
 
 ### StripeAccount
 `tenant_id` (unico), `stripe_account_id` (unico globale), `charges_enabled`, `payouts_enabled`, `details_submitted`, `livemode`, `last_synced_at`.
 
 ### Property
-`name`, `slug` (unico per tenant), indirizzo strutturato, `cin_code`, `timezone`, `contact_email`, `contact_phone`, `checkin_time`, `checkout_time`, `privacy_policy_url`, `terms_url`, `ota_commission_bps` (default 1500), `status` (`DRAFT`, `PUBLISHED`, `ARCHIVED`).
+`name`, `slug` (unico per tenant), indirizzo strutturato, `cin_code`, `timezone`, `contact_email`, `contact_phone`, `checkin_time`, `checkout_time`, `privacy_policy_url`, `terms_url`, `ota_commission_bps` (default 1500), `default_cancellation_policy_id` (nullable nel database, obbligatoria per pubblicare; ADR-0009), `status` (`DRAFT`, `PUBLISHED`, `ARCHIVED`).
 
 ### PropertyTranslation / UnitTranslation
 `locale` (`it`, `en`), `name`, `description`, `house_rules`. Unicità `(parent_id, locale)`. Nessuna traduzione automatica; fallback su `it` con etichetta esplicita.
 
 ### Unit
-`property_id`, `name`, `base_occupancy`, `max_occupancy`, `booking_mode` (`REQUEST` | `INSTANT`), `payment_mode` (`DEPOSIT_30` | `FULL`), `min_nights`, `cleaning_fee_cents`, `extra_guest_fee_cents`, `sync_health` (`HEALTHY`, `WARNING`, `UNHEALTHY`, `NONE`), `sales_suspended` (bool, interruttore del gestore), `status` (`ACTIVE`, `INACTIVE`).
+`property_id`, `name`, `base_occupancy`, `max_occupancy`, `booking_mode` (`REQUEST` | `INSTANT`), `payment_mode` (`DEPOSIT_30` | `FULL`), `min_nights`, `cleaning_fee_cents`, `extra_guest_fee_cents`, `sync_health` (`HEALTHY`, `WARNING`, `UNHEALTHY`, `NONE`), `sales_suspended` (bool, interruttore del gestore), `cancellation_policy_id` (facoltativa; ADR-0009), `status` (`ACTIVE`, `INACTIVE`).
 
 Vincolo: `booking_mode = INSTANT` vietato se esiste un `ExternalCalendar` attivo sull'unità (applicazione + trigger).
 
@@ -55,7 +56,8 @@ Vincolo: `booking_mode = INSTANT` vietato se esiste un `ExternalCalendar` attivo
 Invariati (04).
 
 ### CancellationPolicy
-`code` (`FLEXIBLE_7D`, `NON_REFUNDABLE`), testi IT/EN. Snapshot copiato nella prenotazione.
+`property_id`, `code` (`FLEXIBLE_7D`, `NON_REFUNDABLE`), unico per struttura. Testi IT/EN standard per codice, nei file di lingua e non modificabili dal gestore nella 1.0 (ADR-0009). Snapshot copiato nella prenotazione.
+Politica effettiva di un'unità: `units.cancellation_policy_id` se presente, altrimenti `properties.default_cancellation_policy_id`. Entrambe puntano a una politica **della stessa struttura** (FK composita `(tenant_id, property_id, policy_id)`).
 
 ### Guest
 `first_name`, `last_name`, `email`, `phone`, `country_code`, `locale`, `anonymized_at`. Un record per prenotazione.
@@ -101,13 +103,13 @@ Invariati rispetto alla 1.0.
 `reservation_id`, `purpose` (`DEPOSIT`, `FULL`, `BALANCE`, `RECOVERY`, `OFFLINE`), `amount_cents`, `capture_method` (`AUTOMATIC`, `MANUAL`), `status` (03), `stripe_account_id`, `checkout_session_id` (unico), `checkout_expires_at`, `payment_intent_id` (unico), `capture_before`, `captured_cents`, `fee_cents`, `method_offline`, `failure_code`.
 
 ### PaymentEvent
-Append-only: `payment_id`, `type`, `amount_cents`, `stripe_object_id`, `occurred_at`, `payload_hash`.
+Append-only (revoca di `UPDATE`/`DELETE` ad `app_runtime`, ADR-0009): `payment_id`, `type`, `amount_cents`, `stripe_object_id`, `occurred_at`, `payload_hash`.
 
 ### Refund
 `payment_id`, `amount_cents`, `method` (`STRIPE` \| `OFFLINE`), `reason`, `stripe_refund_id` (unico), `status` (`PENDING`, `SUCCEEDED`, `FAILED`, `CANCELLED`), `attempts`, `next_attempt_at`, `requested_by`, `completed_at`.
 
 ### IcsFeed — export per destinazione (ADR-0003)
-`unit_id`, `destination` (`BOOKING`, `AIRBNB`, `OTHER`), `paired_external_calendar_id` (nullable: il calendario importato dallo **stesso** canale), `token_encrypted`, `token_hash` (per la ricerca), `status` (`ACTIVE`, `FROZEN`, `RETIRED`), `last_fetched_at`, `last_fetch_user_agent`, `rotated_at`. Unicità `(unit_id, destination)` tra i feed non `RETIRED`.
+`unit_id`, `destination` (`BOOKING`, `AIRBNB`, `OTHER`), `paired_external_calendar_id` (nullable: il calendario importato dallo **stesso** canale), `token_encrypted`, `token_hash` (per la ricerca), `status` (`ACTIVE`, `FROZEN`, `RETIRED`), `last_fetched_at`, `last_fetch_user_agent`, `rotated_at`. Unicità `(unit_id, destination)` solo tra i feed `ACTIVE` (ADR-0009): alla rotazione del token il vecchio feed resta `FROZEN` per 7 giorni accanto al nuovo `ACTIVE` (06).
 
 ### ExternalCalendar
 `unit_id`, `source` (`BOOKING`, `AIRBNB`, `OTHER`), `url_encrypted`, `etag`, `last_modified`, `last_attempt_at`, `last_success_at`, `consecutive_failures`, `status` (`ACTIVE`, `DEGRADED`, `UNHEALTHY`, `DISABLED`), `next_poll_at`.
@@ -122,8 +124,9 @@ Invariato.
 `unit_id`, `stay`, `occupancy_id` (nullable), `external_event_id` (nullable), `other_external_event_id` (nullable), `suspected_echo` (bool), `status` (`OPEN`, `INVESTIGATING`, `RESOLVED`, `IGNORED`), `detected_at`, `resolved_at`, `resolved_by`, `resolution` (`CANCELLED_DIRECT`, `CANCELLED_EXTERNAL`, `FALSE_POSITIVE`, `RELOCATED`, `OTHER`), `resolution_notes`.
 
 ### AuditLog
-Append-only: `actor_type`, `actor_id`, `action`, `subject_type`, `subject_id`, `changes JSONB`, `ip`, `user_agent`, `occurred_at`.
-`changes` **non contiene valori di campi personali**: per i campi marcati personali registra solo il nome del campo e `"[personal]"` (09).
+Append-only: `tenant_id` (nullable solo per gli eventi di piattaforma senza tenant, es. login con email inesistente; ADR-0008), `actor_type`, `actor_id`, `action`, `subject_type`, `subject_id`, `changes JSONB`, `ip`, `user_agent`, `occurred_at`.
+`changes` **non contiene valori di campi personali**: per i campi marcati personali registra solo il nome del campo e `"[personal]"` (09). Per le modifiche dei modelli: `{ campo: { from, to } }` per i campi ordinari, `"[hidden]"` per i campi nascosti (hash, segreti; ADR-0008).
+Sono personali anche i campi di testo libero che possono contenere dati dell'ospite: `reservations.cancel_reason`, `reservation_changes.note`, `inventory_occupancies.note`, `inventory_conflicts.resolution_notes`, `refunds.reason`, `external_calendar_events.summary_redacted`, `guests.notes` (ADR-0009).
 
 ### WebhookEvent, OutboxMessage
 Come 1.0. `OutboxMessage.payload` viene svuotato 30 giorni dopo l'invio (09).

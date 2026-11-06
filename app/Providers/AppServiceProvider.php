@@ -2,12 +2,14 @@
 
 namespace App\Providers;
 
+use App\Domain\Tenancy\Auth\PwnedPasswordsVerifier;
 use App\Domain\Tenancy\MembershipTenantResolver;
 use App\Domain\Tenancy\Outbox\AdminOpsPendingOutboxMessages;
 use App\Domain\Tenancy\Outbox\PendingOutboxMessages;
 use App\Domain\Tenancy\TenantContext;
 use App\Domain\Tenancy\TenantResolver;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Contracts\Validation\UncompromisedVerifier;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
@@ -30,6 +32,13 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        // Password compromesse: fail-open con avviso nel log (08, decisione dopo la verifica di M1).
+        // extend e non bind: il provider di validazione è differito e sostituirebbe il binding.
+        $this->app->extend(
+            UncompromisedVerifier::class,
+            fn (): UncompromisedVerifier => $this->app->make(PwnedPasswordsVerifier::class),
+        );
+
         // API admin: 300 richieste al minuto per utente (07).
         RateLimiter::for('admin', function (Request $request): Limit {
             $id = $request->user()?->getAuthIdentifier();

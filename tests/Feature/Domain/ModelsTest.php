@@ -192,7 +192,8 @@ it('marca con #[PersonalData] i campi personali di 09', function () {
     expect(PersonalDataRegistry::fieldsOf(Guest::class))->toBe(['first_name', 'last_name', 'email', 'phone', 'notes'])
         ->and(PersonalDataRegistry::fieldsOf(Quote::class))->toBe(['guest_name', 'guest_email'])
         ->and(PersonalDataRegistry::fieldsOf(User::class))->toBe(['email'])
-        ->and(PersonalDataRegistry::fieldsOf(Reservation::class))->toBe([])
+        // Testo libero del gestore (ADR-0009).
+        ->and(PersonalDataRegistry::fieldsOf(Reservation::class))->toBe(['cancel_reason'])
         ->and(PersonalDataRegistry::isPersonal(new Guest, 'country_code'))->toBeFalse();
 });
 

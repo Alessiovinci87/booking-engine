@@ -9,6 +9,7 @@ use App\Domain\Inventory\Enums\PaymentMode;
 use App\Domain\Inventory\Enums\SyncHealth;
 use App\Domain\Inventory\Enums\UnitStatus;
 use App\Domain\Pricing\Models\RatePlan;
+use App\Domain\Reservations\Models\CancellationPolicy;
 use App\Domain\Reservations\Models\Reservation;
 use App\Domain\Tenancy\Models\TenantModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -31,6 +32,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property SyncHealth $sync_health
  * @property bool $sales_suspended
  * @property UnitStatus $status
+ * @property string|null $cancellation_policy_id facoltativa: senza, vale quella della struttura (ADR-0009)
  */
 class Unit extends TenantModel
 {
@@ -54,6 +56,12 @@ class Unit extends TenantModel
     public function property(): BelongsTo
     {
         return $this->belongsTo(Property::class);
+    }
+
+    /** @return BelongsTo<CancellationPolicy, $this> */
+    public function cancellationPolicy(): BelongsTo
+    {
+        return $this->belongsTo(CancellationPolicy::class);
     }
 
     /** @return HasMany<UnitTranslation, $this> */

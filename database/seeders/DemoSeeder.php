@@ -7,6 +7,8 @@ use App\Domain\Inventory\Models\PropertyTranslation;
 use App\Domain\Inventory\Models\Unit;
 use App\Domain\Inventory\Models\UnitTranslation;
 use App\Domain\Pricing\Models\RatePlan;
+use App\Domain\Reservations\Enums\CancellationPolicyCode;
+use App\Domain\Reservations\Models\CancellationPolicy;
 use App\Domain\Tenancy\Enums\Locale;
 use App\Domain\Tenancy\TenantContext;
 use App\Domain\Tenancy\TenantProvisioning;
@@ -91,6 +93,17 @@ final class DemoSeeder extends Seeder
                 'house_rules' => $rules,
             ])->save();
         }
+
+        // Politiche standard (testi nei file di lingua); predefinita della struttura: flessibile (ADR-0009).
+        $policies = [];
+
+        foreach (CancellationPolicyCode::cases() as $code) {
+            $policy = new CancellationPolicy;
+            $policy->forceFill(['property_id' => $property->id, 'code' => $code])->save();
+            $policies[$code->value] = $policy;
+        }
+
+        $property->forceFill(['default_cancellation_policy_id' => $policies[CancellationPolicyCode::FLEXIBLE_7D->value]->id])->save();
 
         return $property;
     }

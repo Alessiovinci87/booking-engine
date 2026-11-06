@@ -12,7 +12,6 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Exceptions\ThrottleRequestsException;
 use Illuminate\Http\Request;
-use Illuminate\Session\TokenMismatchException;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -59,10 +58,6 @@ return Application::configure(basePath: dirname(__DIR__))
             return ApiError::response(429, 'RATE_LIMITED', [], $retryAfter === null ? [] : ['Retry-After' => (string) $retryAfter]);
         });
 
-        $exceptions->render(function (TokenMismatchException $e, Request $request) use ($isApi) {
-            return $isApi($request) ? ApiError::response(419, 'UNAUTHENTICATED') : null;
-        });
-
         $exceptions->render(function (ModelNotFoundException|NotFoundHttpException $e, Request $request) use ($isApi) {
             return $isApi($request) ? ApiError::response(404, 'NOT_FOUND') : null;
         });
@@ -72,9 +67,11 @@ return Application::configure(basePath: dirname(__DIR__))
                 return null;
             }
 
+            // Laravel converte TokenMismatchException in HttpException 419 prima dei callback.
             return match ($e->getStatusCode()) {
                 403 => ApiError::response(403, 'FORBIDDEN'),
                 404 => ApiError::response(404, 'NOT_FOUND'),
+                419 => ApiError::response(419, 'CSRF_TOKEN_EXPIRED'),
                 default => null,
             };
         });

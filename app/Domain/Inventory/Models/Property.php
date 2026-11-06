@@ -5,6 +5,7 @@ namespace App\Domain\Inventory\Models;
 use App\Domain\Inventory\Enums\PropertyStatus;
 use App\Domain\Reservations\Models\CancellationPolicy;
 use App\Domain\Tenancy\Models\TenantModel;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
@@ -17,6 +18,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string $timezone
  * @property int $ota_commission_bps
  * @property PropertyStatus $status
+ * @property string|null $default_cancellation_policy_id obbligatoria per pubblicare (ADR-0009)
  */
 class Property extends TenantModel
 {
@@ -44,5 +46,11 @@ class Property extends TenantModel
     public function cancellationPolicies(): HasMany
     {
         return $this->hasMany(CancellationPolicy::class);
+    }
+
+    /** @return BelongsTo<CancellationPolicy, $this> */
+    public function defaultCancellationPolicy(): BelongsTo
+    {
+        return $this->belongsTo(CancellationPolicy::class, 'default_cancellation_policy_id');
     }
 }

@@ -101,9 +101,10 @@ return new class extends Migration
         });
         TenantTable::enumCheck('ics_feeds', 'destination', ChannelSource::class);
         TenantTable::enumCheck('ics_feeds', 'status', IcsFeedStatus::class);
-        // Un feed per destinazione tra quelli non RETIRED (02).
+        // Un solo feed ACTIVE per unità e destinazione (02, ADR-0009): alla rotazione del token il
+        // vecchio feed resta FROZEN per 7 giorni accanto al nuovo ACTIVE (06).
         DB::statement(
-            "CREATE UNIQUE INDEX ics_feeds_one_per_destination ON ics_feeds (tenant_id, unit_id, destination) WHERE status <> 'RETIRED'"
+            "CREATE UNIQUE INDEX ics_feeds_one_active_per_destination ON ics_feeds (tenant_id, unit_id, destination) WHERE status = 'ACTIVE'"
         );
     }
 

@@ -35,6 +35,10 @@ it('crea tenant, struttura con traduzioni, due unità e le tariffe base', functi
             ->and(DB::table('unit_translations')->count())->toBe(4)
             ->and(DB::table('rate_plans')->where('active', true)->count())->toBe(2)
             ->and(DB::table('rate_plans')->pluck('base_nightly_cents')->sort()->values()->all())->toBe([9500, 14500]);
+
+        // Politiche standard della struttura, flessibile come predefinita (ADR-0009).
+        expect(DB::table('cancellation_policies')->orderBy('code')->pluck('code')->all())->toBe(['FLEXIBLE_7D', 'NON_REFUNDABLE'])
+            ->and(DB::table('cancellation_policies')->where('id', $property->default_cancellation_policy_id)->value('code'))->toBe('FLEXIBLE_7D');
     });
 
     $owner = User::query()->where('email', DemoSeeder::OWNER_EMAIL)->sole();

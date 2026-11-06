@@ -5,6 +5,7 @@ namespace App\Domain\Inventory\Models;
 use App\Domain\Calendar\Models\ExternalCalendarEvent;
 use App\Domain\Inventory\Enums\ConflictResolution;
 use App\Domain\Inventory\Enums\ConflictStatus;
+use App\Domain\Privacy\PersonalData;
 use App\Domain\Reservations\Casts\StayRangeCast;
 use App\Domain\Reservations\StayRange;
 use App\Domain\Tenancy\Models\Concerns\GuardsStatusWrites;
@@ -34,6 +35,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string|null $resolution_notes
  */
 #[UseEloquentBuilder(StatusGuardedBuilder::class)]
+#[PersonalData('resolution_notes')]
 class InventoryConflict extends TenantModel
 {
     use GuardsStatusWrites;
