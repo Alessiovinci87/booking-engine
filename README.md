@@ -18,12 +18,14 @@ Questa cartella è la fonte di verità del comportamento del sistema. Il codice 
 | 08 | [SECURITY-OPERATIONS](docs/08-SECURITY-OPERATIONS.md) | Multi-tenancy, RLS, autenticazione, backup, incidenti |
 | 09 | [PRIVACY-GDPR](docs/09-PRIVACY-GDPR.md) | Ruoli, DPA, retention, diritti, data breach |
 | 10 | [TRACEABILITY](docs/10-TRACEABILITY.md) | Matrice requisito → servizio → tabella → endpoint → test |
+| 11 | [MILESTONES](docs/11-MILESTONES.md) | Piano di sviluppo vincolante: milestone M0–M7, attività, criteri di uscita |
 | — | [CHANGELOG-v1.1](docs/CHANGELOG-v1.1.md) | Le 10 correzioni della revisione tecnica, una per una |
 | — | [ADR-0001](docs/adr/0001-decisioni-v1.md) | Decisioni fondative v1.0 e fatti verificati |
 | — | [ADR-0002](docs/adr/0002-inventario-unico.md) | Occupazione unica come garanzia anti-overbooking |
 | — | [ADR-0003](docs/adr/0003-feed-ical-per-destinazione.md) | Feed iCal per destinazione, echi, ritiro dei feed |
 | — | [ADR-0004](docs/adr/0004-ciclo-di-vita-pagamenti.md) | Scadenze del checkout, recupero capture, rimborsi, prenotazioni manuali |
 | — | [ADR-0005](docs/adr/0005-fk-composite-tenant.md) | Chiavi esterne composite per l'integrità tra tenant |
+| — | [ADR-0006](docs/adr/0006-scelte-di-implementazione.md) | Scelte di implementazione: ambiente Windows, librerie, struttura del codice |
 | — | [ADR template](docs/adr/0000-template.md) | Modello per le decisioni successive |
 | — | [CLAUDE.md](CLAUDE.md) | Istruzioni per Claude Code |
 
