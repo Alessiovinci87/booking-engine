@@ -79,5 +79,6 @@ Route::prefix('public/{tenantSlug}/{propertySlug}')
     ->middleware(['throttle:public-read', 'guest.locale', 'tenant:public'])
     ->group(function (): void {
         Route::get('/', [PublicPropertyController::class, 'show'])->name('public.property.show');
+        Route::get('availability', [PublicPropertyController::class, 'availability'])->name('public.property.availability');
         Route::post('quote-price', [PublicPropertyController::class, 'quotePrice'])->name('public.property.quote-price');
     });

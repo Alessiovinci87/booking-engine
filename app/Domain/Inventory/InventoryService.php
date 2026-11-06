@@ -219,6 +219,26 @@ final class InventoryService
     }
 
     /**
+     * Intervalli che rendono non vendibili le notti di un'unità secondo le tre fonti di 02:
+     * occupazioni attive, eventi esterni ACTIVE/PENDING_REMOVAL, conflitti OPEN/INVESTIGATING.
+     *
+     * @return list<StayRange>
+     */
+    public function blockedRanges(string $unitId, StayRange $range, ?string $excludeOccupancyId = null): array
+    {
+        $ranges = $this->activeInRange($unitId, $range)
+            ->reject(fn (InventoryOccupancy $o): bool => $o->id === $excludeOccupancyId)
+            ->map(fn (InventoryOccupancy $o): StayRange => $o->stay)
+            ->values()->all();
+
+        foreach (self::externalBlocksQuery($unitId, $range)->get() as $row) {
+            $ranges[] = StayRange::fromPostgres((string) $row->stay);
+        }
+
+        return $ranges;
+    }
+
+    /**
      * Occupazioni di checkout o di recupero scadute (05 "Rilascio delle occupazioni con sessione").
      *
      * @return Collection<int, InventoryOccupancy>
@@ -408,14 +428,7 @@ final class InventoryService
      */
     private function unavailableNights(string $unitId, StayRange $stay, ?string $excludeOccupancyId): array
     {
-        $ranges = $this->activeInRange($unitId, $stay)
-            ->reject(fn (InventoryOccupancy $o): bool => $o->id === $excludeOccupancyId)
-            ->map(fn (InventoryOccupancy $o): StayRange => $o->stay)
-            ->values()->all();
-
-        foreach (self::externalBlocksQuery($unitId, $stay)->get() as $row) {
-            $ranges[] = StayRange::fromPostgres((string) $row->stay);
-        }
+        $ranges = $this->blockedRanges($unitId, $stay, $excludeOccupancyId);
 
         $nights = [];
 

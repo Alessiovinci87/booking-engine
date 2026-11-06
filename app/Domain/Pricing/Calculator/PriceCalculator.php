@@ -4,6 +4,7 @@ namespace App\Domain\Pricing\Calculator;
 
 use App\Domain\Inventory\Enums\PaymentMode;
 use App\Domain\Pricing\Enums\PriceLineKind;
+use App\Domain\Reservations\StayRange;
 use InvalidArgumentException;
 
 /**
@@ -97,6 +98,29 @@ final class PriceCalculator
             paymentMode: $unit->paymentMode,
             currency: $plan->currency,
         );
+    }
+
+    /**
+     * Minimo di notti richiesto per ogni notte dell'intervallo (07, availability.min_nights_by_night):
+     * il massimo tra il minimo dell'unità e quello della stagione vincente della notte, con la stessa
+     * regola di calculate(). Restituisce solo le notti con un minimo diverso da quello dell'unità.
+     *
+     * @return array<string, int>
+     */
+    public function minNightsByNight(PricingUnit $unit, PricingRatePlan $plan, StayRange $range): array
+    {
+        $result = [];
+
+        foreach ($range->nightDates() as $date) {
+            $day = $date->toDateString();
+            $min = max($unit->minNights, $this->winningSeason($plan->seasons, $day)->minNights ?? 0);
+
+            if ($min !== $unit->minNights) {
+                $result[$day] = $min;
+            }
+        }
+
+        return $result;
     }
 
     /**

@@ -4,8 +4,8 @@ use Illuminate\Support\Facades\DB;
 
 /*
  * 2.7: API pubblica (07). GET /public/{t}/{p}: struttura pubblicata, testi nella lingua richiesta con
- * translation_fallback, unitÃ  attive con foto; POST quote-price: stesso calcolo del pannello. Tenant
- * dallo slug, bozze e tenant non attivi â†’ 404, nessun dato interno nella risposta.
+ * translation_fallback, unità attive con foto; POST quote-price: stesso calcolo del pannello. Tenant
+ * dallo slug, bozze e tenant non attivi → 404, nessun dato interno nella risposta.
  */
 
 beforeEach(function () {
@@ -39,13 +39,13 @@ beforeEach(function () {
         ]);
     });
 
-    $this->inactiveUnit = createUnitRow($this->tenant, $this->golden['property'], 'UnitÃ  chiusa');
+    $this->inactiveUnit = createUnitRow($this->tenant, $this->golden['property'], 'Unità chiusa');
     inTenant($this->tenant, fn () => DB::table('units')->where('id', $this->inactiveUnit)->update(['status' => 'INACTIVE']));
 
     $this->base = "/api/v1/public/{$this->tenantSlug}/{$this->propertySlug}";
 });
 
-it('restituisce la struttura pubblicata in italiano con le sole unitÃ  attive', function () {
+it('restituisce la struttura pubblicata in italiano con le sole unità attive', function () {
     $response = $this->getJson($this->base, ['Accept-Language' => 'it-IT,it;q=0.9'])
         ->assertOk()
         ->assertJsonPath('locale', 'it')
@@ -125,16 +125,16 @@ it('valida il corpo di quote-price', function (array $body, string $field) {
         ->assertJsonPath('error.code', 'VALIDATION_FAILED')
         ->assertJsonStructure(['error' => ['details' => ['fields' => [$field]]]]);
 })->with([
-    'senza unitÃ ' => [['check_in' => '2027-08-10', 'check_out' => '2027-08-17', 'adults' => 2], 'unit_id'],
-    'unitÃ  non UUID' => [['unit_id' => 'abc', 'check_in' => '2027-08-10', 'check_out' => '2027-08-17', 'adults' => 2], 'unit_id'],
+    'senza unità' => [['check_in' => '2027-08-10', 'check_out' => '2027-08-17', 'adults' => 2], 'unit_id'],
+    'unità non UUID' => [['unit_id' => 'abc', 'check_in' => '2027-08-10', 'check_out' => '2027-08-17', 'adults' => 2], 'unit_id'],
     'check-out prima del check-in' => [['unit_id' => '01900000-0000-7000-8000-000000000000', 'check_in' => '2027-08-10', 'check_out' => '2027-08-09', 'adults' => 2], 'check_out'],
 ]);
 
-it('non calcola prezzi per unitÃ  inattive o di altre strutture', function () {
+it('non calcola prezzi per unità inattive (409 UNIT_NOT_BOOKABLE, ADR-0010) o di altre strutture (404)', function () {
     $body = ['check_in' => '2027-09-10', 'check_out' => '2027-09-13', 'adults' => 2];
 
     $this->postJson($this->base.'/quote-price', ['unit_id' => $this->inactiveUnit] + $body)
-        ->assertNotFound()->assertJsonPath('error.code', 'NOT_FOUND');
+        ->assertStatus(409)->assertJsonPath('error.code', 'UNIT_NOT_BOOKABLE');
 
     $other = twoTenantsWithUnits()['a'];
     $this->postJson($this->base.'/quote-price', ['unit_id' => $other['unit']] + $body)->assertNotFound();
@@ -144,7 +144,7 @@ it('risponde 404 per struttura in bozza, slug sconosciuti e tenant non attivo', 
     $this->getJson("/api/v1/public/tenant-inesistente/{$this->propertySlug}")->assertNotFound()->assertJsonPath('error.code', 'NOT_FOUND');
     $this->getJson("/api/v1/public/{$this->tenantSlug}/struttura-inesistente")->assertNotFound();
 
-    // Lo stesso slug di struttura in un altro tenant non Ã¨ raggiungibile da questo tenant.
+    // Lo stesso slug di struttura in un altro tenant non è raggiungibile da questo tenant.
     $otherSlug = 'tenant-altro-'.substr(uuid7(), -6);
     $other = createTenantRow($otherSlug);
     $draft = createPropertyRow($other, 'solo-altro');

@@ -10,4 +10,7 @@ return [
         'limit' => 'Puoi caricare al massimo :max foto per unità.',
         'order_mismatch' => 'L\'ordine deve contenere tutte le foto dell\'unità.',
     ],
+    'availability' => [
+        'range_too_long' => 'L\'intervallo può essere al massimo di :months mesi.',
+    ],
 ];
