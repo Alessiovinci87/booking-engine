@@ -35,3 +35,43 @@ it('le traduzioni del pannello e dell\'ospite hanno le stesse chiavi in tutte le
     expect($keys($load('guest/locales/en.json')))->toBe($keys($load('guest/locales/it.json')))
         ->and($keys($load('panel/locales/it.json')))->not->toBeEmpty();
 });
+
+it('serve le pagine di accesso del pannello', function (string $path) {
+    $this->get($path)->assertOk()->assertSee('<div id="app"></div>', escape: false);
+})->with(['/app/login', '/app/mfa/setup', '/app/mfa/verify']);
+
+it('fornisce il cookie CSRF alla SPA del pannello', function () {
+    $this->withHeader('Referer', TEST_PANEL_ORIGIN.'/app/login')
+        ->get('/sanctum/csrf-cookie')
+        ->assertNoContent()
+        ->assertCookie('XSRF-TOKEN');
+});
+
+it('il pannello traduce ogni codice di errore dell\'API', function () {
+    $panel = json_decode((string) file_get_contents(resource_path('js/panel/locales/it.json')), true, flags: JSON_THROW_ON_ERROR);
+    $codes = array_keys((require lang_path('it/api.php'))['errors']);
+
+    expect($codes)->not->toBeEmpty()
+        ->and(array_keys($panel['errors']))->toEqualCanonicalizing($codes);
+});
+
+it('i testi del pannello passano dalle chiavi di traduzione', function () {
+    // Nessun testo italiano scritto direttamente nel markup JSX: solo {t('...')}.
+    $offenders = [];
+
+    foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator(resource_path('js/panel'))) as $file) {
+        if ($file->getExtension() !== 'tsx') {
+            continue;
+        }
+
+        $source = (string) file_get_contents($file->getPathname());
+
+        if (preg_match_all('/>\s*([A-Za-zÀ-ÿ][^<>{}]*[A-Za-zÀ-ÿ.!?])\s*</u', $source, $m)) {
+            foreach ($m[1] as $text) {
+                $offenders[] = basename($file->getPathname()).': '.trim($text);
+            }
+        }
+    }
+
+    expect($offenders)->toBe([]);
+});
