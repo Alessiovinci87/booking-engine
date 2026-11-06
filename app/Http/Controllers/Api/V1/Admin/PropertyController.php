@@ -12,7 +12,8 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 /**
- * Strutture del pannello (07): GET/POST /admin/properties, GET/PATCH /admin/properties/{id}.
+ * Strutture del pannello (07): GET/POST /admin/properties, GET/PATCH /admin/properties/{id},
+ * POST /admin/properties/{id}/publish.
  *
  * I modelli si caricano dentro il contesto tenant (niente binding implicito, che girerebbe prima del
  * middleware tenant): una struttura di un altro tenant risulta inesistente, quindi 404 (08).
@@ -49,6 +50,18 @@ final class PropertyController extends Controller
         $model = self::lock($property, $request);
 
         return self::respond($this->setup->update($model, $request->attributesData(), $request->translations()));
+    }
+
+    /**
+     * Pubblica la struttura (07). Le guardie stanno in PropertySetupService; la riga è bloccata così due
+     * richieste contemporanee non pubblicano due volte. Ripetere la richiesta su una struttura già
+     * pubblicata restituisce la struttura senza cambiare nulla.
+     */
+    public function publish(string $property): JsonResponse
+    {
+        $model = Property::query()->lockForUpdate()->findOrFail($property);
+
+        return self::respond($this->setup->publish($model));
     }
 
     /** Legge la struttura con lock di riga e verifica If-Match (07). */

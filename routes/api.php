@@ -46,6 +46,7 @@ Route::prefix('admin')->group(function (): void {
         Route::post('properties', [PropertyController::class, 'store'])->name('admin.properties.store');
         Route::get('properties/{property}', [PropertyController::class, 'show'])->name('admin.properties.show');
         Route::patch('properties/{property}', [PropertyController::class, 'update'])->name('admin.properties.update');
+        Route::post('properties/{property}/publish', [PropertyController::class, 'publish'])->name('admin.properties.publish');
 
         Route::get('properties/{property}/units', [UnitController::class, 'index'])->name('admin.units.index');
         Route::post('properties/{property}/units', [UnitController::class, 'store'])->name('admin.units.store');
