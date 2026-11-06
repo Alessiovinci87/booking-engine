@@ -16,6 +16,11 @@ use Symfony\Component\HttpFoundation\Response;
  * `tenant` usa il risolutore del pannello (membership); `tenant:public` ricava il tenant dallo slug
  * nel percorso (API pubblica, 07).
  *
+ * Con il secondo parametro `steps` (`tenant:panel,steps`, `tenant:public,steps`) la richiesta non viene
+ * avvolta in una transazione: il tenant risolto finisce nell'attributo `tenant_id` e il servizio apre i
+ * propri `TenantContext::run()` per passi. Serve dove una chiamata al servizio di pagamento deve stare
+ * fuori transazione (05, sequenza in tre passi; CLAUDE.md regola 15).
+ *
  * Laravel trasforma in risposta le eccezioni del controller già dentro la pipeline, quindi qui
  * arriverebbe una risposta normale e la transazione verrebbe confermata con le scritture parziali.
  * Se la risposta porta un'eccezione, la transazione si annulla e si restituisce la stessa risposta.
@@ -31,13 +36,21 @@ final class WithTenantContext
     /**
      * @param  Closure(Request): Response  $next
      */
-    public function handle(Request $request, Closure $next, string $surface = 'panel'): Response
+    public const TENANT_ATTRIBUTE = 'tenant_id';
+
+    public function handle(Request $request, Closure $next, string $surface = 'panel', string $mode = 'transaction'): Response
     {
         $resolver = $surface === 'public' ? $this->publicResolver : $this->resolver;
         $tenantId = $resolver->resolve($request);
 
         if ($tenantId === null) {
             abort(404);
+        }
+
+        if ($mode === 'steps') {
+            $request->attributes->set(self::TENANT_ATTRIBUTE, $tenantId);
+
+            return $next($request);
         }
 
         try {

@@ -58,7 +58,7 @@ function acquireReservation(string $tenant, string $unit, string $checkIn, strin
 
 function occupancies(string $tenant, string $unit): array
 {
-    return inTenant($tenant, fn () => DB::table('inventory_occupancies')->where('unit_id', $unit)->orderBy('created_at')->get()->all());
+    return inTenant($tenant, fn () => DB::table('inventory_occupancies')->where('unit_id', $unit)->orderBy('created_at')->orderBy('id')->get()->all());
 }
 
 it('acquisisce un\'occupazione temporanea per la prenotazione con UID iCal stabile e audit', function () {

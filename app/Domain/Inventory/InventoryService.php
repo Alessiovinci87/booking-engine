@@ -95,11 +95,13 @@ final class InventoryService
         });
     }
 
-    public function releaseBlock(string $occupancyId, string $reason): InventoryOccupancy
+    /** Rimozione di un blocco manuale attivo (dell'unità indicata, se data); altrimenti 404. */
+    public function releaseBlock(string $occupancyId, string $reason, ?string $unitId = null): InventoryOccupancy
     {
         $occupancy = InventoryOccupancy::query()
             ->where('kind', OccupancyKind::MANUAL_BLOCK->value)
             ->where('status', OccupancyStatus::ACTIVE->value)
+            ->when($unitId !== null, fn ($q) => $q->where('unit_id', $unitId))
             ->findOrFail($occupancyId);
 
         return DB::transaction(function () use ($occupancy, $reason): InventoryOccupancy {
@@ -264,6 +266,39 @@ final class InventoryService
             ->orderBy('expires_at')
             ->limit($limit)
             ->get();
+    }
+
+    /**
+     * Occupazioni attive di un'unità nell'intervallo per il calendario del pannello (07), come array:
+     * fuori da questo servizio il modello delle occupazioni non si usa (CLAUDE.md regola 13).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function calendarOccupancies(string $unitId, StayRange $range): array
+    {
+        return $this->activeInRange($unitId, $range)->map(fn (InventoryOccupancy $o): array => self::view($o))->values()->all();
+    }
+
+    /**
+     * Vista di un'occupazione per le risposte del pannello. Le note dei blocchi sono del gestore.
+     *
+     * @return array<string, mixed>
+     */
+    public static function view(InventoryOccupancy $o): array
+    {
+        return [
+            'id' => $o->id,
+            'unit_id' => $o->unit_id,
+            'kind' => $o->kind->value,
+            'phase' => $o->phase->value,
+            'temp_reason' => $o->temp_reason?->value,
+            'status' => $o->status->value,
+            'check_in' => $o->stay->checkIn->toDateString(),
+            'check_out' => $o->stay->checkOut->toDateString(),
+            'expires_at' => $o->expires_at?->toIso8601ZuluString(),
+            'reservation_id' => $o->reservation_id,
+            'note' => $o->note,
+        ];
     }
 
     // ---------------------------------------------------------------- interni

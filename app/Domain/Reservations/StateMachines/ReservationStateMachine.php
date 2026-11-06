@@ -230,10 +230,14 @@ final class ReservationStateMachine
         });
     }
 
-    /** T10: rifiuto del gestore; annullo dell'autorizzazione dopo il commit, con retry. */
-    public function reject(Reservation $reservation): Reservation
+    /**
+     * T10: rifiuto del gestore; annullo dell'autorizzazione dopo il commit, con retry. Il motivo
+     * facoltativo resta sulla prenotazione (cancel_reason), mai nell'audit (testo libero, 09).
+     */
+    public function reject(Reservation $reservation, ?string $reason = null): Reservation
     {
-        return $this->transition($reservation, ReservationEvent::REJECT, function (Reservation $r): void {
+        return $this->transition($reservation, ReservationEvent::REJECT, function (Reservation $r) use ($reason): void {
+            $r->cancel_reason = $reason;
             $this->inventory->release($r, 'rejected');
             $this->cancelAuthorizationLater($r);
             $this->notify($r, 'reservation.rejected');
