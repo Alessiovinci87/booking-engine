@@ -70,5 +70,20 @@ class AppServiceProvider extends ServiceProvider
         // API pubblica in lettura: 120 richieste al minuto per IP (07).
         RateLimiter::for('public-read', fn (Request $request): Limit => Limit::perMinute((int) config('security.public_read_rate_limit_per_minute'))
             ->by('public-read:'.$request->ip()));
+
+        // Creazione di prenotazioni dalla pagina ospite: per IP e per email (07). L'email entra nella
+        // chiave del limite solo come impronta (09: nessun dato personale nella cache).
+        RateLimiter::for('public-booking', function (Request $request): array {
+            /** @var array{attempts: int, minutes: int} $limit */
+            $limit = config('security.public_booking_rate_limit');
+            $email = $request->input('guest.email');
+            $limits = [Limit::perMinutes($limit['minutes'], $limit['attempts'])->by('public-booking:ip:'.$request->ip())];
+
+            if (is_string($email) && $email !== '') {
+                $limits[] = Limit::perMinutes($limit['minutes'], $limit['attempts'])->by('public-booking:email:'.hash('sha256', mb_strtolower(trim($email))));
+            }
+
+            return $limits;
+        });
     }
 }

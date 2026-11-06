@@ -12,7 +12,7 @@ it('serve il pannello su /app e sui suoi sottopercorsi', function (string $path)
 it('serve la pagina ospite su /p/{tenant}/{struttura} e sui suoi sottopercorsi', function (string $path) {
     $this->get($path)
         ->assertOk()
-        ->assertSee('<div id="app"></div>', escape: false);
+        ->assertSee('<div id="app" data-embed="0"></div>', escape: false);
 })->with(['/p/demo/casa-demo', '/p/demo/casa-demo/', '/p/demo/casa-demo/date']);
 
 it('non serve la pagina ospite senza lo slug della struttura', function () {
@@ -55,11 +55,11 @@ it('il pannello traduce ogni codice di errore dell\'API', function () {
         ->and(array_keys($panel['errors']))->toEqualCanonicalizing($codes);
 });
 
-it('i testi del pannello passano dalle chiavi di traduzione', function () {
-    // Nessun testo italiano scritto direttamente nel markup JSX: solo {t('...')}.
+it('i testi del pannello e della pagina ospite passano dalle chiavi di traduzione', function (string $app) {
+    // Nessun testo scritto direttamente nel markup JSX: solo {t('...')}.
     $offenders = [];
 
-    foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator(resource_path('js/panel'))) as $file) {
+    foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator(resource_path('js/'.$app))) as $file) {
         if ($file->getExtension() !== 'tsx') {
             continue;
         }
@@ -74,4 +74,4 @@ it('i testi del pannello passano dalle chiavi di traduzione', function () {
     }
 
     expect($offenders)->toBe([]);
-});
+})->with(['panel', 'guest']);

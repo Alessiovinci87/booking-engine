@@ -97,6 +97,8 @@ final class DemoSeeder extends Seeder
             'country_code' => 'IT',
             'timezone' => 'Europe/Rome',
             'contact_email' => 'info.demo@example.test',
+            'privacy_policy_url' => 'https://demo.example.test/privacy',
+            'terms_url' => 'https://demo.example.test/condizioni',
             'checkin_time' => '15:00',
             'checkout_time' => '10:00',
         ])->save();

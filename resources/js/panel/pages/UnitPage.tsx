@@ -94,6 +94,25 @@ function SalesSection({ unit, onNotice }: { unit: Unit; onNotice: (notice: SaveN
         ...callbacks,
     });
     const error = sales.error ?? status.error;
+    // ADR-0010 punto 8: disattivare l'ultima unità attiva di una struttura pubblicata è consentito,
+    // ma la pagina ospite mostrerà "Nessuna disponibilità al momento": si chiede conferma.
+    const property = useQuery({ queryKey: ['property', unit.property_id], queryFn: () => adminApi.property(unit.property_id) });
+    const units = useQuery({ queryKey: ['units', unit.property_id], queryFn: () => adminApi.units(unit.property_id) });
+    const [confirming, setConfirming] = useState(false);
+    const lastActive =
+        unit.status === 'ACTIVE' &&
+        property.data?.status === 'PUBLISHED' &&
+        (units.data?.data ?? []).filter((u) => u.status === 'ACTIVE' && u.id !== unit.id).length === 0;
+    const toggleStatus = () => {
+        if (lastActive && !confirming) {
+            setConfirming(true);
+
+            return;
+        }
+
+        setConfirming(false);
+        status.mutate();
+    };
 
     return (
         <Section title={t('unit.salesTitle')}>
@@ -103,10 +122,23 @@ function SalesSection({ unit, onNotice }: { unit: Unit; onNotice: (notice: SaveN
                 <button className={secondaryButton} type="button" onClick={() => sales.mutate()} disabled={sales.isPending}>
                     {unit.sales_suspended ? t('unit.resumeSales') : t('unit.suspendSales')}
                 </button>
-                <button className={secondaryButton} type="button" onClick={() => status.mutate()} disabled={status.isPending}>
+                <button className={secondaryButton} type="button" onClick={toggleStatus} disabled={status.isPending}>
                     {unit.status === 'ACTIVE' ? t('unit.deactivate') : t('unit.activate')}
                 </button>
             </div>
+            {confirming && (
+                <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900" role="alert" data-testid="last-unit-warning">
+                    <p>{t('unit.lastActiveWarning')}</p>
+                    <div className="mt-2 flex gap-2">
+                        <button className={primaryButton} type="button" onClick={toggleStatus}>
+                            {t('unit.deactivateAnyway')}
+                        </button>
+                        <button className={secondaryButton} type="button" onClick={() => setConfirming(false)}>
+                            {t('common.cancel')}
+                        </button>
+                    </div>
+                </div>
+            )}
             {error !== null && !(error instanceof ApiError && error.code === 'VERSION_MISMATCH') && (
                 <div className="mt-3">
                     <FormError message={errorMessage(error)} />

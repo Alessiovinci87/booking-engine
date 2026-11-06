@@ -14,7 +14,9 @@ use App\Http\Controllers\Api\V1\Admin\ReservationController;
 use App\Http\Controllers\Api\V1\Admin\UnitController;
 use App\Http\Controllers\Api\V1\Admin\UnitPhotoController;
 use App\Http\Controllers\Api\V1\Public\PropertyController as PublicPropertyController;
+use App\Http\Controllers\Api\V1\Public\ReservationController as PublicReservationController;
 use Illuminate\Support\Facades\Route;
+use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful;
 
 // Identificativi UUID nei percorsi: un valore diverso non trova la rotta (404) e non arriva mai al database.
 foreach (['property', 'unit', 'photo', 'season', 'reservation', 'block'] as $parameter) {
@@ -27,7 +29,7 @@ foreach (['property', 'unit', 'photo', 'season', 'reservation', 'block'] as $par
  * Pannello: Sanctum SPA (cookie + CSRF). Le rotte di autenticazione stanno sotto /admin/auth;
  * tutte le altre rotte admin richiedono sessione valida, MFA verificata e contesto tenant.
  */
-Route::prefix('admin')->group(function (): void {
+Route::prefix('admin')->middleware(EnsureFrontendRequestsAreStateful::class)->group(function (): void {
     Route::prefix('auth')->group(function (): void {
         Route::post('login', LoginController::class)->name('admin.auth.login');
 
@@ -102,9 +104,23 @@ Route::prefix('admin')->group(function (): void {
  */
 Route::prefix('public/{tenantSlug}/{propertySlug}')
     ->where(['tenantSlug' => '[a-z0-9-]{1,63}', 'propertySlug' => '[a-z0-9-]{1,100}'])
-    ->middleware(['throttle:public-read', 'guest.locale', 'tenant:public'])
+    ->middleware(['guest.locale'])
     ->group(function (): void {
-        Route::get('/', [PublicPropertyController::class, 'show'])->name('public.property.show');
-        Route::get('availability', [PublicPropertyController::class, 'availability'])->name('public.property.availability');
-        Route::post('quote-price', [PublicPropertyController::class, 'quotePrice'])->name('public.property.quote-price');
+        Route::middleware(['throttle:public-read', 'tenant:public', 'public.origin'])->group(function (): void {
+            Route::get('/', [PublicPropertyController::class, 'show'])->name('public.property.show');
+            Route::get('availability', [PublicPropertyController::class, 'availability'])->name('public.property.availability');
+            Route::post('quote-price', [PublicPropertyController::class, 'quotePrice'])->name('public.property.quote-price');
+        });
+
+        // Avvio della prenotazione (07): Idempotency-Key, limite per IP ed email, passi fuori
+        // transazione (la sessione di pagamento si apre fuori, 05).
+        Route::post('reservations', [PublicReservationController::class, 'store'])
+            ->middleware(['throttle:public-booking', 'idempotent', 'tenant:public,steps', 'public.origin'])
+            ->name('public.reservations.store');
     });
+
+// Stato della prenotazione per la pagina di ritorno (07): tenant da codice e token.
+Route::get('public/reservations/{code}', [PublicReservationController::class, 'show'])
+    ->where('code', '[A-Z0-9]{8}')
+    ->middleware(['throttle:public-read', 'guest.locale', 'tenant:reservation'])
+    ->name('public.reservations.show');

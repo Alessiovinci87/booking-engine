@@ -41,4 +41,8 @@ return [
     // (Redis in sviluppo e produzione, array nei test).
     'idempotency_store' => env('IDEMPOTENCY_CACHE_STORE'),
 
+    // Origini aggiuntive per img-src della CSP (08), ad esempio il CDN delle foto se diverso
+    // dall'origine dell'app: elenco separato da virgole in CSP_IMG_SRC.
+    'csp_img_src' => array_values(array_filter(array_map('trim', explode(',', (string) env('CSP_IMG_SRC', ''))))),
+
 ];

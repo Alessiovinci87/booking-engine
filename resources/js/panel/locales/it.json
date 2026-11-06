@@ -175,7 +175,9 @@
         "suspendSales": "Sospendi le vendite",
         "resumeSales": "Riapri le vendite",
         "deactivate": "Disattiva l'unità",
-        "activate": "Riattiva l'unità"
+        "activate": "Riattiva l'unità",
+        "lastActiveWarning": "È l'ultima unità attiva di una struttura pubblicata: dopo la disattivazione la pagina ospite mostrerà \"Nessuna disponibilità al momento\".",
+        "deactivateAnyway": "Disattiva comunque"
     },
     "photos": {
         "title": "Foto",

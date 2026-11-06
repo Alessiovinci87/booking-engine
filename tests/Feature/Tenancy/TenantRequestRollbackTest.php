@@ -3,6 +3,7 @@
 use App\Domain\Tenancy\Exceptions\BusinessRuleViolation;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
+use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful;
 
 /*
  * La richiesta con contesto tenant è una sola transazione: se il controller fallisce dopo aver
@@ -10,7 +11,7 @@ use Illuminate\Support\Facades\Route;
  */
 
 beforeEach(function () {
-    Route::middleware(['api', 'auth:sanctum', 'panel.fresh', 'mfa', 'tenant'])
+    Route::middleware(['api', EnsureFrontendRequestsAreStateful::class, 'auth:sanctum', 'panel.fresh', 'mfa', 'tenant'])
         ->post('/api/v1/admin/_test/write-then-fail', function () {
             DB::table('properties')->where('slug', 'casa-prova')->update(['name' => 'Scrittura parziale']);
 

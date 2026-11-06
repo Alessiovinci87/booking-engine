@@ -3,6 +3,7 @@
 namespace App\Domain\Tenancy\Http;
 
 use App\Domain\Tenancy\PublicSlugTenantResolver;
+use App\Domain\Tenancy\ReservationAccessTenantResolver;
 use App\Domain\Tenancy\TenantContext;
 use App\Domain\Tenancy\TenantResolver;
 use Closure;
@@ -14,7 +15,8 @@ use Symfony\Component\HttpFoundation\Response;
  * l'intera richiesta dentro TenantContext::run(). Senza tenant risolto risponde 404, mai 403 (08).
  *
  * `tenant` usa il risolutore del pannello (membership); `tenant:public` ricava il tenant dallo slug
- * nel percorso (API pubblica, 07).
+ * nel percorso (API pubblica, 07); `tenant:reservation` lo ricava da codice e token della prenotazione
+ * (GET /public/reservations/{code}?token=).
  *
  * Con il secondo parametro `steps` (`tenant:panel,steps`, `tenant:public,steps`) la richiesta non viene
  * avvolta in una transazione: il tenant risolto finisce nell'attributo `tenant_id` e il servizio apre i
@@ -31,6 +33,7 @@ final class WithTenantContext
         private readonly TenantContext $tenantContext,
         private readonly TenantResolver $resolver,
         private readonly PublicSlugTenantResolver $publicResolver,
+        private readonly ReservationAccessTenantResolver $reservationResolver,
     ) {}
 
     /**
@@ -40,7 +43,11 @@ final class WithTenantContext
 
     public function handle(Request $request, Closure $next, string $surface = 'panel', string $mode = 'transaction'): Response
     {
-        $resolver = $surface === 'public' ? $this->publicResolver : $this->resolver;
+        $resolver = match ($surface) {
+            'public' => $this->publicResolver,
+            'reservation' => $this->reservationResolver,
+            default => $this->resolver,
+        };
         $tenantId = $resolver->resolve($request);
 
         if ($tenantId === null) {

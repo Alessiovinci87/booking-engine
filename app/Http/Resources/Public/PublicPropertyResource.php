@@ -6,6 +6,7 @@ use App\Domain\Inventory\Models\Property;
 use App\Domain\Inventory\Models\Unit;
 use App\Domain\Inventory\Translations;
 use App\Domain\Pricing\Money;
+use App\Domain\Reservations\LegalAcceptance;
 use App\Domain\Reservations\Models\CancellationPolicy;
 use App\Domain\Tenancy\Enums\Locale;
 use App\Http\Resources\Admin\PropertyResource;
@@ -52,6 +53,8 @@ final class PublicPropertyResource
             'checkout_time' => PropertyResource::time($property->checkout_time),
             'privacy_policy_url' => $property->privacy_policy_url,
             'terms_url' => $property->terms_url,
+            'privacy_version' => LegalAcceptance::privacyVersion($property),
+            'terms_version' => LegalAcceptance::termsVersion($property),
             'cancellation_policy' => $policy($property->default_cancellation_policy_id),
             'units' => $units->map(fn (Unit $unit): array => [
                 'id' => $unit->id,

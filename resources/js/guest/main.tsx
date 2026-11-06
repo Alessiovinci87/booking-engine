@@ -4,18 +4,15 @@ import { createRoot } from 'react-dom/client';
 import { I18nextProvider } from 'react-i18next';
 import { BrowserRouter, Route, Routes } from 'react-router';
 
+import 'react-day-picker/style.css';
 import '../../css/app.css';
+import { guestLocation } from './api';
 import { i18n } from './i18n';
-import { HomePage } from './pages/HomePage';
+import { BookingPage } from './pages/BookingPage';
+import { PropertyPage } from './pages/PropertyPage';
+import { ReservationPage } from './pages/ReservationPage';
 
-const queryClient = new QueryClient();
-
-/** Base delle rotte: /p/{tenantSlug}/{propertySlug} (ADR-0006). */
-function guestBasename(pathname: string): string {
-    const [, prefix, tenantSlug, propertySlug] = pathname.split('/');
-
-    return prefix === 'p' && tenantSlug && propertySlug ? `/p/${tenantSlug}/${propertySlug}` : '/';
-}
+const queryClient = new QueryClient({ defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } } });
 
 const container = document.getElementById('app');
 
@@ -23,13 +20,19 @@ if (container === null) {
     throw new Error('Elemento #app non trovato');
 }
 
+/** Vista embed (/e/…): il pagamento si apre sempre fuori dall'iframe (08, ADR-0009). */
+export const isEmbed = container.dataset.embed === '1';
+
 createRoot(container).render(
     <StrictMode>
         <I18nextProvider i18n={i18n}>
             <QueryClientProvider client={queryClient}>
-                <BrowserRouter basename={guestBasename(window.location.pathname)}>
+                <BrowserRouter basename={guestLocation()?.basename ?? '/'}>
                     <Routes>
-                        <Route path="*" element={<HomePage />} />
+                        <Route path="/" element={<PropertyPage />} />
+                        <Route path="/alloggi/:unitId" element={<BookingPage embed={isEmbed} />} />
+                        <Route path="/prenotazione/:code" element={<ReservationPage />} />
+                        <Route path="*" element={<PropertyPage />} />
                     </Routes>
                 </BrowserRouter>
             </QueryClientProvider>
