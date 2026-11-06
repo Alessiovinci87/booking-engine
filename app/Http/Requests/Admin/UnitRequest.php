@@ -4,6 +4,7 @@ namespace App\Http\Requests\Admin;
 
 use App\Domain\Inventory\Enums\BookingMode;
 use App\Domain\Inventory\Enums\PaymentMode;
+use App\Domain\Inventory\Enums\UnitStatus;
 use App\Domain\Inventory\Models\Unit;
 use App\Domain\Reservations\Models\CancellationPolicy;
 use Illuminate\Foundation\Http\FormRequest;
@@ -12,7 +13,8 @@ use Illuminate\Validation\Rule;
 /**
  * Creazione (POST /properties/{id}/units) e modifica parziale (PATCH /units/{id}) di un'unità (07).
  * Importi in centesimi interi. La politica di cancellazione è facoltativa e solo tra quelle della
- * stessa struttura (ADR-0009). Stato e sospensione delle vendite hanno endpoint propri.
+ * stessa struttura (ADR-0009). Lo stato (ACTIVE/INACTIVE) passa da UnitService; la sospensione delle
+ * vendite ha un endpoint proprio.
  */
 final class UnitRequest extends FormRequest
 {
@@ -30,6 +32,7 @@ final class UnitRequest extends FormRequest
             'max_occupancy' => [$required, 'integer', 'between:1,50'],
             'booking_mode' => ['sometimes', Rule::enum(BookingMode::class)],
             'payment_mode' => ['sometimes', Rule::enum(PaymentMode::class)],
+            'status' => ['sometimes', Rule::enum(UnitStatus::class)],
             'min_nights' => ['sometimes', 'integer', 'between:1,365'],
             'cleaning_fee_cents' => ['sometimes', 'integer', 'between:0,10000000'],
             'extra_guest_fee_cents' => ['sometimes', 'integer', 'between:0,10000000'],

@@ -11,6 +11,10 @@ use Symfony\Component\HttpFoundation\Response;
 /**
  * Middleware delle richieste admin e pubbliche: risolve il tenant da fonti verificate e gestisce
  * l'intera richiesta dentro TenantContext::run(). Senza tenant risolto risponde 404, mai 403 (08).
+ *
+ * Laravel trasforma in risposta le eccezioni del controller già dentro la pipeline, quindi qui
+ * arriverebbe una risposta normale e la transazione verrebbe confermata con le scritture parziali.
+ * Se la risposta porta un'eccezione, la transazione si annulla e si restituisce la stessa risposta.
  */
 final class WithTenantContext
 {
@@ -30,6 +34,18 @@ final class WithTenantContext
             abort(404);
         }
 
-        return $this->tenantContext->run($tenantId, fn (): Response => $next($request));
+        try {
+            return $this->tenantContext->run($tenantId, function () use ($request, $next): Response {
+                $response = $next($request);
+
+                if (isset($response->exception)) {
+                    throw new RollbackWithResponse($response);
+                }
+
+                return $response;
+            });
+        } catch (RollbackWithResponse $rollback) {
+            return $rollback->response;
+        }
     }
 }

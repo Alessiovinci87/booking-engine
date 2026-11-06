@@ -49,6 +49,15 @@ final class UnitController extends Controller
         return self::respond($this->units->update($model, $request->attributesData(), $request->translations()));
     }
 
+    /** PATCH /admin/units/{id}/sales (07): sospende o riattiva le vendite, con If-Match. */
+    public function sales(Request $request, string $unit): JsonResponse
+    {
+        $model = self::lock($unit, $request);
+        $validated = $request->validate(['sales_suspended' => ['required', 'boolean']]);
+
+        return self::respond($this->units->setSalesSuspended($model, (bool) $validated['sales_suspended']));
+    }
+
     /** Legge l'unità con lock di riga e verifica If-Match (07). */
     public static function lock(string $id, Request $request): Unit
     {

@@ -51,6 +51,7 @@ Route::prefix('admin')->group(function (): void {
         Route::post('properties/{property}/units', [UnitController::class, 'store'])->name('admin.units.store');
         Route::get('units/{unit}', [UnitController::class, 'show'])->name('admin.units.show');
         Route::patch('units/{unit}', [UnitController::class, 'update'])->name('admin.units.update');
+        Route::patch('units/{unit}/sales', [UnitController::class, 'sales'])->name('admin.units.sales');
 
         Route::get('units/{unit}/photos', [UnitPhotoController::class, 'index'])->name('admin.units.photos.index');
         Route::post('units/{unit}/photos', [UnitPhotoController::class, 'store'])->name('admin.units.photos.store');

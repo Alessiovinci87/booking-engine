@@ -16,6 +16,7 @@ return [
         'RATE_LIMITED' => 'Too many attempts. Please try again later.',
         'CSRF_TOKEN_EXPIRED' => 'The page session has expired. Please try again.',
         'SERVER_ERROR' => 'Something went wrong. Please try again later.',
+        'ILLEGAL_TRANSITION' => 'Operation not allowed in the current state.',
         'VERSION_MISMATCH' => 'The data was changed in the meantime. Reload and try again.',
         'EXTERNAL_CALENDARS_ACTIVE' => 'Instant booking is not possible with active external calendars.',
         'NO_ACTIVE_UNITS' => 'At least one active unit is required.',

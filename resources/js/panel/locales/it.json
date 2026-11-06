@@ -62,6 +62,7 @@
         "RATE_LIMITED": "Troppi tentativi. Riprova tra qualche minuto.",
         "CSRF_TOKEN_EXPIRED": "La pagina è rimasta aperta troppo a lungo: riprova.",
         "SERVER_ERROR": "Si è verificato un errore. Riprova più tardi.",
+        "ILLEGAL_TRANSITION": "Operazione non consentita nello stato attuale.",
         "VERSION_MISMATCH": "Qualcuno ha modificato questi dati nel frattempo: ricarica la pagina e riprova.",
         "EXTERNAL_CALENDARS_ACTIVE": "La prenotazione immediata non è possibile finché ci sono calendari esterni attivi.",
         "NO_ACTIVE_UNITS": "Serve almeno un'unità attiva.",

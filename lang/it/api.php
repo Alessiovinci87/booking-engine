@@ -16,6 +16,7 @@ return [
         'RATE_LIMITED' => 'Troppi tentativi. Riprova più tardi.',
         'CSRF_TOKEN_EXPIRED' => 'La sessione della pagina è scaduta. Riprova.',
         'SERVER_ERROR' => 'Si è verificato un errore. Riprova più tardi.',
+        'ILLEGAL_TRANSITION' => 'Operazione non consentita nello stato attuale.',
         'VERSION_MISMATCH' => 'I dati sono stati modificati nel frattempo. Ricarica e riprova.',
         'EXTERNAL_CALENDARS_ACTIVE' => 'La prenotazione immediata non è possibile con calendari esterni attivi.',
         'NO_ACTIVE_UNITS' => 'Serve almeno un\'unità attiva.',
