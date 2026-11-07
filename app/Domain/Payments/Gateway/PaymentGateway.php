@@ -3,6 +3,7 @@
 namespace App\Domain\Payments\Gateway;
 
 use App\Domain\Payments\Gateway\Exceptions\PaymentDeclined;
+use App\Domain\Payments\Gateway\Exceptions\PaymentProviderRejected;
 use App\Domain\Payments\Gateway\Exceptions\PaymentProviderUnavailable;
 use App\Domain\Payments\Gateway\Exceptions\SessionAlreadyCompleted;
 
@@ -17,7 +18,9 @@ use App\Domain\Payments\Gateway\Exceptions\SessionAlreadyCompleted;
  * - PaymentProviderUnavailable: rete, timeout o errore del fornitore; l'esito è sconosciuto e la
  *   chiamata si ripete con la stessa idempotency key (I9);
  * - PaymentDeclined: rifiuto definitivo (capture, rimborso);
- * - SessionAlreadyCompleted: expireSession su una sessione già pagata o autorizzata (T6).
+ * - SessionAlreadyCompleted: expireSession su una sessione già pagata o autorizzata (T6);
+ * - PaymentProviderRejected: richiesta rifiutata per un motivo non transitorio. Su
+ *   createCheckoutSession significa che la sessione non è stata creata (05: il job rilascia).
  */
 interface PaymentGateway
 {
@@ -26,6 +29,7 @@ interface PaymentGateway
      * è il meccanismo di recupero di 05 quando il passo 2 o 3 non si completa.
      *
      * @throws PaymentProviderUnavailable
+     * @throws PaymentProviderRejected
      */
     public function createCheckoutSession(CheckoutSessionRequest $request): CheckoutSession;
 
@@ -60,10 +64,33 @@ interface PaymentGateway
     public function cancelAuthorization(string $accountId, string $paymentIntentId, string $idempotencyKey): void;
 
     /**
-     * Rimborso (anche parziale) di un pagamento incassato.
+     * Rimborso (anche parziale) di un pagamento incassato. I metadata contengono solo ID interni.
+     *
+     * @param  array<string, string>  $metadata
      *
      * @throws PaymentDeclined
      * @throws PaymentProviderUnavailable
      */
-    public function refund(string $accountId, string $paymentIntentId, int $amountCents, string $idempotencyKey): RefundResult;
+    public function refund(string $accountId, string $paymentIntentId, int $amountCents, string $idempotencyKey, array $metadata = []): RefundResult;
+
+    /**
+     * Rilettura di un rimborso (refund.updated, riconciliazione dei rimborsi PENDING).
+     *
+     * @throws PaymentProviderUnavailable
+     */
+    public function retrieveRefund(string $accountId, string $refundId): RefundResult;
+
+    /**
+     * Rilettura di un PaymentIntent (riconciliazione di AUTHORIZED e CAPTURE_PENDING, 05).
+     *
+     * @throws PaymentProviderUnavailable
+     */
+    public function retrievePaymentIntent(string $accountId, string $paymentIntentId): PaymentIntentState;
+
+    /**
+     * Rilettura di una contestazione (charge.dispute.*).
+     *
+     * @throws PaymentProviderUnavailable
+     */
+    public function retrieveDispute(string $accountId, string $disputeId): DisputeState;
 }

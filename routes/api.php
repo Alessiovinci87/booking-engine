@@ -6,11 +6,14 @@ use App\Http\Controllers\Api\V1\Admin\Auth\MfaVerifyController;
 use App\Http\Controllers\Api\V1\Admin\Auth\SessionController;
 use App\Http\Controllers\Api\V1\Admin\BlockController;
 use App\Http\Controllers\Api\V1\Admin\CalendarController;
+use App\Http\Controllers\Api\V1\Admin\DisputeController;
 use App\Http\Controllers\Api\V1\Admin\MeController;
 use App\Http\Controllers\Api\V1\Admin\PricePreviewController;
 use App\Http\Controllers\Api\V1\Admin\PropertyController;
 use App\Http\Controllers\Api\V1\Admin\RatePlanController;
+use App\Http\Controllers\Api\V1\Admin\RefundController;
 use App\Http\Controllers\Api\V1\Admin\ReservationController;
+use App\Http\Controllers\Api\V1\Admin\StripeAccountController;
 use App\Http\Controllers\Api\V1\Admin\UnitController;
 use App\Http\Controllers\Api\V1\Admin\UnitPhotoController;
 use App\Http\Controllers\Api\V1\Public\PropertyController as PublicPropertyController;
@@ -19,7 +22,7 @@ use Illuminate\Support\Facades\Route;
 use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful;
 
 // Identificativi UUID nei percorsi: un valore diverso non trova la rotta (404) e non arriva mai al database.
-foreach (['property', 'unit', 'photo', 'season', 'reservation', 'block'] as $parameter) {
+foreach (['property', 'unit', 'photo', 'season', 'reservation', 'block', 'refund'] as $parameter) {
     Route::pattern($parameter, '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}');
 }
 
@@ -57,11 +60,19 @@ Route::prefix('admin')->middleware(EnsureFrontendRequestsAreStateful::class)->gr
         Route::post('reservations/{reservation}/release-dates', [ReservationController::class, 'releaseDates'])->name('admin.reservations.release-dates');
         Route::post('reservations/{reservation}/offline-payments', [ReservationController::class, 'offlinePayment'])->name('admin.reservations.offline-payments');
         Route::post('units/{unit}/blocks', [BlockController::class, 'store'])->name('admin.units.blocks.store');
+        Route::post('refunds/{refund}/retry', [RefundController::class, 'retry'])->middleware('reauth')->name('admin.refunds.retry');
+        Route::post('refunds/{refund}/mark-offline', [RefundController::class, 'markOffline'])->middleware('reauth')->name('admin.refunds.mark-offline');
     });
 
     // Chiamate al servizio di pagamento fuori transazione (05): il servizio apre i propri passi.
     Route::middleware(['auth:sanctum', 'panel.fresh', 'mfa', 'throttle:admin', 'idempotent', 'tenant:panel,steps'])->group(function (): void {
         Route::post('reservations/{reservation}/recovery-link', [ReservationController::class, 'recoveryLink'])->name('admin.reservations.recovery-link');
+    });
+
+    // Collegamento Stripe (4.1): letture e link di onboarding con chiamate a Stripe fuori transazione.
+    Route::middleware(['auth:sanctum', 'panel.fresh', 'mfa', 'throttle:admin', 'tenant:panel,steps'])->group(function (): void {
+        Route::get('stripe/account', [StripeAccountController::class, 'show'])->name('admin.stripe.account');
+        Route::post('stripe/onboarding-link', [StripeAccountController::class, 'onboardingLink'])->middleware('reauth')->name('admin.stripe.onboarding-link');
     });
 
     Route::middleware(['auth:sanctum', 'panel.fresh', 'mfa', 'throttle:admin', 'tenant'])->group(function (): void {
@@ -96,6 +107,8 @@ Route::prefix('admin')->middleware(EnsureFrontendRequestsAreStateful::class)->gr
         Route::get('reservations', [ReservationController::class, 'index'])->name('admin.reservations.index');
         Route::get('reservations/{reservation}', [ReservationController::class, 'show'])->name('admin.reservations.show');
         Route::patch('reservations/{reservation}', [ReservationController::class, 'update'])->name('admin.reservations.update');
+        Route::get('refunds', [RefundController::class, 'index'])->name('admin.refunds.index');
+        Route::get('disputes', [DisputeController::class, 'index'])->name('admin.disputes.index');
     });
 });
 

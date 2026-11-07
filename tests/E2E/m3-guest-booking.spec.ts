@@ -180,5 +180,23 @@ test.describe('M3', () => {
             await expect(page.getByTestId('calendar-reservation').filter({ hasText: 'Chiara Prova' }).first()).toBeVisible();
             await snap(page, 'pannello-calendario');
         });
+
+        // Verifica di M4 (ADR-0012 punto 24): la cancellazione con rimborso chiede la password.
+        await test.step('cancellazione con rimborso: conferma della password, poi cancellata', async () => {
+            await page.getByRole('link', { name: 'Prenotazioni' }).click();
+            await page.getByLabel('Codice prenotazione').fill(reservationCode);
+            await page.getByRole('button', { name: 'Filtra' }).click();
+            await page.getByRole('link', { name: reservationCode }).click();
+            await page.getByTestId('action-cancel').click();
+            // A un giorno dall'arrivo la politica flessibile non propone rimborsi: il gestore ne concede uno.
+            await page.getByTestId('action-form').getByLabel('Rimborso online').fill('10,00');
+            await page.getByTestId('action-form').getByRole('button', { name: 'Cancella la prenotazione' }).click();
+            const reauth = page.getByTestId('reauth');
+            await expect(reauth).toBeVisible();
+            await snap(page, 'pannello-cancellazione-password');
+            await reauth.getByLabel('Password').fill(password ?? '');
+            await reauth.getByRole('button', { name: 'Conferma e continua' }).click();
+            await expect(page.getByTestId('reservation-status').first()).toHaveText('Cancellata');
+        });
     });
 });

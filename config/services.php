@@ -28,6 +28,15 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    // Stripe Connect (05). Le chiavi restano solo nelle variabili d'ambiente (08): mai nei log.
+    // STRIPE_WEBHOOK_SECRET firma gli eventi degli account connessi (in locale: stripe listen --print-secret).
+    'stripe' => [
+        'key' => env('STRIPE_KEY'),
+        'secret' => env('STRIPE_SECRET'),
+        'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
+        'connect_country' => env('STRIPE_CONNECT_COUNTRY', 'it'),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),

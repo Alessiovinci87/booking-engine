@@ -8,6 +8,7 @@ use App\Domain\Payments\Enums\PaymentPurpose;
 use App\Domain\Payments\Enums\PaymentStatus;
 use App\Domain\Payments\Gateway\CheckoutSession;
 use App\Domain\Payments\Gateway\CheckoutSessionRequest;
+use App\Domain\Payments\Gateway\Exceptions\PaymentProviderRejected;
 use App\Domain\Payments\Gateway\Exceptions\PaymentProviderUnavailable;
 use App\Domain\Payments\Gateway\Exceptions\SessionAlreadyCompleted;
 use App\Domain\Payments\Gateway\PaymentGateway;
@@ -77,7 +78,7 @@ final class CheckoutService
     /**
      * Passi 2 e 3 per un Payment PENDING: crea (o recupera) la sessione e allinea le scadenze.
      *
-     * @throws PaymentProviderUnavailable
+     * @throws BusinessRuleViolation 503 PAYMENT_PROVIDER_UNAVAILABLE se Stripe non risponde o rifiuta
      */
     public function openSession(string $tenantId, string $paymentId): CheckoutSession
     {
@@ -85,9 +86,9 @@ final class CheckoutService
 
         try {
             $session = $this->gateway->createCheckoutSession($request);
-        } catch (PaymentProviderUnavailable $e) {
+        } catch (PaymentProviderUnavailable|PaymentProviderRejected $e) {
             // L'occupazione resta con la scadenza provvisoria: il job di rilascio recupera o rilascia.
-            Log::warning('payments.checkout_session_unavailable', ['payment_id' => $paymentId]);
+            Log::warning('payments.checkout_session_unavailable', ['payment_id' => $paymentId, 'error' => class_basename($e)]);
 
             throw BusinessRuleViolation::make(503, 'PAYMENT_PROVIDER_UNAVAILABLE');
         }
@@ -172,7 +173,16 @@ final class CheckoutService
         try {
             if ($sessionId === null && $recovery instanceof CheckoutSessionRequest) {
                 // Recupero tramite idempotency key: se la sessione non esisteva, nasce ora e si chiude subito.
-                $sessionId = $this->gateway->createCheckoutSession($recovery)->id;
+                try {
+                    $sessionId = $this->gateway->createCheckoutSession($recovery)->id;
+                } catch (PaymentProviderRejected) {
+                    // Il fornitore rifiuta la richiesta (per esempio expires_at ormai passato): con la
+                    // stessa chiave una sessione già creata sarebbe restituita, quindi non è mai esistita.
+                    $this->releaseWithoutSession($tenantId, $payment->id);
+
+                    return 'released';
+                }
+
                 $this->tenants->run($tenantId, fn () => $this->payments->attachSession(
                     Payment::query()->lockForUpdate()->findOrFail($payment->id), $sessionId,
                     $this->gateway->retrieveSession($account, $sessionId)->expiresAt,
@@ -181,9 +191,7 @@ final class CheckoutService
 
             $this->gateway->expireSession($account, (string) $sessionId, 'expire:'.$payment->id);
         } catch (SessionAlreadyCompleted) {
-            $this->outcomes->process($tenantId, $payment->id);
-
-            return 'completed';
+            return $this->outcomes->process($tenantId, $payment->id) ? 'completed' : 'retry';
         } catch (PaymentProviderUnavailable) {
             Log::warning('payments.release_retry', ['payment_id' => $payment->id]);
 
@@ -202,7 +210,66 @@ final class CheckoutService
         return 'released';
     }
 
-    /** Richiesta di sessione deterministica per il Payment (stessa chiave, stessi parametri). */
+    /**
+     * Webhook di una sessione che il passo 3 non ha salvato (05: recupero tramite metadata.payment_id).
+     * La sessione si rilegge da Stripe e si adotta solo se i suoi metadata indicano proprio quel
+     * pagamento; poi si allineano le scadenze come al passo 3.
+     *
+     * @throws PaymentProviderUnavailable
+     */
+    public function adoptSession(string $tenantId, string $paymentId, string $sessionId): bool
+    {
+        $payment = $this->tenants->run($tenantId, fn (): ?Payment => Payment::query()->find($paymentId));
+
+        if ($payment === null || $payment->stripe_account_id === null) {
+            return false;
+        }
+
+        if ($payment->checkout_session_id !== null) {
+            return $payment->checkout_session_id === $sessionId;
+        }
+
+        $state = $this->gateway->retrieveSession($payment->stripe_account_id, $sessionId);
+
+        if (($state->metadata['payment_id'] ?? null) !== $paymentId) {
+            return false;
+        }
+
+        $this->tenants->run($tenantId, function () use ($paymentId, $sessionId, $state): void {
+            $locked = Payment::query()->lockForUpdate()->findOrFail($paymentId);
+
+            if ($locked->checkout_session_id !== null) {
+                return;
+            }
+
+            $this->payments->attachSession($locked, $sessionId, $state->expiresAt);
+            $reservation = Reservation::query()->findOrFail($locked->reservation_id);
+
+            if ($reservation->status === ReservationStatus::AWAITING_PAYMENT) {
+                $this->inventory->setExpiry($reservation, $state->expiresAt->addMinutes((int) config('payments.occupancy_grace_minutes')));
+            }
+        });
+
+        return true;
+    }
+
+    private function releaseWithoutSession(string $tenantId, string $paymentId): void
+    {
+        $this->tenants->run($tenantId, function () use ($paymentId): void {
+            $current = Payment::query()->lockForUpdate()->findOrFail($paymentId);
+            $reservation = Reservation::query()->findOrFail($current->reservation_id);
+
+            if ($reservation->status === ReservationStatus::AWAITING_PAYMENT && $current->checkout_session_id === null) {
+                $this->reservations->checkoutExpired($reservation, $current);
+            }
+        });
+    }
+
+    /**
+     * Richiesta di sessione deterministica per il Payment (stessa chiave, stessi parametri). La scadenza
+     * è creazione del Payment + 30 minuti + un margine (ADR-0012): Stripe accetta expires_at solo da 30
+     * minuti dopo la creazione della sessione, che avviene qualche istante dopo il passo 1.
+     */
     private function sessionRequest(Payment $payment): CheckoutSessionRequest
     {
         $reservation = Reservation::query()->with('unit.property')->findOrFail($payment->reservation_id);
@@ -212,7 +279,8 @@ final class CheckoutService
 
         $expiresAt = $payment->purpose === PaymentPurpose::RECOVERY && $reservation->recovery_deadline !== null
             ? $reservation->recovery_deadline
-            : CarbonImmutable::parse($payment->created_at)->addMinutes((int) config('payments.checkout_session_minutes'));
+            : CarbonImmutable::parse($payment->created_at)->addMinutes((int) config('payments.checkout_session_minutes'))
+                ->addSeconds((int) config('payments.checkout_session_margin_seconds'));
 
         $return = rtrim((string) config('app.url'), '/')."/p/{$tenantSlug}/{$property->slug}/prenotazione/{$reservation->code}";
 

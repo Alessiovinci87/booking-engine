@@ -49,10 +49,15 @@ function currentOtp(string $secret): string
 /**
  * Sessione del pannello già completa (login e MFA verificata), senza passare dalle API di accesso.
  */
-function actingAsPanelUser(TestCase $test, User $user, bool $mfaVerified = true): TestCase
+function actingAsPanelUser(TestCase $test, User $user, bool $mfaVerified = true, bool $passwordConfirmed = false): TestCase
 {
     $now = now()->getTimestamp();
     $session = ['panel.authenticated_at' => $now, 'panel.last_activity_at' => $now];
+
+    // Ri-autenticazione per le azioni sensibili (08): password confermata adesso.
+    if ($passwordConfirmed) {
+        $session['panel.password_confirmed_at'] = $now;
+    }
 
     if ($mfaVerified) {
         $session['panel.mfa_verified_at'] = $now;
@@ -91,10 +96,10 @@ function panelPatch(TestCase $test, string $uri, array $data = [], ?int $version
  *
  * @return array{user: User, tenant: string, secret: string|null}
  */
-function signedInOwner(TestCase $test, ?string $tenantId = null): array
+function signedInOwner(TestCase $test, ?string $tenantId = null, bool $passwordConfirmed = false): array
 {
     $owner = panelUser($tenantId);
-    actingAsPanelUser($test, $owner['user']);
+    actingAsPanelUser($test, $owner['user'], passwordConfirmed: $passwordConfirmed);
 
     return $owner;
 }

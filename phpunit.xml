@@ -21,6 +21,7 @@
         </include>
     </source>
     <php>
+        <ini name="memory_limit" value="1G"/>
         <!-- force="true": i valori dei test prevalgono sulle variabili d'ambiente (es. in CI). -->
         <env name="APP_ENV" value="testing" force="true"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>

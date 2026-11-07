@@ -39,6 +39,7 @@ export interface Property {
     privacy_policy_url: string | null;
     terms_url: string | null;
     ota_commission_bps: number;
+    approval_window_hours: number;
     default_cancellation_policy_id: string | null;
     cancellation_policies: { id: string; code: string }[];
     translations: Translations;

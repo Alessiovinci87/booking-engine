@@ -23,7 +23,7 @@ final class RefundStateMachine
     /** @var array<string, list<S>> stato di arrivo → stati di partenza ammessi */
     private const TRANSITIONS = [
         'SUCCEEDED' => [S::PENDING, S::FAILED],
-        'FAILED' => [S::PENDING],
+        'FAILED' => [S::PENDING, S::SUCCEEDED],
         'PENDING' => [S::FAILED],
         'CANCELLED' => [S::PENDING],
     ];
@@ -74,6 +74,75 @@ final class RefundStateMachine
         $this->payments->applyRefund($payment, $this->refundedCents($payment));
     }
 
+    /** ID del rimborso creato da Stripe ma non ancora concluso (esito asincrono, refund.updated). */
+    public function attachProviderId(Refund $refund, string $providerRefundId): void
+    {
+        if ($refund->stripe_refund_id === null) {
+            $refund->stripe_refund_id = $providerRefundId;
+            $refund->save();
+        }
+    }
+
+    /** refund.updated con esito "canceled": allerta al gestore (03 sezione 3). */
+    public function markCancelled(Refund $refund): void
+    {
+        $refund->next_attempt_at = null;
+        $this->move($refund, S::CANCELLED);
+    }
+
+    /**
+     * FAILED → PENDING per un nuovo tentativo (automatico o "Riprova" del gestore, 03 sezione 3).
+     * Se Stripe aveva creato un rimborso poi fallito, il nuovo tentativo ne crea un altro: l'ID del
+     * vecchio resta solo nell'audit.
+     */
+    public function requeue(Refund $refund, bool $byManager): void
+    {
+        $previous = $refund->stripe_refund_id;
+        $refund->stripe_refund_id = null;
+        $refund->next_attempt_at = null;
+        $this->move($refund, S::PENDING, ['retry' => $byManager ? 'manager' : 'automatic', 'previous_stripe_refund_id' => $previous]);
+    }
+
+    /**
+     * FAILED → SUCCEEDED con metodo OFFLINE (03: "Segna come rimborsato fuori piattaforma"). La nota è
+     * obbligatoria e può contenere dati personali (09): resta nel rimborso, nell'audit solo "[personal]".
+     */
+    public function markOffline(Refund $refund, string $note): void
+    {
+        if ($refund->status !== S::FAILED) {
+            throw IllegalTransition::of('refund', $refund->status->value, 'offline');
+        }
+
+        $refund->method = RefundMethod::OFFLINE;
+        $refund->reason = $note;
+        $refund->completed_at = CarbonImmutable::now();
+        $refund->next_attempt_at = null;
+        $this->move($refund, S::SUCCEEDED, ['method' => RefundMethod::OFFLINE->value, 'note' => '[personal]']);
+
+        $payment = Payment::query()->findOrFail($refund->payment_id);
+        $this->payments->applyRefund($payment, $this->refundedCents($payment));
+    }
+
+    /**
+     * SUCCEEDED → FAILED solo quando lo comunica Stripe (evento sul rimborso riletto via API, ADR-0012
+     * punto 23): il denaro non è arrivato all'ospite. Nessun tentativo automatico: il gestore contatta
+     * l'ospite e usa "Riprova" o "Segna come rimborsato fuori piattaforma". Il rimborsato del Payment
+     * si ricalcola, e con lui refund_status (derivato, 02).
+     */
+    public function markReversedByProvider(Refund $refund): void
+    {
+        if ($refund->status !== S::SUCCEEDED || $refund->method !== RefundMethod::STRIPE) {
+            throw IllegalTransition::of('refund', $refund->status->value, 'reversed_by_provider');
+        }
+
+        $refund->completed_at = null;
+        $refund->next_attempt_at = null;
+        $this->move($refund, S::FAILED, ['reported_by' => 'stripe', 'stripe_refund_id' => $refund->stripe_refund_id]);
+
+        $payment = Payment::query()->findOrFail($refund->payment_id);
+        $this->payments->revertRefund($payment, $this->refundedCents($payment));
+    }
+
     /** Errore definitivo: nuovo tentativo automatico dopo 1 h, 6 h, 24 h, poi allerta (05). */
     public function markFailed(Refund $refund): void
     {
@@ -104,7 +173,8 @@ final class RefundStateMachine
             ->sum('amount_cents');
     }
 
-    private function move(Refund $refund, S $to): void
+    /** @param  array<string, mixed>  $extra */
+    private function move(Refund $refund, S $to, array $extra = []): void
     {
         $from = $refund->status;
 
@@ -116,7 +186,7 @@ final class RefundStateMachine
         $refund->save();
 
         $this->audit->record('refund.'.strtolower($to->value), 'refund', $refund->id, [
-            'status' => ['from' => $from->value, 'to' => $to->value], 'payment_id' => $refund->payment_id,
+            'status' => ['from' => $from->value, 'to' => $to->value], 'payment_id' => $refund->payment_id, ...$extra,
         ]);
     }
 }

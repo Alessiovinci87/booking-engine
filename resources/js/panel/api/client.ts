@@ -129,6 +129,8 @@ export const api = {
     mfaVerify: (input: { code: string } | { recovery_code: string }) =>
         apiRequest<{ recovery_codes_remaining: number }>('POST', '/auth/mfa/verify', input),
     me: () => apiRequest<Me>('GET', '/me'),
+    /** Ri-autenticazione per le azioni sensibili (08), valida 15 minuti. */
+    confirmPassword: (password: string) => apiRequest<void>('POST', '/auth/confirm-password', { password }),
 };
 
 /** Errori per campo di VALIDATION_FAILED (07: details.fields). */

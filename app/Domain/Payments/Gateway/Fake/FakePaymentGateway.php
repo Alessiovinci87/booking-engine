@@ -8,11 +8,13 @@ use App\Domain\Payments\Gateway\CheckoutSession;
 use App\Domain\Payments\Gateway\CheckoutSessionRequest;
 use App\Domain\Payments\Gateway\CheckoutSessionState;
 use App\Domain\Payments\Gateway\CheckoutSessionStatus;
+use App\Domain\Payments\Gateway\DisputeState;
 use App\Domain\Payments\Gateway\Exceptions\FakeGatewayNotAllowed;
 use App\Domain\Payments\Gateway\Exceptions\PaymentDeclined;
 use App\Domain\Payments\Gateway\Exceptions\PaymentProviderUnavailable;
 use App\Domain\Payments\Gateway\Exceptions\SessionAlreadyCompleted;
 use App\Domain\Payments\Gateway\PaymentGateway;
+use App\Domain\Payments\Gateway\PaymentIntentState;
 use App\Domain\Payments\Gateway\PaymentIntentStatus;
 use App\Domain\Payments\Gateway\RefundResult;
 use App\Domain\Payments\Gateway\RefundResultStatus;
@@ -197,7 +199,7 @@ final class FakePaymentGateway implements PaymentGateway
         }
     }
 
-    public function refund(string $accountId, string $paymentIntentId, int $amountCents, string $idempotencyKey): RefundResult
+    public function refund(string $accountId, string $paymentIntentId, int $amountCents, string $idempotencyKey, array $metadata = []): RefundResult
     {
         $failure = $this->takeFailure(FakeOperation::REFUND);
         $this->record(FakeOperation::REFUND, $idempotencyKey);
@@ -227,12 +229,75 @@ final class FakePaymentGateway implements PaymentGateway
         $session['refunded_cents'] += $amountCents;
         $this->save($session);
         $this->cache->put($this->key('idem:refund:'.$idempotencyKey), $status->value, self::TTL_SECONDS);
+        $this->cache->put($this->key('refund:'.$refundId), $status->value, self::TTL_SECONDS);
 
         if ($failure === FakeFailure::TIMEOUT_AFTER_EFFECT) {
             throw PaymentProviderUnavailable::make('refund');
         }
 
         return new RefundResult($refundId, $status);
+    }
+
+    public function retrieveRefund(string $accountId, string $refundId): RefundResult
+    {
+        $failure = $this->takeFailure(FakeOperation::RETRIEVE);
+
+        if ($failure === FakeFailure::TIMEOUT) {
+            throw PaymentProviderUnavailable::make('retrieveRefund');
+        }
+
+        $status = $this->cache->get($this->key('refund:'.$refundId));
+
+        if (! is_string($status)) {
+            throw new LogicException('Rimborso finto inesistente.');
+        }
+
+        return new RefundResult($refundId, RefundResultStatus::from($status));
+    }
+
+    public function retrievePaymentIntent(string $accountId, string $paymentIntentId): PaymentIntentState
+    {
+        $failure = $this->takeFailure(FakeOperation::RETRIEVE);
+
+        if ($failure === FakeFailure::TIMEOUT) {
+            throw PaymentProviderUnavailable::make('retrievePaymentIntent');
+        }
+
+        $session = $this->loadByPaymentIntent($accountId, $paymentIntentId);
+
+        return new PaymentIntentState(
+            id: $paymentIntentId,
+            status: PaymentIntentStatus::from((string) $session['payment_intent_status']),
+            amountCents: $session['amount_cents'],
+            amountReceivedCents: $session['captured_cents'],
+            metadata: $session['metadata'],
+            captureBefore: $session['capture_before'] === null ? null : CarbonImmutable::parse($session['capture_before']),
+            failureCode: $session['failure_code'],
+        );
+    }
+
+    /** Il checkout simulato non produce contestazioni: si provano con Stripe simulato e in modalità test. */
+    public function retrieveDispute(string $accountId, string $disputeId): DisputeState
+    {
+        throw new LogicException('Contestazioni non disponibili nel gateway finto.');
+    }
+
+    /** Solo test: esito asincrono di un rimborso rimasto in attesa (refund.updated). */
+    public function settleRefund(string $refundId, RefundResultStatus $status): void
+    {
+        $this->cache->put($this->key('refund:'.$refundId), $status->value, self::TTL_SECONDS);
+    }
+
+    /** Solo test: autorizzazione annullata o scaduta lato fornitore. */
+    public function cancelIntentExternally(string $paymentIntentId): void
+    {
+        $sessionId = $this->cache->get($this->key('pi:'.$paymentIntentId));
+
+        if (is_string($sessionId)) {
+            $session = $this->load($sessionId);
+            $session['payment_intent_status'] = PaymentIntentStatus::CANCELED->value;
+            $this->save($session);
+        }
     }
 
     /**

@@ -16,6 +16,7 @@ import {
 } from '../api/reservations';
 import { useErrorMessage } from '../auth/session';
 import { dangerButton, Field, FormError, inputClass, primaryButton, secondaryButton, Section, TextInput } from '../components/Form';
+import { ReauthPrompt, needsReauth } from '../components/Reauth';
 import { StatusBadge } from '../components/Reservations';
 import { formatDate, formatDateTime } from '../dates';
 import { centsToEuroInput, formatMoney, parseEuroToCents } from '../money';
@@ -406,7 +407,8 @@ function CancelForm({ reservation, onDone }: { reservation: ReservationDetail; o
                     <textarea className={inputClass} rows={2} value={reason} onChange={(e) => setReason(e.target.value)} maxLength={500} />
                 </Field>
             </ActionForm>
-            <ActionError error={action.error} />
+            {/* Rimborso > 0: password richiesta (08, ADR-0012 punto 24); dopo la conferma la cancellazione riparte. */}
+            {needsReauth(action.error) ? <ReauthPrompt onConfirmed={submit} onCancel={() => action.reset()} /> : <ActionError error={action.error} />}
         </>
     );
 }

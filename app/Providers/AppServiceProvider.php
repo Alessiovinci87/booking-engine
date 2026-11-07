@@ -2,8 +2,13 @@
 
 namespace App\Providers;
 
+use App\Domain\Payments\Gateway\ConnectedAccounts;
+use App\Domain\Payments\Gateway\Fake\FakeConnectedAccounts;
 use App\Domain\Payments\Gateway\Fake\FakePaymentGateway;
 use App\Domain\Payments\Gateway\PaymentGateway;
+use App\Domain\Payments\Stripe\StripeClientFactory;
+use App\Domain\Payments\Stripe\StripeConnectedAccounts;
+use App\Domain\Payments\Stripe\StripePaymentGateway;
 use App\Domain\Tenancy\Auth\PwnedPasswordsVerifier;
 use App\Domain\Tenancy\MembershipTenantResolver;
 use App\Domain\Tenancy\Outbox\AdminOpsPendingOutboxMessages;
@@ -33,11 +38,22 @@ class AppServiceProvider extends ServiceProvider
         // Dispatcher dell'outbox: lettura cross-tenant degli ID con app_admin_ops (08).
         $this->app->bind(PendingOutboxMessages::class, AdminOpsPendingOutboxMessages::class);
 
-        // Fornitore di pagamento (05). Il gateway finto rifiuta di partire fuori da local e testing;
-        // StripePaymentGateway arriva in M4 (attività 4.2).
+        // Fornitore di pagamento (05), scelto con PAYMENT_GATEWAY: "stripe" (Stripe Connect) oppure
+        // "fake" (checkout simulato, che rifiuta di partire fuori da local e testing).
+        $this->app->singleton(StripeClientFactory::class, fn (): StripeClientFactory => new StripeClientFactory(config('services.stripe.secret')));
+
         $this->app->singleton(PaymentGateway::class, function ($app): PaymentGateway {
             return match (config('payments.gateway')) {
+                'stripe' => $app->make(StripePaymentGateway::class),
                 'fake' => new FakePaymentGateway($app['cache']->store(), $app->environment(), (string) config('app.url')),
+                default => throw new LogicException('Gateway di pagamento non disponibile: '.var_export(config('payments.gateway'), true).'.'),
+            };
+        });
+
+        $this->app->singleton(ConnectedAccounts::class, function ($app): ConnectedAccounts {
+            return match (config('payments.gateway')) {
+                'stripe' => new StripeConnectedAccounts($app->make(StripeClientFactory::class), (string) config('services.stripe.connect_country', 'it')),
+                'fake' => new FakeConnectedAccounts($app->environment()),
                 default => throw new LogicException('Gateway di pagamento non disponibile: '.var_export(config('payments.gateway'), true).'.'),
             };
         });

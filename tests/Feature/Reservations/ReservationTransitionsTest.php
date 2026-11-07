@@ -69,8 +69,8 @@ it('T1: avvio del checkout con occupazione CHECKOUT allineata alla sessione e Pa
         ->and($occupancy->temp_reason)->toBe(OccupancyTempReason::CHECKOUT)
         ->and($payment->status)->toBe(PaymentStatus::PENDING)
         ->and($payment->checkout_session_id)->toStartWith('cs_fake_')
-        ->and($payment->checkout_expires_at->toIso8601String())->toBe('2027-06-01T10:30:00+00:00')
-        ->and($occupancy->expires_at->toIso8601String())->toBe('2027-06-01T10:35:00+00:00')
+        ->and($payment->checkout_expires_at->toIso8601String())->toBe('2027-06-01T10:32:00+00:00')
+        ->and($occupancy->expires_at->toIso8601String())->toBe('2027-06-01T10:37:00+00:00')
         ->and($payment->amount_cents)->toBe($r->deposit_due_cents);
 });
 

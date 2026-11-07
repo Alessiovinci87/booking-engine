@@ -33,12 +33,15 @@ final class CheckoutOutcomes
         private readonly ReservationStateMachine $reservations,
     ) {}
 
-    public function process(string $tenantId, string $paymentId): void
+    /**
+     * @return bool false se il fornitore non ha risposto: l'esito resta da leggere (nuovo tentativo)
+     */
+    public function process(string $tenantId, string $paymentId): bool
     {
         $payment = $this->tenants->run($tenantId, fn (): ?Payment => Payment::query()->find($paymentId));
 
         if ($payment === null || $payment->checkout_session_id === null || $payment->stripe_account_id === null) {
-            return;
+            return true;
         }
 
         try {
@@ -58,10 +61,12 @@ final class CheckoutOutcomes
         } catch (PaymentProviderUnavailable) {
             Log::warning('payments.outcome_retry', ['payment_id' => $paymentId]);
 
-            return;
+            return false;
         }
 
         $this->tenants->run($tenantId, fn () => $this->apply($paymentId, $state));
+
+        return true;
     }
 
     private function apply(string $paymentId, CheckoutSessionState $state): void

@@ -342,6 +342,43 @@ Indirizzi:
 - Pannello: http://127.0.0.1:8000/app (accesso con l'utente demo, vedi 7.1)
 - Pagina ospite di prova: http://127.0.0.1:8000/p/demo/casa-demo
 
+### 9.1 Pagamenti Stripe in modalità test (da M4)
+
+Con `PAYMENT_GATEWAY=fake` (predefinito in locale) il pagamento è la pagina "Pagamento simulato". Per Stripe vero in modalità test:
+
+1. In `.env`: `PAYMENT_GATEWAY=stripe`, `STRIPE_KEY=pk_test_…`, `STRIPE_SECRET=sk_test_…` (chiavi della piattaforma, dashboard Stripe → Sviluppatori → Chiavi API). Mai chiavi `sk_live_`, mai nei commit o nei log.
+2. Installa la [Stripe CLI](https://docs.stripe.com/stripe-cli) e accedi una volta con `stripe login`.
+3. Account connesso del tenant demo, con onboarding ospitato da Stripe (dati di prova di Stripe):
+
+   ```powershell
+   php artisan stripe:demo-account
+   ```
+
+   Apri il link stampato e completa l'onboarding. Se il link scade, rilancia il comando. Per collegare un account già completato (per esempio dopo aver rigenerato il database): `php artisan stripe:demo-account --account=acct_…`.
+4. In una quarta finestra, inoltro dei webhook Connect al server locale:
+
+   ```powershell
+   stripe listen --forward-connect-to http://127.0.0.1:8000/webhooks/stripe
+   ```
+
+   Il segreto si legge con `stripe listen --print-secret`: mettilo in `STRIPE_WEBHOOK_SECRET` nel file `.env` e riavvia `php artisan serve` e `php artisan queue:work`.
+5. Carte di prova: `4242 4242 4242 4242` (riuscito), `4000 0025 0000 3155` (3D Secure), `4000 0000 0000 9995` (rifiutata). Scadenza futura qualsiasi, CVC qualsiasi.
+
+Suite `Stripe/*` (API di Stripe in modalità test, fuori da `composer test`):
+
+```powershell
+$env:STRIPE_LIVE_TESTS='1'; php vendor/bin/pest -c phpunit.stripe.xml
+```
+
+Usa `STRIPE_SECRET` di `.env` e il primo account connesso con i pagamenti attivi (oppure `STRIPE_TEST_CONNECTED_ACCOUNT`). In CI gira ogni notte (`.github/workflows/stripe-nightly.yml`, segreto `STRIPE_SECRET`).
+
+E2E con Stripe Checkout vero (server E2E sulla porta 8001):
+
+```powershell
+stripe listen --forward-connect-to http://127.0.0.1:8001/webhooks/stripe
+$env:E2E_PAYMENT_GATEWAY='stripe'; $env:E2E_STRIPE_ACCOUNT='acct_…'; npx playwright test m4-stripe-checkout
+```
+
 ## 10. Problemi frequenti
 
 | Sintomo | Causa e soluzione |

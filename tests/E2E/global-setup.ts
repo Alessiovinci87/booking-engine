@@ -38,6 +38,13 @@ export default function globalSetup(): void {
 
     process.env.E2E_DEMO_PASSWORD = password;
 
+    // Spec di M4 con Stripe: il tenant demo appena rigenerato riusa un account connesso già completato.
+    const stripeAccount = process.env.E2E_STRIPE_ACCOUNT;
+
+    if (stripeAccount !== undefined && /^acct_[A-Za-z0-9]+$/.test(stripeAccount)) {
+        artisan(['stripe:demo-account', `--account=${stripeAccount}`]);
+    }
+
     rmSync(SCREENSHOT_DIR, { recursive: true, force: true });
     mkdirSync(SCREENSHOT_DIR, { recursive: true });
 }

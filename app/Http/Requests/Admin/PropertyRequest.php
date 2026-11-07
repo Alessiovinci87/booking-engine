@@ -41,6 +41,7 @@ final class PropertyRequest extends FormRequest
             'privacy_policy_url' => ['sometimes', 'nullable', 'string', 'url:https', 'max:2000'],
             'terms_url' => ['sometimes', 'nullable', 'string', 'url:https', 'max:2000'],
             'ota_commission_bps' => ['sometimes', 'integer', 'between:0,9999'],
+            'approval_window_hours' => ['sometimes', 'integer', 'between:1,48'],
             ...TranslationRules::rules(),
         ];
 

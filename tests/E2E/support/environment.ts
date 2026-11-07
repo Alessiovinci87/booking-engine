@@ -20,5 +20,6 @@ export const E2E_ENV: Record<string, string> = {
     CACHE_PREFIX: 'booking-engine-e2e-cache-',
     // Nessun worker nei test: i job (es. esito del pagamento simulato) girano subito.
     QUEUE_CONNECTION: 'sync',
-    PAYMENT_GATEWAY: 'fake',
+    // Spec di M4 con Stripe in modalità test: E2E_PAYMENT_GATEWAY=stripe (vedi m4-stripe-checkout.spec.ts).
+    PAYMENT_GATEWAY: process.env.E2E_PAYMENT_GATEWAY ?? 'fake',
 };

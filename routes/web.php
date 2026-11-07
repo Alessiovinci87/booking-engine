@@ -3,6 +3,7 @@
 use App\Domain\Payments\Gateway\Fake\FakePaymentGateway;
 use App\Http\Controllers\GuestPageController;
 use App\Http\Controllers\SimulatedCheckoutController;
+use App\Http\Controllers\StripeWebhookController;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
@@ -30,6 +31,13 @@ Route::get('/e/{tenantSlug}/{propertySlug}/{any?}', [GuestPageController::class,
     ->withoutMiddleware($withoutSession)
     ->middleware('security:embed')
     ->name('guest.embed');
+
+// Webhook di Stripe per gli eventi degli account connessi (05, 4.3): firma verificata, niente
+// sessione, cookie o CSRF.
+Route::post('/webhooks/stripe', StripeWebhookController::class)
+    ->withoutMiddleware($withoutSession)
+    ->middleware('security:api')
+    ->name('webhooks.stripe');
 
 // Checkout simulato (3.3): solo con PAYMENT_GATEWAY=fake e APP_ENV local o testing. In ogni altro
 // ambiente le rotte non esistono (e il gateway finto rifiuta comunque di partire).

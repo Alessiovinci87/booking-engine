@@ -50,7 +50,8 @@ L'API pubblica non usa cookie di sessione e quindi non usa il token CSRF (ADR-00
 | 412 | `VERSION_MISMATCH` |
 | 422 | `MIN_NIGHTS_NOT_MET`, `OCCUPANCY_EXCEEDED`, `AMOUNT_BELOW_MINIMUM`, `PAYMENTS_NOT_ENABLED`, `IDEMPOTENCY_KEY_REUSED`, `INVALID_ICAL_URL`, `CANCELLATION_POLICY_MISSING`, `PRIVACY_POLICY_MISSING`, `NO_ACTIVE_UNITS`, `TRANSLATION_IT_MISSING` |
 | 429 | `RATE_LIMITED` |
-| 502/503 | `PAYMENT_PROVIDER_UNAVAILABLE` |
+| 502 | `PAYMENT_PROVIDER_REJECTED` (richiesta rifiutata da Stripe; codice di Stripe in `details.provider_code`, ADR-0012) |
+| 503 | `PAYMENT_PROVIDER_UNAVAILABLE` (Stripe non risponde) |
 
 I messaggi `message` sono localizzati; il client si basa sempre su `code`.
 
@@ -135,7 +136,7 @@ Tutte richiedono utente autenticato con MFA verificata nella sessione e membersh
 | Metodo | Percorso | Note |
 |---|---|---|
 | GET/POST | `/properties` | elenco e creazione (ADR-0010) |
-| GET/PATCH | `/properties/{id}` | incluse traduzioni |
+| GET/PATCH | `/properties/{id}` | incluse traduzioni; `approval_window_hours` 1–48 (ADR-0012 punto 22) |
 | POST | `/properties/{id}/publish` | richiede, nell'ordine: ≥ 1 unità attiva (`422 NO_ACTIVE_UNITS`), traduzione `it` (`422 TRANSLATION_IT_MISSING`), politica di cancellazione predefinita della struttura (`422 CANCELLATION_POLICY_MISSING`, ADR-0009), link all'informativa privacy (`422 PRIVACY_POLICY_MISSING`, ADR-0011), account Stripe del tenant con `charges_enabled` (`422 PAYMENTS_NOT_ENABLED`). Risponde con il codice della prima guardia non soddisfatta e l'elenco di tutte in `details.missing`; già pubblicata → `200` senza modifiche; archiviata → `409 ILLEGAL_TRANSITION`. Senza `Idempotency-Key` finché non c'è il meccanismo generico di I9: l'operazione è idempotente per natura (ADR-0010) |
 | GET/POST | `/properties/{id}/units` | |
 | GET/PATCH | `/units/{id}` | cambio a `INSTANT` rifiutato se ci sono calendari esterni attivi (`409 EXTERNAL_CALENDARS_ACTIVE`, `details.active_calendars`); disattivare l'ultima unità attiva di una struttura pubblicata è consentito (il pannello mostra un avviso, ADR-0010); `cancellation_policy_id` facoltativa, solo tra le politiche della stessa struttura |
@@ -173,16 +174,17 @@ Tutte richiedono utente autenticato con MFA verificata nella sessione e membersh
 | POST | `/reservations` | manuale, confermata anche senza pagamento (stato economico `UNPAID`) · Idempotency-Key |
 | POST | `/reservations/{id}/approve` | Idempotency-Key; `409 CONFLICT_OPEN` se ci sono conflitti sulle date |
 | POST | `/reservations/{id}/reject` | Idempotency-Key, `reason` opzionale |
-| POST | `/reservations/{id}/cancel` | Idempotency-Key; body `refund_cents` (default = proposto dalla policy, max = incassato online). Risposta: prenotazione `CANCELLED` e `refund_status` (`PENDING`/`NONE`), mai "rimborsato" |
+| POST | `/reservations/{id}/cancel` | Idempotency-Key; body `refund_cents` (default = proposto dalla policy, max = incassato online); rimborso > 0 → ri-autenticazione (08, `403 REAUTH_REQUIRED`, ADR-0012 punto 24). Risposta: prenotazione `CANCELLED` e `refund_status` (`PENDING`/`NONE`), mai "rimborsato" |
 | POST | `/reservations/{id}/modify-preview` | anteprima della modifica: stesso body del `PATCH`, risponde `current`, `proposed` (righe e totale), `difference`, `version`; non salva nulla (ADR-0011 punto 28) |
 | PATCH | `/reservations/{id}` | modifica date/ospiti/note · If-Match; `expected_total_cents` facoltativo dall'anteprima → `409 PRICE_CHANGED` se il prezzo è cambiato (ADR-0011 punto 28) |
 | POST | `/reservations/{id}/offline-payments` | registra pagamento fuori piattaforma |
 | POST | `/reservations/{id}/balance-link` | link di pagamento del saldo (nessuna occupazione nuova) · Idempotency-Key |
 | POST | `/reservations/{id}/recovery-link` | solo da `CAPTURE_FAILED` (T15); body `deadline_hours` 1–24 · Idempotency-Key |
 | POST | `/reservations/{id}/release-dates` | solo da `CAPTURE_FAILED` (T16) · Idempotency-Key |
-| GET | `/refunds?status=FAILED` | rimborsi da gestire |
-| POST | `/refunds/{id}/retry` | Idempotency-Key |
-| POST | `/refunds/{id}/mark-offline` | `note` obbligatoria |
+| GET | `/refunds?status[]=FAILED&status[]=PENDING` | rimborsi da gestire, con prenotazione, tentativi e prossimo tentativo (ADR-0012) |
+| POST | `/refunds/{id}/retry` | Idempotency-Key · ri-autenticazione (08, `403 REAUTH_REQUIRED`) |
+| POST | `/refunds/{id}/mark-offline` | Idempotency-Key · ri-autenticazione (08); `note` obbligatoria (3–500 caratteri, dato personale: in `refunds.reason`, mai nell'audit); il rimborso diventa `SUCCEEDED` con metodo `OFFLINE` e parte l'email di completamento (ADR-0012) |
+| GET | `/disputes` | contestazioni aperte (Stripe `charge.dispute.*`), con prenotazione e importo (ADR-0012) |
 
 ### Preventivi
 | Metodo | Percorso |
@@ -203,8 +205,8 @@ Tutte richiedono utente autenticato con MFA verificata nella sessione e membersh
 ### Pagamenti e account
 | Metodo | Percorso |
 |---|---|
-| GET | `/stripe/account` (stato onboarding) |
-| POST | `/stripe/onboarding-link` |
+| GET | `/stripe/account` (stato onboarding: `NOT_CONNECTED`, `ONBOARDING_INCOMPLETE`, `IN_REVIEW`, `ENABLED`; `?refresh=1` rilegge da Stripe al rientro dall'onboarding, ADR-0012) |
+| POST | `/stripe/onboarding-link` (ri-autenticazione, 08: collegamento o cambio dell'account Stripe) |
 | GET | `/metrics?from=&to=` (fatturato diretto, commissioni evitate, beneficio stimato, con percentuale usata) |
 | GET | `/exports/reservations.csv?from=&to=` |
 

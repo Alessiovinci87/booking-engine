@@ -53,7 +53,7 @@ Solo `InventoryService` scrive `inventory_occupancies` (02). Un controllo static
 - Pannello: Laravel Sanctum con cookie SPA, `SameSite=Lax`, `Secure`, `HttpOnly`; CSRF attivo (token mancante o scaduto → `419 CSRF_TOKEN_EXPIRED`, ADR-0008). Rotte di accesso sotto `/api/v1/admin/auth/*` (07).
 - Password: minimo 12 caratteri, controllo contro liste di password compromesse (Have I Been Pwned, solo il prefisso di 5 caratteri dello SHA-1; fail-open con avviso nel log a ogni mancata risposta, senza password né email; ADR-0009), hash Argon2id.
 - **MFA obbligatoria** (TOTP) per ogni utente del pannello, con 10 codici di recupero monouso salvati come hash (`user_recovery_codes`, ADR-0008). Un codice TOTP già usato non vale una seconda volta. Nessuna operazione admin senza MFA verificata nella sessione; la configurazione è possibile solo finché la MFA non è attiva.
-- Sessione: scadenza per inattività 2 h, assoluta 12 h; ri-autenticazione per azioni sensibili (rimborsi, cambio account Stripe, export completo, cambio email), valida 15 minuti.
+- Sessione: scadenza per inattività 2 h, assoluta 12 h; ri-autenticazione per azioni sensibili (rimborsi: cancellazione con rimborso > 0, "Riprova", "Segna come rimborsato", ADR-0012 punto 24; cambio account Stripe, export completo, cambio email), valida 15 minuti.
 - Ruoli: `OWNER` attivo nella 1.0; `MANAGER` e `STAFF` definiti nelle policy ma non assegnabili da UI.
 - Accesso di supporto al tenant di un cliente: solo con ruolo `app_admin_ops`, motivazione obbligatoria, durata limitata, `AuditLog` visibile al cliente.
 
@@ -110,6 +110,7 @@ Scritto per: modifiche a struttura, unità, tariffe, stagioni, politiche; ogni t
 | Occupazione scaduta non rilasciata | > 30 min | push |
 | Incoerenza stato/occupazione (I15) | qualsiasi | push, incidente P1 |
 | Rimborso `FAILED` dopo 3 tentativi | qualsiasi | email al gestore |
+| Rimborso riuscito dichiarato fallito da Stripe (`SUCCEEDED → FAILED`, ADR-0012 punto 23) | urgente | log `critical` ed email al gestore; nessuna email all'ospite |
 | Feed iCal non letto dall'OTA | > 24 h | avviso nel pannello |
 | Calendario `UNHEALTHY` | per tenant | email al gestore; riepilogo giornaliero interno |
 | Conflitto aperto | qualsiasi | email immediata al gestore |
