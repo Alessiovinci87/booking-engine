@@ -25,6 +25,31 @@ L'integrazione con Stripe (M4) ha incontrato punti che 05 lascia aperti o che di
 7. **Sessione mai creata.** Se il recupero con la stessa idempotency key viene rifiutato da Stripe (per esempio perché `expires_at` è ormai passato), la sessione non è mai esistita: una sessione già creata sarebbe restituita dalla chiave. Il job di rilascio applica T5 senza `expire`.
 8. **Carta rifiutata dentro Stripe Checkout.** Un rifiuto della carta lascia la sessione aperta e Stripe Checkout fa riprovare l'ospite: non è il "pagamento fallito definitivo" di T8. Con Stripe `paymentFailed` è vero solo per un PaymentIntent annullato; altrimenti la prenotazione resta `AWAITING_PAYMENT` fino al pagamento o alla scadenza (T5). Il gateway finto conserva il comportamento di M3 (rifiuto = T8) per i test della macchina a stati.
 
+### Webhook (4.3)
+
+9. **Oggetti non nostri.** Eventi `checkout.session.*` e `payment_intent.*` senza `metadata.tenant_id` (per esempio un link di pagamento creato dal gestore nella sua dashboard Stripe) → `IGNORED` con motivo `foreign_object`. Il controllo di `metadata.tenant_id` (passo 4 di 05) si applica quando il campo è presente; rimborsi, contestazioni e account si riconducono al tenant tramite l'account connesso e i nostri ID.
+10. **Riconsegna di un evento `FAILED` o `RECEIVED`**: si accoda di nuovo il job (il job rilegge sempre via API, quindi una seconda elaborazione è innocua). Solo `PROCESSED` e `IGNORED` sono finali (I3). Gli stati del `WebhookEvent` si scrivono solo tramite `WebhookEventStateMachine`.
+11. **Job del webhook**: 6 tentativi con backoff 30 s → 1 h; dal terzo tentativo fallito un'allerta (08). In `last_error` solo il nome della classe dell'errore.
+12. **Contestazioni**: `PaymentEvent` `dispute_created` / `dispute_closed` (unico per contestazione), allerta, email al gestore (`reservation.dispute_opened`) e avviso nel pannello (`GET /admin/disputes`). Stati di prenotazione e pagamento invariati: la risposta si gestisce nella dashboard Stripe.
+
+### Rimborsi (4.7)
+
+13. **Chiavi dei tentativi.** Primo tentativo `refund:{refund_id}`; dopo un rifiuto definitivo il tentativo successivo usa `refund:{refund_id}:{n}` (n = tentativi già fatti), perché Stripe restituirebbe lo stesso rifiuto per la stessa chiave. Con esito sconosciuto (timeout, 5xx) si riusa la stessa chiave.
+14. **Tentativi automatici** = primo tentativo + 3 ripetizioni (1 h, 6 h, 24 h). Dopo l'ultimo: log di errore ed email al gestore (`reservation.refund_failed`), una per serie di tentativi.
+15. **"Segna come rimborsato fuori piattaforma"**: nota obbligatoria (3–500 caratteri) salvata in `refunds.reason` (campo già personale, ADR-0009), nell'audit solo `[personal]`; il rimborso diventa `SUCCEEDED` con metodo `OFFLINE` e parte l'email "rimborso completato", perché per l'ospite il rimborso è avvenuto.
+16. **"Riprova"** dal pannello: `FAILED → PENDING`, azzera `stripe_refund_id` e richiama Stripe con una chiave nuova. "Riprova", "Segna come rimborsato fuori piattaforma" e il link di onboarding Stripe richiedono la password confermata negli ultimi 15 minuti (08, middleware `reauth`, `403 REAUTH_REQUIRED`); il pannello chiede la password e ripete l'azione. La cancellazione con rimborso (M3, `POST /reservations/{id}/cancel`) non è ancora protetta: punto aperto nel rapporto di M4.
+
+### Flusso R e riconciliazione (4.6, 4.8)
+
+17. **Promemoria di `CAPTURE_FAILED`** al gestore 12 ore prima di `decision_deadline`, tramite outbox con `available_at`; non parte se la prenotazione non è più in `CAPTURE_FAILED`.
+18. **Allerte della riconciliazione**: `CAPTURING` da oltre 1 h (T14), autorizzazione di una prenotazione chiusa ancora da annullare dopo 24 h (con nuovo annullo), `capture_before` entro 6 h con richiesta da approvare. Nei log solo ID.
+
+### Pannello e test (4.10, 4.11)
+
+19. **Pagina Pagamenti** (`/app/pagamenti`): stato Stripe e onboarding, richieste da approvare con tempo rimasto e promemoria "verifica Booking e Airbnb prima di approvare", pagamenti da recuperare, rimborsi da gestire, contestazioni aperte.
+20. **Suite `Stripe/*`**: una Checkout Session non si completa lato server; il pagamento dell'ospite è un PaymentIntent reale con carta di prova sull'account connesso e gli stessi metadata, presentato come esito della sessione. Tutte le altre chiamate sono reali. La suite è fuori dalla suite predefinita (`phpunit.stripe.xml`) e si attiva con `STRIPE_LIVE_TESTS=1`; gira ogni notte (`.github/workflows/stripe-nightly.yml`). Il Checkout vero è coperto dall'E2E `m4-stripe-checkout.spec.ts`.
+21. **`stripe:demo-account --account=acct_…`** collega un account connesso già completato al tenant demo (database rigenerato, E2E).
+
 ## Alternative considerate
 
 | Alternativa | Perché scartata |
@@ -32,17 +57,22 @@ L'integrazione con Stripe (M4) ha incontrato punti che 05 lascia aperti o che di
 | Account v1 Standard | Accounts v2 è disponibile senza preview in stripe-php 22; v1 resta solo come ripiego |
 | Scadenza della sessione calcolata al momento della chiamata | Cambierebbe i parametri a ogni tentativo: Stripe rifiuta una idempotency key riusata con parametri diversi, e il recupero di 05 non funzionerebbe |
 | Chiudere la sessione al primo rifiuto della carta | L'ospite perderebbe le date per un errore di digitazione o un 3D Secure non riuscito, mentre Stripe Checkout gli permette di riprovare |
+| Stessa chiave `refund:{id}` per tutti i tentativi | Stripe restituirebbe il rifiuto memorizzato: i tentativi automatici non servirebbero |
+| Rifiutare gli eventi senza metadata con `FAILED` e allerta | Un link di pagamento creato dal gestore nella sua dashboard genererebbe allerte di sicurezza inutili |
+| Completare il Checkout nei test `Stripe/*` con un browser | Lento e fragile per una suite notturna; il Checkout vero resta coperto dall'E2E |
 
 ## Conseguenze
 
 - La sessione di checkout dura 32 minuti invece di 30; l'occupazione 37 invece di 35.
+- Nuovo endpoint `GET /admin/disputes`; nuovo codice di errore `502 PAYMENT_PROVIDER_REJECTED` (07).
+- Nuova funzione SECURITY DEFINER `app_tenant_by_stripe_account` con policy `definer_lookup` su `stripe_accounts` (eccezione già prevista in 02 per `stripe_accounts.stripe_account_id`).
 
 ## Impatto sui test
 
-- Test aggiunti: `Payments/StripeConnectOnboardingTest`, `Payments/StripeCheckoutTest`.
+- Test aggiunti: `Payments/StripeConnectOnboardingTest`, `Payments/StripeCheckoutTest`, `WebhookIdempotencyTest`, `Payments/StripeFlowsTest`, `ApprovalDeadlineTest`, `Payments/StripeReleaseTest`, `CaptureFailedTimeoutTest`, `RefundRetryTest`, `RefundEmailTimingTest`, `Payments/PaymentReconciliationTest`, `Payments/GuestReturnPageTest`, `Payments/DisputeApiTest`, `Stripe/*` (dieci test), `E2E/m4-stripe-checkout.spec`.
 - Test modificati: `Reservations/ReservationTransitionsTest` e `Public/PublicReservationApiTest` (scadenze con il margine).
 
 ## Aggiornamento della specifica
 
 - [x] 05-PAYMENTS-SPEC e 07-API-CONTRACT aggiornati con riferimento a questa ADR
-- [ ] Versione della specifica incrementata (alla chiusura di M4)
+- [ ] Versione della specifica incrementata (alla chiusura di M4, dopo il merge)

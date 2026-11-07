@@ -122,7 +122,7 @@ Calcolo con lo snapshot della politica:
 
 Il gestore può aumentare il rimborso fino al 100% dell'incassato online, mai oltre. I pagamenti `OFFLINE` non si rimborsano da Stripe: il gestore registra un `Refund` `OFFLINE`.
 
-Errori: un rimborso fallito **non** riapre la prenotazione né rioccupa le date. Retry automatici (1 h, 6 h, 24 h), poi allerta al gestore con le azioni "Riprova" e "Segna come rimborsato fuori piattaforma" (03, macchina del rimborso).
+Errori: un rimborso fallito **non** riapre la prenotazione né rioccupa le date. Retry automatici (1 h, 6 h, 24 h), poi allerta al gestore con le azioni "Riprova" e "Segna come rimborsato fuori piattaforma" (03, macchina del rimborso). Idempotency key `refund:{refund_id}` al primo tentativo e `refund:{refund_id}:{n}` dopo un rifiuto definitivo; con esito sconosciuto si riusa la stessa chiave (ADR-0012).
 
 Qualificazione giuridica dell'anticipo e testi delle politiche da validare legalmente prima del pilota.
 
@@ -133,7 +133,7 @@ Endpoint unico `POST /webhooks/stripe` (eventi Connect con campo `account`). Pro
 1. Verifica firma. Non valida → `400`.
 2. `WebhookEvent (provider, event_id)` unico; già `PROCESSED` → `200` senza effetti (I3).
 3. Tenant da `event.account`; account sconosciuto → `IGNORED`.
-4. `metadata.tenant_id` deve coincidere; altrimenti `FAILED` + allerta di sicurezza.
+4. `metadata.tenant_id` deve coincidere; altrimenti `FAILED` + allerta di sicurezza. Sessioni e PaymentIntent senza i nostri metadata non sono nostri → `IGNORED` (ADR-0012).
 5. Accoda il job, risponde `200`.
 6. Il job **rilegge l'oggetto via API** e applica solo transizioni ammesse.
 
@@ -145,6 +145,10 @@ Endpoint unico `POST /webhooks/stripe` (eventi Connect con campo `account`). Pro
 | `charge.refunded`, `refund.updated` | rimborsi |
 | `charge.dispute.created`, `charge.dispute.closed` | chargeback: allerta e `PaymentEvent` |
 | `account.updated` | stato onboarding |
+| `refund.created`, `refund.failed`, `charge.refund.updated` | rimborsi (rilettura del `Refund`, ADR-0012) |
+| `payment_intent.amount_capturable_updated`, `capability.updated` | autorizzazione e stato dell'account (ADR-0012) |
+
+In locale: `stripe listen --forward-connect-to http://127.0.0.1:8000/webhooks/stripe`, con il segreto di `--print-secret` in `STRIPE_WEBHOOK_SECRET` (docs/dev/SETUP-WINDOWS.md).
 
 ## Riconciliazione
 
@@ -154,6 +158,10 @@ Ogni 15 minuti (ogni 5 per `CAPTURING`):
 - `Payment CAPTURE_PENDING` → chiude l'esito.
 - `Refund PENDING` da oltre 1 h → legge il rimborso.
 - Occupazione `ACTIVE` con prenotazione terminale, o prenotazione occupante senza occupazione → allerta P1 (violazione di I15).
+- `Refund FAILED` con tentativo scaduto → nuovo tentativo automatico.
+- Allerte (ADR-0012): `CAPTURING` da oltre 1 h; autorizzazione di una prenotazione chiusa non annullata dopo 24 h; `capture_before` entro 6 h con richiesta ancora da approvare.
+
+Dispatcher con `app_admin_ops` (solo ID dei tenant), un job per tenant con `app_runtime` (08 "Job cross-tenant").
 
 ## Abbonamento SaaS
 
