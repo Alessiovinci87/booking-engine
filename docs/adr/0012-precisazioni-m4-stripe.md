@@ -1,6 +1,6 @@
 # ADR-0012 — Precisazioni dei pagamenti Stripe dopo M4
 
-- **Stato**: Accettata
+- **Stato**: Proposta (da accettare con la verifica di M4, regola 2 di `CLAUDE.md`)
 - **Data**: 2026-11-07
 - **Autori**: Alessio Vinci, Claude Code
 - **Documenti di specifica toccati**: 05-PAYMENTS-SPEC, 07-API-CONTRACT, 08-SECURITY-OPERATIONS
@@ -50,6 +50,10 @@ L'integrazione con Stripe (M4) ha incontrato punti che 05 lascia aperti o che di
 20. **Suite `Stripe/*`**: una Checkout Session non si completa lato server; il pagamento dell'ospite è un PaymentIntent reale con carta di prova sull'account connesso e gli stessi metadata, presentato come esito della sessione. Tutte le altre chiamate sono reali. La suite è fuori dalla suite predefinita (`phpunit.stripe.xml`) e si attiva con `STRIPE_LIVE_TESTS=1`; gira ogni notte (`.github/workflows/stripe-nightly.yml`). Il Checkout vero è coperto dall'E2E `m4-stripe-checkout.spec.ts`.
 21. **`stripe:demo-account --account=acct_…`** collega un account connesso già completato al tenant demo (database rigenerato, E2E).
 
+### Decisioni dopo la verifica di M3
+
+22. **Finestra di approvazione per struttura** (03 "Tempi"): nuova colonna `properties.approval_window_hours` (smallint, predefinita 12, vincolo 1–48; migration `2027_01_04_000200`), impostabile dal pannello nella scheda della struttura (`PATCH /admin/properties/{id}`, `400 VALIDATION_FAILED` fuori intervallo). All'autorizzazione (T4) `approval_deadline` = ora + finestra della struttura, ma mai oltre `capture_before − 6 h` (`ReservationStateMachine::approvalDeadline`). Sostituisce la configurazione globale `payments.approval_window_hours`. La finestra vale per le autorizzazioni successive al cambio: le richieste già in attesa mantengono la loro scadenza.
+
 ## Alternative considerate
 
 | Alternativa | Perché scartata |
@@ -69,7 +73,7 @@ L'integrazione con Stripe (M4) ha incontrato punti che 05 lascia aperti o che di
 
 ## Impatto sui test
 
-- Test aggiunti: `Payments/StripeConnectOnboardingTest`, `Payments/StripeCheckoutTest`, `WebhookIdempotencyTest`, `Payments/StripeFlowsTest`, `ApprovalDeadlineTest`, `Payments/StripeReleaseTest`, `CaptureFailedTimeoutTest`, `RefundRetryTest`, `RefundEmailTimingTest`, `Payments/PaymentReconciliationTest`, `Payments/GuestReturnPageTest`, `Payments/DisputeApiTest`, `Stripe/*` (dieci test), `E2E/m4-stripe-checkout.spec`.
+- Test aggiunti: `Payments/ApprovalWindowTest` (punto 22), `Payments/StripeConnectOnboardingTest`, `Payments/StripeCheckoutTest`, `WebhookIdempotencyTest`, `Payments/StripeFlowsTest`, `ApprovalDeadlineTest`, `Payments/StripeReleaseTest`, `CaptureFailedTimeoutTest`, `RefundRetryTest`, `RefundEmailTimingTest`, `Payments/PaymentReconciliationTest`, `Payments/GuestReturnPageTest`, `Payments/DisputeApiTest`, `Stripe/*` (dieci test), `E2E/m4-stripe-checkout.spec`.
 - Test modificati: `Reservations/ReservationTransitionsTest` e `Public/PublicReservationApiTest` (scadenze con il margine).
 
 ## Aggiornamento della specifica

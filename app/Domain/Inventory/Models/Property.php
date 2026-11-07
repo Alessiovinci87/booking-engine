@@ -32,6 +32,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string|null $terms_url
  * @property string $timezone
  * @property int $ota_commission_bps
+ * @property int $approval_window_hours finestra di approvazione delle richieste, 1–48 h (03, ADR-0012 punto 22)
  * @property PropertyStatus $status
  * @property string|null $default_cancellation_policy_id obbligatoria per pubblicare (ADR-0009)
  */
@@ -44,6 +45,7 @@ class Property extends TenantModel
         return [
             'status' => PropertyStatus::class,
             'ota_commission_bps' => 'integer',
+            'approval_window_hours' => 'integer',
         ];
     }
 

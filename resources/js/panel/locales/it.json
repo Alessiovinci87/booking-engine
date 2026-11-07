@@ -123,7 +123,9 @@
         "defaultPolicy": "Politica di cancellazione predefinita",
         "defaultPolicyHint": "Obbligatoria per pubblicare; ogni unità può sceglierne un'altra.",
         "noPolicy": "Nessuna",
-        "legalUrlHint": "Se aggiorni il documento, cambia anche il link (per esempio aggiungendo ?v=2): così agli ospiti verrà chiesto di accettare la nuova versione."
+        "legalUrlHint": "Se aggiorni il documento, cambia anche il link (per esempio aggiungendo ?v=2): così agli ospiti verrà chiesto di accettare la nuova versione.",
+        "approvalWindow": "Ore per approvare le richieste",
+        "approvalWindowHint": "Da 1 a 48 ore (predefinite 12). Se l’autorizzazione della carta scade prima, la scadenza si anticipa a 6 ore prima di quel limite; alla scadenza la richiesta è rifiutata e l’autorizzazione annullata."
     },
     "policies": {
         "FLEXIBLE_7D": "Flessibile (7 giorni)",

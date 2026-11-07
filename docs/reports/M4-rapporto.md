@@ -96,6 +96,11 @@ Tutti nell'**ADR-0012**, in sintesi:
    - Allerte: `CAPTURING` da oltre 1 h, autorizzazione non annullata dopo 24 h, `capture_before` vicina.
 6. **Ri-autenticazione (08).** Applicata a "Riprova", "Segna come rimborsato" e al link di onboarding Stripe.
 
+## Decisioni dopo la verifica di M3
+- **Finestra di approvazione per struttura** (ADR-0012 punto 22): `properties.approval_window_hours` 1–48 h (predefinita 12), impostabile nella scheda della struttura nel pannello; la scadenza resta limitata a `capture_before − 6 h`. Test: `Payments/ApprovalWindowTest`.
+- Branch riallineato a `main` dopo il merge di M3 (merge di `main`, nessuna riscrittura della storia); PR #70 ora verso `main`.
+- ADR-0012 in stato "Proposta" fino alla verifica di M4 (nuova regola 2 di `CLAUDE.md`).
+
 ## Punti aperti e rischi
 1. **Ri-autenticazione sulla cancellazione con rimborso.**
    - 08 chiede la password confermata per i rimborsi, ma `POST /reservations/{id}/cancel` (M3) non ha il middleware `reauth`.

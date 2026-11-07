@@ -136,7 +136,7 @@ Tutte richiedono utente autenticato con MFA verificata nella sessione e membersh
 | Metodo | Percorso | Note |
 |---|---|---|
 | GET/POST | `/properties` | elenco e creazione (ADR-0010) |
-| GET/PATCH | `/properties/{id}` | incluse traduzioni |
+| GET/PATCH | `/properties/{id}` | incluse traduzioni; `approval_window_hours` 1–48 (ADR-0012 punto 22) |
 | POST | `/properties/{id}/publish` | richiede, nell'ordine: ≥ 1 unità attiva (`422 NO_ACTIVE_UNITS`), traduzione `it` (`422 TRANSLATION_IT_MISSING`), politica di cancellazione predefinita della struttura (`422 CANCELLATION_POLICY_MISSING`, ADR-0009), link all'informativa privacy (`422 PRIVACY_POLICY_MISSING`, ADR-0011), account Stripe del tenant con `charges_enabled` (`422 PAYMENTS_NOT_ENABLED`). Risponde con il codice della prima guardia non soddisfatta e l'elenco di tutte in `details.missing`; già pubblicata → `200` senza modifiche; archiviata → `409 ILLEGAL_TRANSITION`. Senza `Idempotency-Key` finché non c'è il meccanismo generico di I9: l'operazione è idempotente per natura (ADR-0010) |
 | GET/POST | `/properties/{id}/units` | |
 | GET/PATCH | `/units/{id}` | cambio a `INSTANT` rifiutato se ci sono calendari esterni attivi (`409 EXTERNAL_CALENDARS_ACTIVE`, `details.active_calendars`); disattivare l'ultima unità attiva di una struttura pubblicata è consentito (il pannello mostra un avviso, ADR-0010); `cancellation_policy_id` facoltativa, solo tra le politiche della stessa struttura |

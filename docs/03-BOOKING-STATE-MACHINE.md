@@ -78,7 +78,7 @@ Note:
 |---|---|---|---|
 | Occupazione di checkout | scadenza sessione Stripe + 5 min | no | sessione Stripe 30 min (minimo Stripe); vedi 05 per l'allineamento |
 | Scadenza provvisoria prima della sessione | creazione + 45 min | no | se la sessione non viene creata, il job rilascia |
-| Finestra di approvazione | 12 h | 1–48 h per struttura | sempre ≤ `capture_before − 6 h` |
+| Finestra di approvazione | 12 h | 1–48 h per struttura (`properties.approval_window_hours`, ADR-0012 punto 22) | sempre ≤ `capture_before − 6 h` |
 | Decisione dopo capture fallita | 24 h | no | promemoria a 12 h |
 | Link di recupero | 24 h | 1–24 h, entro il giorno prima del check-in | limite massimo di una sessione Stripe |
 | Job di rilascio | ogni minuto | — | |

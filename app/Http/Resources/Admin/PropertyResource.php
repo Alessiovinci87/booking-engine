@@ -42,6 +42,7 @@ final class PropertyResource extends JsonResource
             'privacy_policy_url' => $p->privacy_policy_url,
             'terms_url' => $p->terms_url,
             'ota_commission_bps' => $p->ota_commission_bps,
+            'approval_window_hours' => $p->approval_window_hours,
             'default_cancellation_policy_id' => $p->default_cancellation_policy_id,
             'cancellation_policies' => $p->cancellationPolicies
                 ->sortBy(fn (CancellationPolicy $c): string => $c->code->value)
