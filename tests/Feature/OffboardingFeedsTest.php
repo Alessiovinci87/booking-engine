@@ -74,6 +74,8 @@ it('avvio con la ri-autenticazione', function () {
 });
 
 it('la pagina mostra per ogni feed l\'ultima lettura dell\'OTA', function () {
+    // Orario fermo: l'atteso si ricalcola con now() a fine test.
+    $this->freezeSecond();
     $fx = bookableTenant();
     [$feed] = offboardingFeed($fx);
     markFeedRead($fx, $feed->id, now()->subDays(2));

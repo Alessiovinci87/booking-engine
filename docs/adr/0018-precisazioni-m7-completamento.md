@@ -85,6 +85,17 @@ M7 completa le parti di 06 e 09 rimaste fuori dalla 1.0 del pilota: uscita del c
 16. **Job notturno** `retention:nightly` alle 02:30 (ora italiana): `DispatchRetentionJob` accoda `RunGlobalRetentionJob` e, con `app_admin_ops` che legge solo gli ID, un `RunTenantRetentionJob` per ogni tenant, anche `CLOSED`, perché restano le righe di audit. Ogni esecuzione registra `retention.run` con modalità, durata e righe per categoria (09: "registra in AuditLog quante righe ha trattato per categoria").
 17. La validità di 30 giorni degli export completi passa in `config/offboarding.php` (`export_valid_days`).
 
+### 7.4 Analisi statica
+
+18. **Larastan a livello 8** su `app`, `bootstrap/app.php`, `database` e `routes`, senza baseline e senza errori ignorati: tolta anche l'unica esclusione rimasta (`trait.unused`). I 139 errori del livello 8 sono stati corretti nel codice:
+    - **relazioni su FK `NOT NULL`**: dichiarate `@property-read` senza `null` nei modelli (`Unit::$property`, `Reservation::$unit`/`$guest`, `Quote::$unit` e simili). Larastan altrimenti le considera sempre annullabili;
+    - **ID letti dai payload dell'outbox**: si leggono con `OutboxMessage::payloadId()`, che restituisce `?string`, così `find()` non può restituire una collezione;
+    - **righe di `DB::select`**: si leggono con `App\Domain\Tenancy\Database\DbRow`;
+    - **liste**: `array_values` dove il tipo dichiarato è `list<…>`;
+    - **casi puntuali**: URL vuoto rifiutato in `CurlTransport`, esito normalizzato in `StripeEventProcessor::process`.
+
+    Nessun cambio di comportamento.
+
 ## Alternative considerate
 
 | Alternativa | Perché scartata |
@@ -118,6 +129,8 @@ M7 completa le parti di 06 e 09 rimaste fuori dalla 1.0 del pilota: uscita del c
 - Invarianti toccati:
   - I19 (feed mai vuoto: `Feature/Calendar/{FrozenFeedNeverEmptyTest, RetiredFeed410Test}` invariati, più `OffboardingFeedsTest`);
   - I22 (export completi cancellati all'anonimizzazione).
+
+- 7.4: nessun test nuovo; `composer analyse` in CI è il controllo.
 
 ## Aggiornamento della specifica
 

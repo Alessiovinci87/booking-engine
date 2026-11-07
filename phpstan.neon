@@ -2,17 +2,11 @@ includes:
     - vendor/larastan/larastan/extension.neon
 
 parameters:
-    # Livello 6 all'inizio, 8 entro M6 (ADR-0006; attività 7.4).
-    level: 6
+    # Livello 8 su tutto il codice, senza baseline né errori ignorati (ADR-0006; attività 7.4, ADR-0018).
+    level: 8
     paths:
         - app
         - bootstrap/app.php
         - database
         - routes
     tmpDir: storage/framework/cache/phpstan
-    ignoreErrors:
-        # Il trait dei job tenant-aware sarà usato dai job di dominio (M3+); oggi solo dai test.
-        -
-            identifier: trait.unused
-            path: app/Domain/Tenancy/Jobs/InteractsWithTenant.php
-            reportUnmatched: false

@@ -57,7 +57,7 @@ final class StripeEventProcessor
      */
     public function process(string $tenantId, string $type, array $ref): string
     {
-        return match (true) {
+        $outcome = match (true) {
             in_array($type, self::CHECKOUT, true) => $this->checkout($tenantId, $ref),
             in_array($type, self::PAYMENT_INTENT, true) => $this->paymentIntent($tenantId, $ref),
             in_array($type, self::REFUND, true) => $this->refund($tenantId, $type, $ref),
@@ -65,6 +65,8 @@ final class StripeEventProcessor
             in_array($type, self::ACCOUNT, true) => $this->accounts->sync($tenantId) === null ? 'ignored' : 'processed',
             default => 'ignored',
         };
+
+        return $outcome === 'ignored' ? 'ignored' : 'processed';
     }
 
     /** @param  array{object_id: string, payment_id: ?string, refund_id: ?string, payment_intent: ?string}  $ref */

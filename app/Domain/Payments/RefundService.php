@@ -89,7 +89,7 @@ final class RefundService
         }
 
         return $this->tenants->run($tenantId, function () use ($refundId, $result): bool {
-            $refund = Refund::query()->lockForUpdate()->findOrFail($refundId);
+            $refund = Refund::query()->lockForUpdate()->findOrFail((string) $refundId);
 
             if ($refund->status !== RefundStatus::SUCCEEDED || $refund->stripe_refund_id !== $result->refundId) {
                 return false;
@@ -163,7 +163,7 @@ final class RefundService
 
         foreach ($due as $refundId) {
             $this->tenants->run($tenantId, function () use ($refundId, $tenantId): void {
-                $refund = Refund::query()->lockForUpdate()->findOrFail($refundId);
+                $refund = Refund::query()->lockForUpdate()->findOrFail((string) $refundId);
 
                 if ($refund->status === RefundStatus::FAILED && $refund->next_attempt_at !== null) {
                     $this->refunds->requeue($refund, byManager: false);

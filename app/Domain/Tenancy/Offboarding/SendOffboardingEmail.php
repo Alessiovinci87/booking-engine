@@ -29,7 +29,7 @@ final class SendOffboardingEmail implements OutboxHandler
         $replace = [];
 
         if ($message->type === 'tenant.export_ready') {
-            $export = TenantExport::query()->find($message->payload['tenant_export_id'] ?? null);
+            $export = TenantExport::query()->find($message->payloadId('tenant_export_id'));
 
             if ($export === null || ! $export->isDownloadable() || $export->expires_at === null) {
                 return;
@@ -37,7 +37,7 @@ final class SendOffboardingEmail implements OutboxHandler
 
             $replace['expires_at'] = $export->expires_at->setTimezone('Europe/Rome')->format('d/m/Y');
         } else {
-            $feed = IcsFeed::query()->with('unit:id,name')->find($message->payload['ics_feed_id'] ?? null);
+            $feed = IcsFeed::query()->with('unit:id,name')->find($message->payloadId('ics_feed_id'));
 
             if ($feed === null || $feed->removal_confirmed_at !== null) {
                 return;

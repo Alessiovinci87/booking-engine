@@ -30,7 +30,7 @@ Guida completa dell'ambiente: `docs/dev/SETUP-WINDOWS.md`. Tutti i comandi si es
 - Migration: `php artisan migrate --database=pgsql_migrator` (sempre con `app_migrator`; con la connessione predefinita `app_runtime` le migration falliscono per scelta)
 - Test: `composer test` (Pest: suite `Unit`, `Feature` su PostgreSQL reale come `app_runtime`, `Arch`) / `npx playwright test` (da M6)
 - Stile: `composer lint` (Pint `--test`); correzione automatica: `vendor/bin/pint`
-- Analisi statica: `composer analyse` (Larastan livello 6)
+- Analisi statica: `composer analyse` (Larastan livello 8, senza baseline; da M7, ADR-0018)
 - Frontend: `npm run dev`, `npm run build`, `npm run typecheck`
 - Server di sviluppo: `php artisan serve` (pannello `/app`, ospite `/p/{tenantSlug}/{propertySlug}`)
 - Code: `php artisan queue:work` in locale su Windows; Horizon solo in staging e produzione

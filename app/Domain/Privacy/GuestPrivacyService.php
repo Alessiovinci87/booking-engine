@@ -155,7 +155,7 @@ final class GuestPrivacyService
         $paymentIds = Payment::query()->whereIn('reservation_id', $reservationIds)->pluck('id');
         $refundIds = Refund::query()->whereIn('payment_id', $paymentIds)->pluck('id');
         $quoteIds = $reservations->pluck('quote_id')->filter()->values();
-        $occupancyIds = $this->inventory->occupancyIdsFor($reservationIds->values()->all());
+        $occupancyIds = $this->inventory->occupancyIdsFor(array_values($reservationIds->map(fn ($id): string => (string) $id)->all()));
         $conflicts = InventoryConflict::query()->whereIn('occupancy_id', $occupancyIds)->get(['id', 'external_event_id', 'other_external_event_id']);
         $eventIds = $conflicts->pluck('external_event_id')->merge($conflicts->pluck('other_external_event_id'))->filter()->unique()->values();
 

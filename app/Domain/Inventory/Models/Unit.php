@@ -36,6 +36,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property bool $sales_suspended
  * @property UnitStatus $status
  * @property string|null $cancellation_policy_id facoltativa: senza, vale quella della struttura (ADR-0009)
+ * @property-read Property $property relazione su FK NOT NULL (7.4)
  */
 class Unit extends TenantModel
 {

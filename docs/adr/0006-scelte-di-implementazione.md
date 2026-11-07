@@ -30,7 +30,7 @@ La specifica fissa lo stack (Laravel 13, PHP 8.4, PostgreSQL con RLS, Redis, Rea
 | Area | Scelta |
 |---|---|
 | Test | Pest (con `arch()` per i controlli architetturali), Playwright per E2E |
-| Analisi statica e stile | Larastan (livello 6 all'inizio, 8 entro M6), Laravel Pint |
+| Analisi statica e stile | Larastan (livello 6 all'inizio, 8 da M7 senza baseline: ADR-0018 punto 18), Laravel Pint |
 | Stripe | `stripe/stripe-php` ufficiale |
 | iCal | `sabre/vobject` |
 | MFA | `pragmarx/google2fa` (TOTP) |

@@ -25,7 +25,7 @@ final class SendCalendarEmail implements OutboxHandler
         $replace = [];
 
         if (isset($payload['conflict_id'])) {
-            $conflict = InventoryConflict::query()->find($payload['conflict_id']);
+            $conflict = InventoryConflict::query()->find($message->payloadId('conflict_id'));
 
             if ($conflict === null) {
                 return;
@@ -35,7 +35,7 @@ final class SendCalendarEmail implements OutboxHandler
             $replace = ['check_in' => $conflict->stay->checkIn->toDateString(), 'check_out' => $conflict->stay->checkOut->toDateString()];
             $path = '/app/conflitti';
         } else {
-            $calendar = ExternalCalendar::query()->find($payload['external_calendar_id'] ?? null);
+            $calendar = ExternalCalendar::query()->find($message->payloadId('external_calendar_id'));
 
             if ($calendar === null) {
                 return;

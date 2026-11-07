@@ -82,10 +82,10 @@ final class TenantExportBuilder
         $tables = [];
 
         foreach (self::TABLES as $table) {
-            $tables[$table] = array_map(
+            $tables[$table] = array_values(array_map(
                 fn (object $row): array => self::clean((array) $row),
                 DB::table($table)->orderBy('created_at')->orderBy('id')->get()->all(),
-            );
+            ));
         }
 
         $today = $now->startOfDay();

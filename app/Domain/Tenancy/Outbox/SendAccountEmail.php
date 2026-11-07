@@ -24,7 +24,7 @@ final class SendAccountEmail implements OutboxHandler
 
     public function handle(OutboxMessage $message): void
     {
-        $user = User::query()->find($message->payload['user_id'] ?? null);
+        $user = User::query()->find($message->payloadId('user_id'));
 
         if ($user === null) {
             return;
@@ -36,7 +36,7 @@ final class SendAccountEmail implements OutboxHandler
         if ($message->type === 'account.password_reset') {
             $reset = UserPasswordReset::query()
                 ->where('user_id', $user->id)
-                ->find($message->payload['password_reset_id'] ?? null);
+                ->find($message->payloadId('password_reset_id'));
 
             if ($reset === null || ! $reset->isUsable()) {
                 return;

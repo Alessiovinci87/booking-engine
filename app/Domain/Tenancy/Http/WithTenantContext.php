@@ -67,7 +67,7 @@ final class WithTenantContext
             return $this->tenantContext->run($tenantId, function () use ($request, $next): Response {
                 $response = $next($request);
 
-                if (isset($response->exception)) {
+                if (($response->exception ?? null) !== null) {
                     throw new RollbackWithResponse($response);
                 }
 

@@ -33,6 +33,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string|null $resolved_by
  * @property ConflictResolution|null $resolution
  * @property string|null $resolution_notes
+ * @property-read Unit $unit relazione su FK NOT NULL (7.4)
  */
 #[UseEloquentBuilder(StatusGuardedBuilder::class)]
 #[PersonalData('resolution_notes')]

@@ -54,6 +54,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string|null $cancel_reason
  * @property string|null $public_access_token_hash
  * @property int $version
+ * @property-read Unit $unit relazione su FK NOT NULL (7.4)
+ * @property-read Guest $guest relazione su FK NOT NULL (7.4)
  */
 #[UseEloquentBuilder(StatusGuardedBuilder::class)]
 #[PersonalData('cancel_reason')]

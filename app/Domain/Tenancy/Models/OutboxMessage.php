@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Attributes\UseEloquentBuilder;
 /**
  * Messaggio in uscita (02, 03 "Regole generali"): scritto nella stessa transazione della modifica che
  * lo genera e consegnato in modo asincrono dal dispatcher, con retry e dedupe_key unico per tenant.
- * Il payload viene svuotato 30 giorni dopo l'invio (09, categoria G).
+ * I messaggi inviati o falliti si cancellano dopo la durata della categoria G (09, job di conservazione 7.2).
  *
  * @property string $id
  * @property string $tenant_id
@@ -42,5 +42,13 @@ class OutboxMessage extends TenantModel
             'failed_at' => 'immutable_datetime',
             'payload_purged_at' => 'immutable_datetime',
         ];
+    }
+
+    /** ID nel payload (solo identificativi, 02): stringa non vuota oppure null, per le ricerche per chiave. */
+    public function payloadId(string $key): ?string
+    {
+        $value = $this->payload[$key] ?? null;
+
+        return is_string($value) && $value !== '' ? $value : null;
     }
 }

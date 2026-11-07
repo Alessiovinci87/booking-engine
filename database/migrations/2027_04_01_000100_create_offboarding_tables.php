@@ -1,5 +1,6 @@
 <?php
 
+use App\Domain\Tenancy\Database\DbRow;
 use App\Domain\Tenancy\Database\TenantTable;
 use App\Domain\Tenancy\Enums\TenantExportStatus;
 use Illuminate\Database\Migrations\Migration;
@@ -93,7 +94,7 @@ return new class extends Migration
     private static function tenantScopedTables(): array
     {
         return array_values(array_map(
-            static fn (object $row): string => (string) $row->table_name,
+            static fn (object $row): string => DbRow::string($row, 'table_name'),
             DB::select(<<<'SQL'
                 SELECT c.table_name FROM information_schema.columns c
                 JOIN information_schema.tables t ON t.table_schema = c.table_schema AND t.table_name = c.table_name

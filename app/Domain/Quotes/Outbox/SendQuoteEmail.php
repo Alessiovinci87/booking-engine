@@ -22,7 +22,7 @@ final class SendQuoteEmail implements OutboxHandler
 
     public function handle(OutboxMessage $message): void
     {
-        $quote = Quote::query()->with('unit.property')->find($message->payload['quote_id'] ?? null);
+        $quote = Quote::query()->with('unit.property')->find($message->payloadId('quote_id'));
 
         if ($quote === null || $quote->status !== QuoteStatus::SENT || $quote->guest_email === null || $quote->guest_email === '') {
             return;

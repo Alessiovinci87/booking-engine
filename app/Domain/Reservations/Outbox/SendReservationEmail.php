@@ -32,7 +32,7 @@ final class SendReservationEmail implements OutboxHandler
     public function handle(OutboxMessage $message): void
     {
         $payload = $message->payload;
-        $reservation = Reservation::query()->with('unit.property')->find($payload['reservation_id'] ?? null);
+        $reservation = Reservation::query()->with('unit.property')->find($message->payloadId('reservation_id'));
 
         if ($reservation === null) {
             return;
@@ -86,14 +86,14 @@ final class SendReservationEmail implements OutboxHandler
     private function amount(OutboxMessage $message, Reservation $reservation, string $locale): string
     {
         $cents = match ($message->type) {
-            'reservation.refund_completed', 'reservation.refund_failed', 'reservation.refund_reversed' => (int) Refund::query()->whereKey($message->payload['refund_id'] ?? null)->value('amount_cents'),
+            'reservation.refund_completed', 'reservation.refund_failed', 'reservation.refund_reversed' => (int) Refund::query()->whereKey($message->payloadId('refund_id'))->value('amount_cents'),
             'reservation.cancelled' => (int) Refund::query()
                 ->whereIn('payment_id', Payment::query()->select('id')->where('reservation_id', $reservation->id))
                 ->sum('amount_cents'),
             default => $reservation->contract_total_cents,
         };
 
-        return Number::currency($cents / 100, in: $reservation->currency, locale: $locale);
+        return (string) Number::currency($cents / 100, in: $reservation->currency, locale: $locale);
     }
 
     private function link(Reservation $reservation, bool $toManager): string

@@ -33,6 +33,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $ics_uid
  * @property int $ics_sequence
  * @property string|null $note
+ * @property-read Unit $unit relazione su FK NOT NULL (7.4)
  */
 #[PersonalData('note')]
 class InventoryOccupancy extends TenantModel

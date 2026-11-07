@@ -153,7 +153,7 @@ final class PaymentStateMachine
     {
         $from = $payment->status;
 
-        if (! in_array($from, self::TRANSITIONS[$to->value], true)) {
+        if (! in_array($from, self::TRANSITIONS[$to->value] ?? [], true)) {
             throw IllegalTransition::of('payment', $from->value, $to->value);
         }
 

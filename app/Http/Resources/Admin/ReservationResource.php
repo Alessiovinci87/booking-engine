@@ -88,13 +88,13 @@ final class ReservationResource
     {
         $money = fn (int $cents): array => Money::json($cents, $r->currency);
 
-        return $r->priceLines()->orderBy('position')->get()->map(fn (ReservationPriceLine $l): array => [
+        return array_values($r->priceLines()->orderBy('position')->get()->map(fn (ReservationPriceLine $l): array => [
             'kind' => $l->kind->value,
             'date' => $l->night_date?->toDateString(),
             'quantity' => $l->quantity,
             'unit_amount' => $money($l->unit_amount_cents),
             'amount' => $money($l->amount_cents),
-        ])->values()->all();
+        ])->values()->all());
     }
 
     /**
