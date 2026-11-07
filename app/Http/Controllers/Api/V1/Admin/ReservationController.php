@@ -6,8 +6,10 @@ use App\Domain\Inventory\Models\Unit;
 use App\Domain\Payments\CheckoutService;
 use App\Domain\Payments\Enums\OfflineMethod;
 use App\Domain\Payments\OfflinePaymentService;
+use App\Domain\Pricing\Calculator\PriceQuote;
 use App\Domain\Pricing\Calculator\PriceRequest;
 use App\Domain\Pricing\Enums\PriceLineKind;
+use App\Domain\Pricing\Money;
 use App\Domain\Pricing\PriceQuoteService;
 use App\Domain\Reservations\CancellationRefund;
 use App\Domain\Reservations\Enums\ReservationChannel;
@@ -16,8 +18,10 @@ use App\Domain\Reservations\Models\Reservation;
 use App\Domain\Reservations\NewReservation;
 use App\Domain\Reservations\StateMachines\ReservationStateMachine;
 use App\Domain\Reservations\StayRange;
+use App\Domain\Tenancy\Exceptions\BusinessRuleViolation;
 use App\Domain\Tenancy\Http\WithTenantContext;
 use App\Domain\Tenancy\TenantContext;
+use App\Http\Api\DryRunRollback;
 use App\Http\Api\IfMatch;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ManualReservationRequest;
@@ -25,6 +29,7 @@ use App\Http\Requests\Admin\ModifyReservationRequest;
 use App\Http\Resources\Admin\ReservationResource;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 /**
@@ -109,13 +114,67 @@ final class ReservationController extends Controller
     public function update(ModifyReservationRequest $request, string $reservation): JsonResponse
     {
         $model = self::lock($reservation, $request);
-        $stay = $request->stayFor($model);
-        $adults = $request->adultsFor($model);
-        $children = $request->childrenFor($model);
-        $discount = -1 * (int) $model->priceLines()->where('kind', PriceLineKind::DISCOUNT->value)->sum('amount_cents');
-        $price = $this->prices->quote($model->unit, new PriceRequest($stay, $adults, $children, $discount, $model->channel !== ReservationChannel::MANUAL));
+        $expected = $request->expectedTotalCents();
 
-        return self::respond($this->machine->modify($model, $stay, $adults, $children, $price, $request->note(), self::userId($request)));
+        if ($expected !== null) {
+            $price = $this->priceFor($request, $model);
+
+            if ($price->totalCents !== $expected) {
+                throw BusinessRuleViolation::make(409, 'PRICE_CHANGED', ['contract_total' => Money::json($price->totalCents, $model->currency)]);
+            }
+        }
+
+        return self::respond($this->modify($request, $model));
+    }
+
+    /**
+     * POST /admin/reservations/{id}/modify-preview (ADR-0011 punto 28): esegue la modifica in un
+     * savepoint annullato e restituisce soggiorno e prezzo prima e dopo, senza salvare nulla. Stessi
+     * errori del PATCH (date non disponibili, transizione non ammessa, notti minime). Il pannello
+     * mostra il confronto e chiede conferma; il PATCH successivo porta `expected_total_cents`.
+     */
+    public function previewModify(ModifyReservationRequest $request, string $reservation): JsonResponse
+    {
+        $model = Reservation::query()->lockForUpdate()->findOrFail($reservation);
+        $current = ReservationResource::priceSnapshot($model);
+        $proposed = null;
+        $currentCents = $model->contract_total_cents;
+        $proposedCents = 0;
+
+        try {
+            DB::transaction(function () use ($request, $model, &$proposed, &$proposedCents): void {
+                $modified = $this->modify($request, $model)->refresh();
+                $proposed = ReservationResource::priceSnapshot($modified);
+                $proposedCents = $modified->contract_total_cents;
+
+                throw new DryRunRollback;
+            });
+        } catch (DryRunRollback) {
+            // Annullata di proposito: l'anteprima non salva niente.
+        }
+
+        $model->refresh();
+
+        return new JsonResponse([
+            'version' => $model->version,
+            'current' => $current,
+            'proposed' => $proposed,
+            'difference' => Money::json($proposedCents - $currentCents, $model->currency),
+        ]);
+    }
+
+    private function priceFor(ModifyReservationRequest $request, Reservation $model): PriceQuote
+    {
+        $discount = -1 * (int) $model->priceLines()->where('kind', PriceLineKind::DISCOUNT->value)->sum('amount_cents');
+
+        return $this->prices->quote($model->unit, new PriceRequest($request->stayFor($model), $request->adultsFor($model),
+            $request->childrenFor($model), $discount, $model->channel !== ReservationChannel::MANUAL));
+    }
+
+    private function modify(ModifyReservationRequest $request, Reservation $model): Reservation
+    {
+        return $this->machine->modify($model, $request->stayFor($model), $request->adultsFor($model), $request->childrenFor($model),
+            $this->priceFor($request, $model), $request->note(), self::userId($request));
     }
 
     public function approve(string $reservation): JsonResponse

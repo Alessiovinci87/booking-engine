@@ -22,9 +22,8 @@ return [
     // Margine tra la scadenza della sessione e quella dell'occupazione (05, passo 3).
     'occupancy_grace_minutes' => 5,
 
-    // Finestra di approvazione delle richieste (03 "Timeout": 12 h). La configurazione per struttura
-    // (1–48 h) non ha ancora un campo nel modello di 02 (ADR-0011).
-    'approval_window_hours' => 12,
+    // La finestra di approvazione delle richieste è per struttura: properties.approval_window_hours
+    // (03 "Tempi": 12 h predefinite, 1–48 h, sempre ≤ capture_before − 6 h; ADR-0012 punto 22).
 
     // Job di rilascio delle occupazioni (05, ogni minuto): il dispatcher legge gli ID dei tenant con
     // app_admin_ops; ogni tenant elabora al massimo questo numero di prenotazioni per motivo e giro.

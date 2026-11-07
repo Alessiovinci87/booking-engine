@@ -59,6 +59,45 @@ final class ReservationResource
     }
 
     /**
+     * Soggiorno e prezzo di una prenotazione: righe, totale, caparra e saldo. Usato dall'anteprima
+     * della modifica (ADR-0011 punto 28) per mostrare il prima e il dopo.
+     *
+     * @return array<string, mixed>
+     */
+    public static function priceSnapshot(Reservation $r): array
+    {
+        $money = fn (int $cents): array => Money::json($cents, $r->currency);
+
+        return [
+            'check_in' => $r->stay->checkIn->toDateString(),
+            'check_out' => $r->stay->checkOut->toDateString(),
+            'nights' => $r->stay->nights(),
+            'adults' => $r->adults,
+            'children' => $r->children,
+            'price_lines' => self::priceLines($r),
+            'contract_total' => $money($r->contract_total_cents),
+            'deposit_due' => $money($r->deposit_due_cents),
+            'balance_due' => $money($r->balance_due_cents),
+        ];
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private static function priceLines(Reservation $r): array
+    {
+        $money = fn (int $cents): array => Money::json($cents, $r->currency);
+
+        return $r->priceLines()->orderBy('position')->get()->map(fn (ReservationPriceLine $l): array => [
+            'kind' => $l->kind->value,
+            'date' => $l->night_date?->toDateString(),
+            'quantity' => $l->quantity,
+            'unit_amount' => $money($l->unit_amount_cents),
+            'amount' => $money($l->amount_cents),
+        ])->values()->all();
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public static function detail(Reservation $r): array
@@ -92,13 +131,7 @@ final class ReservationResource
             'cancel_reason' => $r->cancel_reason,
             'actions' => self::actions($r, $economics),
             'cancellation_refund' => $r->status === ReservationStatus::CONFIRMED ? self::cancellationRefund($r) : null,
-            'price_lines' => $r->priceLines()->orderBy('position')->get()->map(fn (ReservationPriceLine $l): array => [
-                'kind' => $l->kind->value,
-                'date' => $l->night_date?->toDateString(),
-                'quantity' => $l->quantity,
-                'unit_amount' => $money($l->unit_amount_cents),
-                'amount' => $money($l->amount_cents),
-            ])->all(),
+            'price_lines' => self::priceLines($r),
             'payments' => $economics->payments->map(fn (Payment $p): array => [
                 'id' => $p->id,
                 'purpose' => $p->purpose->value,

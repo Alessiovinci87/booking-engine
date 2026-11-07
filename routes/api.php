@@ -115,6 +115,7 @@ Route::prefix('admin')->middleware(EnsureFrontendRequestsAreStateful::class)->gr
         Route::patch('units/{unit}/seasons/{season}', [RatePlanController::class, 'updateSeason'])->name('admin.units.seasons.update');
         Route::delete('units/{unit}/seasons/{season}', [RatePlanController::class, 'destroySeason'])->name('admin.units.seasons.destroy');
         Route::post('units/{unit}/price-preview', PricePreviewController::class)->name('admin.units.price-preview');
+        Route::post('reservations/{reservation}/modify-preview', [ReservationController::class, 'previewModify'])->name('admin.reservations.modify-preview');
 
         Route::get('calendar', CalendarController::class)->name('admin.calendar');
         Route::delete('units/{unit}/blocks/{block}', [BlockController::class, 'destroy'])->name('admin.units.blocks.destroy');

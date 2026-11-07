@@ -58,6 +58,9 @@ use LogicException;
  */
 final class ReservationStateMachine
 {
+    /** Margine tra la scadenza dell'approvazione e capture_before dell'autorizzazione (03 "Tempi"). */
+    public const CAPTURE_BEFORE_MARGIN_HOURS = 6;
+
     public function __construct(
         private readonly TenantContext $tenantContext,
         private readonly InventoryService $inventory,
@@ -141,17 +144,26 @@ final class ReservationStateMachine
             $this->inventory->activeFor($r);
             $this->payments->markAuthorized($payment, $paymentIntentId, $captureBefore);
 
-            $deadline = CarbonImmutable::now()->addHours((int) config('payments.approval_window_hours'));
-
-            if ($captureBefore !== null && $captureBefore->subHours(6)->lessThan($deadline)) {
-                $deadline = $captureBefore->subHours(6);
-            }
+            $deadline = self::approvalDeadline(CarbonImmutable::now(), $r->unit->property->approval_window_hours, $captureBefore);
 
             $r->approval_deadline = $deadline;
             $this->inventory->setTemporaryReason($r, OccupancyTempReason::AWAITING_APPROVAL, $deadline);
             $this->notify($r, 'reservation.awaiting_approval');
             $this->notify($r, 'reservation.approval_requested');
         });
+    }
+
+    /**
+     * Scadenza dell'approvazione (03 "Tempi", ADR-0012 punto 22): ora + finestra della struttura
+     * (1–48 h), ma mai oltre capture_before − 6 h, così l'autorizzazione è ancora valida per la
+     * capture anche se il gestore approva all'ultimo momento.
+     */
+    public static function approvalDeadline(CarbonImmutable $now, int $windowHours, ?CarbonImmutable $captureBefore): CarbonImmutable
+    {
+        $deadline = $now->addHours(max(1, min(48, $windowHours)));
+        $limit = $captureBefore?->subHours(self::CAPTURE_BEFORE_MARGIN_HOURS);
+
+        return $limit !== null && $limit->lessThan($deadline) ? $limit : $deadline;
     }
 
     /** T5: il job di rilascio ha chiuso la sessione (o era già scaduta). */

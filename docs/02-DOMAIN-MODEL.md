@@ -1,6 +1,6 @@
 # 02 — Domain model
 
-Versione: 1.2 · Data: 06/11/2026 · Modifiche rispetto alla 1.0: ADR-0002, ADR-0004, ADR-0005, [CHANGELOG-v1.1](CHANGELOG-v1.1.md); 1.2: ADR-0008, ADR-0009
+Versione: 1.2 · Data: 06/11/2026 · Modifiche rispetto alla 1.0: ADR-0002, ADR-0004, ADR-0005, [CHANGELOG-v1.1](CHANGELOG-v1.1.md); 1.2: ADR-0008, ADR-0009; 1.3: ADR-0012 (`properties.approval_window_hours`)
 
 Tutte le tabelle tenant-scoped hanno `tenant_id UUID NOT NULL`, sono protette da RLS (08) e collegate ai genitori con **chiavi esterne composite** (vedi "Integrità tra tenant"). Colonne comuni non ripetute: `id UUID PK (v7)`, `created_at`, `updated_at` (`TIMESTAMPTZ`).
 
@@ -42,7 +42,7 @@ Non ha `tenant_id`; RLS la limita a `id = app.tenant_id`.
 `tenant_id` (unico), `stripe_account_id` (unico globale), `charges_enabled`, `payouts_enabled`, `details_submitted`, `livemode`, `last_synced_at`.
 
 ### Property
-`name`, `slug` (unico per tenant), indirizzo strutturato, `cin_code`, `timezone`, `contact_email`, `contact_phone`, `checkin_time`, `checkout_time`, `privacy_policy_url`, `terms_url`, `ota_commission_bps` (default 1500), `default_cancellation_policy_id` (nullable nel database, obbligatoria per pubblicare; ADR-0009), `status` (`DRAFT`, `PUBLISHED`, `ARCHIVED`).
+`name`, `slug` (unico per tenant), indirizzo strutturato, `cin_code`, `timezone`, `contact_email`, `contact_phone`, `checkin_time`, `checkout_time`, `privacy_policy_url`, `terms_url`, `approval_window_hours` (1–48, predefinita 12; ADR-0012 punto 22), `ota_commission_bps` (default 1500), `default_cancellation_policy_id` (nullable nel database, obbligatoria per pubblicare; ADR-0009), `status` (`DRAFT`, `PUBLISHED`, `ARCHIVED`).
 
 ### PropertyTranslation / UnitTranslation
 `locale` (`it`, `en`), `name`, `description`, `house_rules`. Unicità `(parent_id, locale)`. Nessuna traduzione automatica; fallback su `it` con etichetta esplicita.

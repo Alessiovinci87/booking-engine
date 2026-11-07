@@ -132,6 +132,9 @@ const PROPERTY_FIELDS = [
 
 type PropertyField = (typeof PROPERTY_FIELDS)[number];
 
+/** Link dei documenti legali: la versione accettata dall'ospite deriva dall'URL (ADR-0011 punto 16). */
+const LEGAL_FIELDS: ReadonlySet<PropertyField> = new Set<PropertyField>(['privacy_policy_url', 'terms_url']);
+
 const FIELD_TYPES: Partial<Record<PropertyField, string>> = {
     contact_email: 'email',
     contact_phone: 'tel',
@@ -151,6 +154,7 @@ function PropertyForm({ property, notice, onNotice }: { property: Property; noti
         () => Object.fromEntries(PROPERTY_FIELDS.map((key) => [key, property[key] ?? ''])) as Record<PropertyField, string>,
     );
     const [policyId, setPolicyId] = useState(property.default_cancellation_policy_id ?? '');
+    const [approvalHours, setApprovalHours] = useState(String(property.approval_window_hours));
     const [translations, setTranslations] = useState(() => translationDraft(property.translations));
 
     const save = useMutation({
@@ -164,6 +168,7 @@ function PropertyForm({ property, notice, onNotice }: { property: Property; noti
                 slug,
                 ...values,
                 default_cancellation_policy_id: policyId === '' ? null : policyId,
+                approval_window_hours: Number.parseInt(approvalHours, 10),
                 translations: translationPayload(translations),
             });
         },
@@ -200,10 +205,13 @@ function PropertyForm({ property, notice, onNotice }: { property: Property; noti
                         <TextInput value={slug} onChange={(value) => setSlug(value.toLowerCase())} required />
                     </Field>
                     {PROPERTY_FIELDS.map((key) => (
-                        <Field key={key} label={t(`property.${key}`)} errors={errors[key]}>
+                        <Field key={key} label={t(`property.${key}`)} errors={errors[key]} hint={LEGAL_FIELDS.has(key) ? t('property.legalUrlHint') : undefined}>
                             <TextInput type={FIELD_TYPES[key] ?? 'text'} value={fields[key]} onChange={(value) => setFields({ ...fields, [key]: value })} />
                         </Field>
                     ))}
+                    <Field label={t('property.approvalWindow')} errors={errors.approval_window_hours} hint={t('property.approvalWindowHint')}>
+                        <TextInput type="number" value={approvalHours} onChange={setApprovalHours} min={1} max={48} />
+                    </Field>
                     <Field label={t('property.defaultPolicy')} errors={errors.default_cancellation_policy_id} hint={t('property.defaultPolicyHint')}>
                         <select className={inputClass} value={policyId} onChange={(e) => setPolicyId(e.target.value)}>
                             <option value="">{t('property.noPolicy')}</option>

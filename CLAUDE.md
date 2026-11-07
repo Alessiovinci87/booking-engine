@@ -5,7 +5,7 @@ Questo repository implementa la specifica in `docs/`. La specifica è la fonte d
 ## Regole
 
 1. Prima di implementare una funzionalità, leggi i documenti di `docs/` che la riguardano. Se il codice e la specifica divergono, vince la specifica.
-2. Non cambiare un comportamento concordato senza una ADR in `docs/adr/` (usa `0000-template.md`). Se una richiesta contraddice la specifica, fermati e segnalalo.
+2. Non cambiare un comportamento concordato senza una ADR in `docs/adr/` (usa `0000-template.md`). Se una richiesta contraddice la specifica, fermati e segnalalo. Le ADR scritte durante una milestone hanno stato **"Proposta"** finché la verifica della milestone non le accetta.
 3. Si lavora **una milestone alla volta** secondo `docs/11-MILESTONES.md`: attività nell'ordine indicato, Definition of Done, regola "Quando ci si ferma", rapporto di fine milestone. Le scelte tecniche sono in `docs/adr/0006-scelte-di-implementazione.md`: non introdurre librerie o strutture diverse senza una nuova ADR.
 4. Ogni invariante I1–I22 (02) e ogni criterio di accettazione (01) deve avere almeno un test automatico. La matrice in `docs/10-TRACEABILITY.md` indica quale; aggiornala quando aggiungi servizi, tabelle o endpoint.
 5. Stati: solo tramite i metodi di servizio delle macchine a stati. Mai `update(['status' => ...])` diretti.

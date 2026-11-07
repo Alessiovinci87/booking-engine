@@ -10,7 +10,7 @@ use Illuminate\Validation\Validator;
 
 /**
  * PATCH /admin/reservations/{id} (07, T18): nuove date e/o ospiti con If-Match. I campi assenti
- * restano quelli attuali. `note` descrive la modifica nello storico (ReservationChange).
+ * restano quelli attuali. `expected_total_cents` facoltativo, dall'anteprima. `note` descrive la modifica nello storico (ReservationChange).
  */
 final class ModifyReservationRequest extends FormRequest
 {
@@ -25,6 +25,7 @@ final class ModifyReservationRequest extends FormRequest
             'adults' => ['sometimes', 'integer', 'between:1,50'],
             'children' => ['sometimes', 'integer', 'between:0,50'],
             'note' => ['sometimes', 'nullable', 'string', 'max:1000'],
+            'expected_total_cents' => ['sometimes', 'nullable', 'integer', 'min:0'],
         ];
     }
 
@@ -58,6 +59,14 @@ final class ModifyReservationRequest extends FormRequest
     public function childrenFor(Reservation $reservation): int
     {
         return $this->has('children') ? $this->integer('children') : $reservation->children;
+    }
+
+    /** Totale visto nell'anteprima (ADR-0011 punto 28): se il prezzo nel frattempo è cambiato → 409 PRICE_CHANGED. */
+    public function expectedTotalCents(): ?int
+    {
+        $value = $this->validated('expected_total_cents');
+
+        return $value === null ? null : (int) $value;
     }
 
     public function note(): ?string
