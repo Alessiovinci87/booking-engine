@@ -101,4 +101,17 @@ return [
         'subject' => 'Il tuo preventivo per :property',
         'lines' => ['Ecco il preventivo per :unit dal :check_in al :check_out: totale :amount.', 'Il preventivo è valido fino al :expires_at (UTC). Puoi prenotare dal link qui sotto.'],
     ],
+    // Account del gestore (6.11): testi del pannello, solo in italiano.
+    'account' => [
+        'greeting' => 'Buongiorno,',
+        'signature' => 'Il team di :app',
+    ],
+    'account_password_reset' => [
+        'subject' => 'Reimposta la password del pannello',
+        'lines' => ['Abbiamo ricevuto una richiesta di reimpostazione della password del tuo account.', 'Il link qui sotto vale 60 minuti e si può usare una sola volta. Dopo la nuova password ti verrà chiesto comunque il codice della verifica in due passaggi.', 'Se non hai chiesto tu la reimpostazione, ignora questa email: la password attuale resta valida.'],
+    ],
+    'account_password_changed' => [
+        'subject' => 'La tua password è stata cambiata',
+        'lines' => ['La password del tuo account del pannello è stata cambiata il :changed_at (UTC). Tutte le altre sessioni aperte sono state chiuse.', 'Se non hai cambiato tu la password, reimpostala subito dal link qui sotto e contatta l’assistenza.'],
+    ],
 ];

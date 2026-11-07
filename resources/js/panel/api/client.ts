@@ -156,6 +156,16 @@ export const api = {
     me: () => apiRequest<Me>('GET', '/me'),
     /** Ri-autenticazione per le azioni sensibili (08), valida 15 minuti. */
     confirmPassword: (password: string) => apiRequest<void>('POST', '/auth/confirm-password', { password }),
+    /** Password dimenticata (6.11): risposta sempre identica, che l'email esista o no. */
+    forgotPassword: (email: string) => apiRequest<{ status: string }>('POST', '/auth/password/forgot', { email }),
+    resetPassword: (token: string, password: string, passwordConfirmation: string) =>
+        apiRequest<void>('POST', '/auth/password/reset', { token, password, password_confirmation: passwordConfirmation }),
+    changePassword: (currentPassword: string, password: string, passwordConfirmation: string) =>
+        apiRequest<void>('POST', '/auth/password', {
+            current_password: currentPassword,
+            password,
+            password_confirmation: passwordConfirmation,
+        }),
 };
 
 /** Errori per campo di VALIDATION_FAILED (07: details.fields). */

@@ -29,4 +29,4 @@ php artisan user:reset-mfa <email-del-gestore> --reason="Telefono perso, identit
 
 1. Si avvisa il gestore per telefono che può accedere e configurare la MFA.
 2. Gli si ricorda di **salvare i nuovi codici di recupero**.
-3. Se c'è il sospetto che qualcuno abbia avuto accesso al telefono o alla password, si controlla l'audit recente. Nel pannello non c'è ancora il cambio password: per ora va concordato con Alessio. Nei casi gravi si segue la gestione degli incidenti di 08 (P1).
+3. Se c'è il sospetto che qualcuno abbia avuto accesso al telefono o alla password, si controlla l'audit recente. Il gestore cambia la password dal pannello ("Account" → "Cambia password") oppure con "Password dimenticata?" (6.11, ADR-0016): in entrambi i casi le altre sessioni si chiudono e arriva un'email di avviso. Nei casi gravi si segue la gestione degli incidenti di 08 (P1).

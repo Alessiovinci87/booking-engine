@@ -11,6 +11,8 @@ Il pannello è all'indirizzo che ti abbiamo comunicato, seguito da `/app`. Funzi
 3. **Salva i 10 codici di recupero** (stampali o tienili in un gestore di password). Ti servono se perdi il telefono. Ogni codice vale una volta.
 4. Da quel momento, a ogni accesso, ti chiediamo password e codice dell'app. Dopo 2 ore di inattività, o 12 ore in totale, si rientra.
 5. Per le operazioni delicate (rimborsi, collegamento a Stripe, download dei dati degli ospiti, anonimizzazione) il pannello ti chiede di nuovo la password. La conferma vale 15 minuti.
+6. **Cambia la password iniziale** al primo accesso: clicca sulla tua email in alto a destra (su telefono: "Account"), poi "Cambia password". Servono la password attuale e una nuova di almeno 12 caratteri, non comparsa in violazioni di dati note. Le altre sessioni aperte (per esempio su un altro computer) vengono chiuse e ricevi un'email di avviso.
+7. **Password dimenticata**: nella pagina di accesso clicca "Password dimenticata?" e scrivi la tua email. Ricevi un link valido 60 minuti, che si usa una sola volta (se ne chiedi un altro, il precedente non vale più). Dopo la nuova password accedi di nuovo: il codice dell'app di autenticazione (o un codice di recupero) **viene chiesto comunque**. Tutte le sessioni aperte vengono chiuse e ricevi un'email di avviso.
 
 ## 2. La struttura
 
@@ -105,5 +107,6 @@ Menu "Metriche": fatturato diretto del periodo, commissioni OTA che avresti paga
 ## Domande frequenti
 
 - **Ho perso il telefono con l'app di autenticazione.** Accedi con uno dei codici di recupero e configura il nuovo telefono. Se non hai più i codici, contattaci.
+- **Ho ricevuto l'email "La tua password è stata cambiata" ma non l'ho cambiata io.** Reimposta subito la password con "Password dimenticata?" e contattaci. Senza il codice dell'app di autenticazione nessuno può entrare, ma la password va comunque cambiata.
 - **Un ospite dice di aver pagato ma la prenotazione non è confermata.** La conferma arriva da Stripe, a volte con qualche minuto di ritardo. Se dopo 15 minuti non è cambiato nulla, contattaci con il codice della prenotazione (8 caratteri), senza altri dati dell'ospite.
 - **Voglio fermare le vendite di un alloggio per qualche giorno.** Blocca le date dal "Calendario" oppure, dall'unità, "Sospendi le vendite".

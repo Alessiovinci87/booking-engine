@@ -48,7 +48,7 @@ const TENANT_SCOPED_TABLES = [
     'external_calendars', 'external_calendar_events', 'sync_runs', 'outbox_messages',
 ];
 
-const GLOBAL_TABLES = ['tenants', 'users', 'user_recovery_codes', 'webhook_events', 'retention_policies', 'audit_log'];
+const GLOBAL_TABLES = ['tenants', 'users', 'user_recovery_codes', 'user_password_resets', 'webhook_events', 'retention_policies', 'audit_log'];
 
 /** @return list<object> */
 function publicColumns(): array
@@ -76,7 +76,7 @@ it('ha tenant_id NOT NULL su ogni tabella tenant-scoped e nessun tenant_id sulle
         expect($tenantColumns->get($table)?->is_nullable)->toBe('NO', "tenant_id NOT NULL mancante su {$table}");
     }
 
-    foreach (['tenants', 'users', 'user_recovery_codes', 'webhook_events', 'retention_policies'] as $table) {
+    foreach (['tenants', 'users', 'user_recovery_codes', 'user_password_resets', 'webhook_events', 'retention_policies'] as $table) {
         expect($tenantColumns->has($table))->toBeFalse("{$table} è globale e non deve avere tenant_id");
     }
 });

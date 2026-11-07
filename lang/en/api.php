@@ -10,6 +10,7 @@ return [
         'MFA_ALREADY_ENABLED' => 'Two-step verification is already enabled.',
         'INVALID_CREDENTIALS' => 'Incorrect email or password.',
         'INVALID_MFA_CODE' => 'Invalid code.',
+        'PASSWORD_RESET_INVALID' => 'The password reset link is invalid, expired or already used.',
         'REAUTH_REQUIRED' => 'Confirm your password to continue.',
         'FORBIDDEN' => 'Operation not allowed.',
         'NOT_FOUND' => 'Resource not found.',

@@ -19,6 +19,8 @@ final class PanelSession
 
     private const PASSWORD_CONFIRMED_AT = 'panel.password_confirmed_at';
 
+    private const REVOCATION_ACK = 'panel.revocation_ack';
+
     public function __construct(private readonly Session $session) {}
 
     public function start(): void
@@ -77,6 +79,21 @@ final class PanelSession
         $authenticatedAt = $this->session->get(self::AUTHENTICATED_AT);
 
         return ! is_int($authenticatedAt) || $authenticatedAt <= $revokedAt->getTimestamp();
+    }
+
+    /**
+     * La sessione corrente prende atto di una revoca che ha causato lei stessa (6.11, cambio password):
+     * resta aperta, con la MFA già verificata, mentre tutte le altre sessioni si chiudono.
+     */
+    public function acknowledgeRevocation(CarbonImmutable $revokedAt): void
+    {
+        $this->session->put(self::REVOCATION_ACK, $revokedAt->getTimestamp());
+    }
+
+    /** La revoca indicata è quella di cui questa sessione ha preso atto (vedi acknowledgeRevocation). */
+    public function hasAcknowledged(CarbonImmutable $revokedAt): bool
+    {
+        return $this->session->get(self::REVOCATION_ACK) === $revokedAt->getTimestamp();
     }
 
     public function touch(): void

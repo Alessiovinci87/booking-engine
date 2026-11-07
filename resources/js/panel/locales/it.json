@@ -54,7 +54,8 @@
         "quotes": "Preventivi",
         "conflicts": "Conflitti",
         "calendars": "Calendari OTA",
-        "metrics": "Metriche"
+        "metrics": "Metriche",
+        "account": "Account"
     },
     "notFound": {
         "title": "Pagina non trovata",
@@ -68,6 +69,7 @@
         "MFA_ALREADY_ENABLED": "La verifica in due passaggi è già attiva.",
         "INVALID_CREDENTIALS": "Email o password non corrette.",
         "INVALID_MFA_CODE": "Codice non valido.",
+        "PASSWORD_RESET_INVALID": "Il link non è valido, è scaduto o è già stato usato. Chiedine uno nuovo.",
         "REAUTH_REQUIRED": "Conferma la password per continuare.",
         "FORBIDDEN": "Operazione non consentita.",
         "NOT_FOUND": "Risorsa non trovata.",
@@ -787,5 +789,30 @@
         "printCard": "I dati della carta sono solo presso Stripe, nel conto della struttura.",
         "dpaMissing": "Accordo sul trattamento dei dati (DPA) non ancora registrato: non puoi pubblicare strutture finché la piattaforma non lo registra.",
         "dpaSigned": "DPA versione {{version}} firmato il {{date}}."
+    },
+    "password": {
+        "forgotLink": "Password dimenticata?",
+        "forgotTitle": "Password dimenticata",
+        "forgotIntro": "Scrivi l'email del tuo account: ti invieremo un link per scegliere una nuova password, valido 60 minuti.",
+        "forgotSubmit": "Invia il link",
+        "forgotSent": "Se l'email corrisponde a un account, riceverai a breve un link per reimpostare la password. Il link vale 60 minuti e si usa una sola volta. Controlla anche la posta indesiderata.",
+        "backToLogin": "Torna all'accesso",
+        "resetTitle": "Scegli una nuova password",
+        "rules": "Almeno 12 caratteri. Non sono ammesse password comparse in violazioni di dati note.",
+        "new": "Nuova password",
+        "confirm": "Ripeti la nuova password",
+        "resetSubmit": "Salva la nuova password",
+        "resetDone": "Password aggiornata. Tutte le sessioni aperte sono state chiuse. Accedi con la nuova password: ti verrà chiesto comunque il codice della verifica in due passaggi (o un codice di recupero).",
+        "goToLogin": "Vai all'accesso",
+        "requestNewLink": "Chiedi un nuovo link"
+    },
+    "account": {
+        "title": "Account",
+        "changePassword": "Cambia password",
+        "changeIntro": "Le altre sessioni aperte verranno chiuse; riceverai un'email di avviso.",
+        "current": "Password attuale",
+        "currentInvalid": "La password attuale non è corretta.",
+        "submit": "Cambia password",
+        "changed": "Password cambiata. Le altre sessioni sono state chiuse."
     }
 }

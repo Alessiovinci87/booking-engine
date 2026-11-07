@@ -10,6 +10,7 @@ return [
         'MFA_ALREADY_ENABLED' => 'La verifica in due passaggi è già attiva.',
         'INVALID_CREDENTIALS' => 'Email o password non corrette.',
         'INVALID_MFA_CODE' => 'Codice non valido.',
+        'PASSWORD_RESET_INVALID' => 'Il link per reimpostare la password non è valido, è scaduto o è già stato usato.',
         'REAUTH_REQUIRED' => 'Conferma la password per continuare.',
         'FORBIDDEN' => 'Operazione non consentita.',
         'NOT_FOUND' => 'Risorsa non trovata.',

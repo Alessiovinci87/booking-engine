@@ -96,4 +96,17 @@ return [
         'subject' => 'Your quote for :property',
         'lines' => ['Here is the quote for :unit from :check_in to :check_out: total :amount.', 'The quote is valid until :expires_at (UTC). You can book from the link below.'],
     ],
+    // Manager account (6.11): the panel sends these in Italian; English kept aligned for completeness.
+    'account' => [
+        'greeting' => 'Hello,',
+        'signature' => 'The :app team',
+    ],
+    'account_password_reset' => [
+        'subject' => 'Reset your panel password',
+        'lines' => ['We received a request to reset the password of your account.', 'The link below is valid for 60 minutes and can be used only once. After the new password you will still be asked for your two-step verification code.', 'If you did not request a reset, ignore this email: your current password remains valid.'],
+    ],
+    'account_password_changed' => [
+        'subject' => 'Your password has been changed',
+        'lines' => ['The password of your panel account was changed on :changed_at (UTC). All other open sessions have been closed.', 'If you did not change it, reset it right away from the link below and contact support.'],
+    ],
 ];

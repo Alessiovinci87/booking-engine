@@ -53,6 +53,7 @@ php artisan tenant:dpa <slug> <versione-del-dpa> --signed-at=<AAAA-MM-GG>
 
 - ☐ Il gestore apre `/app`, accede con email e password, configura la MFA con un'app di autenticazione (Google Authenticator, 1Password e simili) e **salva i 10 codici di recupero** in un posto sicuro.
 - ☐ Verifica che il pannello mostri il nome del gestore e nessun avviso DPA.
+- ☐ Il gestore **cambia la password iniziale** ("Account" → "Cambia password") e prova "Password dimenticata?" solo se vuole verificare la ricezione delle email.
 
 ## 5. Configurazione (il gestore, con l'aiuto della piattaforma)
 

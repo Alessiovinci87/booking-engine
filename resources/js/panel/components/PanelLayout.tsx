@@ -47,7 +47,14 @@ export function PanelLayout() {
                                 {t('layout.metrics')}
                             </Link>
                         </nav>
-                        {me.data && <span className="hidden text-slate-600 sm:inline">{me.data.user.email}</span>}
+                        {me.data && (
+                            <Link to="/account" className="hidden text-slate-600 hover:underline sm:inline" title={t('layout.account')}>
+                                {me.data.user.email}
+                            </Link>
+                        )}
+                        <Link to="/account" className="font-medium text-blue-700 hover:underline sm:hidden">
+                            {t('layout.account')}
+                        </Link>
                         <LogoutButton className="rounded-md border border-slate-300 px-3 py-1.5 text-slate-700 hover:bg-slate-50" />
                     </div>
                 </div>

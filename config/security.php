@@ -29,6 +29,15 @@ return [
         'min_length' => 12,
     ],
 
+    // Password dimenticata (6.11, ADR-0016): link monouso di 60 minuti; richieste limitate per email (in
+    // hash) e per IP, nella stessa finestra di un'ora.
+    'password_reset' => [
+        'ttl_minutes' => 60,
+        'per_email' => 3,
+        'per_ip' => 10,
+        'decay_seconds' => 3600,
+    ],
+
     'admin_rate_limit_per_minute' => 300,
 
     // Proxy davanti all'applicazione (load balancer, reverse proxy del provider; 6.7): indirizzi o reti

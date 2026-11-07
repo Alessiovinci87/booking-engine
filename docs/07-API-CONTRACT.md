@@ -48,7 +48,7 @@ L'API pubblica non usa cookie di sessione e quindi non usa il token CSRF (ADR-00
 | 419 | `CSRF_TOKEN_EXPIRED` (la SPA richiede un nuovo cookie CSRF e ripete una volta) |
 | 410 | `QUOTE_EXPIRED`, `QUOTE_REVOKED`, `QUOTE_EXHAUSTED`, `FEED_RETIRED` |
 | 412 | `VERSION_MISMATCH` |
-| 422 | `MIN_NIGHTS_NOT_MET`, `OCCUPANCY_EXCEEDED`, `AMOUNT_BELOW_MINIMUM`, `PAYMENTS_NOT_ENABLED`, `IDEMPOTENCY_KEY_REUSED`, `INVALID_ICAL_URL`, `CANCELLATION_POLICY_MISSING`, `PRIVACY_POLICY_MISSING`, `DPA_NOT_SIGNED` (ADR-0014), `NO_ACTIVE_UNITS`, `TRANSLATION_IT_MISSING`, `QUOTE_EMAIL_MISSING`, `CHECKLIST_STEP_INVALID` (ADR-0013) |
+| 422 | `MIN_NIGHTS_NOT_MET`, `OCCUPANCY_EXCEEDED`, `AMOUNT_BELOW_MINIMUM`, `PAYMENTS_NOT_ENABLED`, `IDEMPOTENCY_KEY_REUSED`, `INVALID_ICAL_URL`, `CANCELLATION_POLICY_MISSING`, `PRIVACY_POLICY_MISSING`, `DPA_NOT_SIGNED` (ADR-0014), `NO_ACTIVE_UNITS`, `TRANSLATION_IT_MISSING`, `QUOTE_EMAIL_MISSING`, `CHECKLIST_STEP_INVALID` (ADR-0013), `PASSWORD_RESET_INVALID` (ADR-0016, Proposta) |
 | 429 | `RATE_LIMITED` |
 | 502 | `PAYMENT_PROVIDER_REJECTED` (richiesta rifiutata da Stripe; codice di Stripe in `details.provider_code`, ADR-0012) |
 | 503 | `PAYMENT_PROVIDER_UNAVAILABLE` (Stripe non risponde) |
@@ -126,6 +126,9 @@ Sotto `/admin/auth/`, con sessione Sanctum e CSRF:
 | GET/POST | `/auth/mfa/setup` | solo con la MFA non ancora attiva: QR (SVG generato in locale) e chiave; la conferma restituisce 10 codici di recupero, una sola volta |
 | POST | `/auth/mfa/verify` | `code` TOTP oppure `recovery_code`; stesso limite di tentativi del login |
 | POST | `/auth/confirm-password` | ri-autenticazione valida 15 minuti per le azioni sensibili (`403 REAUTH_REQUIRED` senza) |
+| POST | `/auth/password/forgot` | *(ADR-0016, Proposta)* senza sessione; `{ email }` → sempre `202 { status: "accepted" }`, che l'email esista o no; limite 3/ora per email e 10/ora per IP (`429 RATE_LIMITED`); link monouso di 60 minuti via email (outbox) |
+| POST | `/auth/password/reset` | *(ADR-0016, Proposta)* senza sessione; `{ token, password, password_confirmation }` → `204`; `422 PASSWORD_RESET_INVALID` per link inesistente, scaduto, usato o sostituito; chiude tutte le sessioni e **non** apre la sessione: dopo serve il login con la MFA |
+| POST | `/auth/password` | *(ADR-0016, Proposta)* sessione con MFA verificata; `{ current_password, password, password_confirmation }` → `204`; `401 INVALID_CREDENTIALS` con la password attuale errata (limite del login); chiude le altre sessioni, la corrente resta aperta |
 
 Ogni altra rotta `/admin/*` richiede, nell'ordine: sessione valida (2 h di inattività, 12 h assolute), MFA verificata nella sessione, limite di 300 richieste/min per utente, tenant dalla membership.
 

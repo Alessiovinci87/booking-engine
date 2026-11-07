@@ -3,6 +3,7 @@
 use App\Domain\Calendar\Outbox\SendCalendarEmail;
 use App\Domain\Quotes\Outbox\SendQuoteEmail;
 use App\Domain\Reservations\Outbox\SendReservationEmail;
+use App\Domain\Tenancy\Outbox\SendAccountEmail;
 
 /*
  * Consegna dei messaggi in uscita (02 OutboxMessage, 03 "Regole generali").
@@ -35,6 +36,8 @@ return [
         'calendar.conflict_auto_resolved' => SendCalendarEmail::class,
         'calendar.sync_unhealthy' => SendCalendarEmail::class,
         'quote.sent' => SendQuoteEmail::class,
+        'account.password_reset' => SendAccountEmail::class,
+        'account.password_changed' => SendAccountEmail::class,
     ],
 
     // Tentativi massimi prima dello stato FAILED.

@@ -13,7 +13,8 @@ use Symfony\Component\HttpFoundation\Response;
 /**
  * Scadenza della sessione del pannello (08): 2 ore di inattività e 12 ore dal login. Una sessione
  * scaduta viene chiusa e la richiesta risponde 401 UNAUTHENTICATED. Vale anche per le sessioni iniziate
- * prima di una revoca (`users.sessions_revoked_at`, 6.10: user:reset-mfa).
+ * prima di una revoca (`users.sessions_revoked_at`: 6.10 user:reset-mfa, 6.11 cambio e reimpostazione
+ * della password), tranne quella che ha cambiato la password e ha preso atto della revoca.
  */
 final class EnsurePanelSessionIsFresh
 {
@@ -29,7 +30,7 @@ final class EnsurePanelSessionIsFresh
         if ($panel->isExpired(
             (int) config('security.session.idle_minutes') * 60,
             (int) config('security.session.absolute_minutes') * 60,
-        ) || ($revokedAt !== null && $panel->startedNotAfter($revokedAt))) {
+        ) || ($revokedAt !== null && $panel->startedNotAfter($revokedAt) && ! $panel->hasAcknowledged($revokedAt))) {
             Auth::guard('web')->logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();

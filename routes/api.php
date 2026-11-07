@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\V1\Admin\Auth\LoginController;
 use App\Http\Controllers\Api\V1\Admin\Auth\MfaSetupController;
 use App\Http\Controllers\Api\V1\Admin\Auth\MfaVerifyController;
+use App\Http\Controllers\Api\V1\Admin\Auth\PasswordController;
 use App\Http\Controllers\Api\V1\Admin\Auth\SessionController;
 use App\Http\Controllers\Api\V1\Admin\BlockController;
 use App\Http\Controllers\Api\V1\Admin\CalendarController;
@@ -42,6 +43,9 @@ foreach (['property', 'unit', 'photo', 'season', 'reservation', 'block', 'refund
 Route::prefix('admin')->middleware(EnsureFrontendRequestsAreStateful::class)->group(function (): void {
     Route::prefix('auth')->group(function (): void {
         Route::post('login', LoginController::class)->name('admin.auth.login');
+        // Password dimenticata (6.11, ADR-0016): senza sessione; la reimpostazione non apre la sessione.
+        Route::post('password/forgot', [PasswordController::class, 'forgot'])->name('admin.auth.password.forgot');
+        Route::post('password/reset', [PasswordController::class, 'reset'])->name('admin.auth.password.reset');
 
         Route::middleware(['auth:sanctum', 'panel.fresh'])->group(function (): void {
             Route::get('session', [SessionController::class, 'show'])->name('admin.auth.session');
@@ -53,6 +57,9 @@ Route::prefix('admin')->middleware(EnsureFrontendRequestsAreStateful::class)->gr
             Route::post('confirm-password', [SessionController::class, 'confirmPassword'])
                 ->middleware('mfa')
                 ->name('admin.auth.confirm-password');
+            Route::post('password', [PasswordController::class, 'change'])
+                ->middleware('mfa')
+                ->name('admin.auth.password.change');
         });
     });
 
