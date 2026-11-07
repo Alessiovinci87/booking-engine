@@ -224,9 +224,10 @@ Alla fine apri la pull request e scrivi il rapporto di fine milestone.
 | 6.3 | Privacy: export e anonimizzazione dell'ospite su tutte le copie (I22), campi DPA del tenant, link alle informative nel checkout |
 | 6.4 | Staging e produzione con Forge in UE, Horizon, backup cifrati, Sentry, monitoraggio di disponibilità |
 | 6.5 | Allerte operative di 08 |
-| 6.6 | Test Playwright E2E per AC1–AC17 e AC19 su staging |
+| 6.6 | Test Playwright E2E per AC1–AC17 e AC19 su staging, compresi `/app/calendari` e `/app/conflitti` (calendari importati, feed, checklist, presa in carico e chiusura di un conflitto) con un server iCal finto in https (verifica di M5) |
 | 6.7 | Revisione di sicurezza con la checklist di 08; test di ripristino del backup (AC12, I10) |
 | 6.8 | Procedura di attivazione dei piloti e guida rapida per i gestori, insieme a Giuseppe |
+| 6.9 | Verifica dei calendari reali di Booking e Airbnb con i risultati della Fase 0 (ADR-0007): formati, etichette di `SUMMARY`, eventi con orario, frequenza di lettura del nostro feed, risposta a `503`; adeguamento di `EchoClassifier`, `IcsParser` e dei file di prova (verifica di M5, ADR-0013). Da fare appena arrivano i risultati, prima di 6.6 |
 
 **Criteri di uscita:** tutti i criteri di accettazione tranne AC18 verdi su staging; backup ripristinato; prima struttura pilota configurata in produzione.
 **Gate:** pilota online ad aprile 2027 (invariato); tra la fine di M6 e il pilota c'è un margine di circa sei settimane.

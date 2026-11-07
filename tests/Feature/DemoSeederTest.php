@@ -1,13 +1,20 @@
 <?php
 
+use App\Domain\Calendar\Enums\ExternalCalendarStatus;
+use App\Domain\Calendar\IcalImportService;
+use App\Domain\Calendar\Models\ExternalCalendar;
+use App\Domain\Calendar\SyncHealthService;
 use App\Domain\Inventory\Enums\PropertyStatus;
 use App\Domain\Inventory\Models\Property;
 use App\Domain\Inventory\PropertySetupService;
 use App\Domain\Tenancy\Models\User;
 use App\Domain\Tenancy\TenantContext;
 use App\Domain\Tenancy\TenantProvisioning;
+use Carbon\CarbonImmutable;
 use Database\Seeders\DemoSeeder;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 
 /*
  * 1.8: seeder demo con dati inventati (tenant demo-alghero, Casa Demo Alghero it/en, due unità,
@@ -93,7 +100,7 @@ it('pubblica la struttura e crea prenotazioni di esempio coerenti con l\'inventa
             'AWAITING_APPROVAL' => 1,
             'AWAITING_PAYMENT' => 1,
             'CANCELLED' => 1,
-            'CONFIRMED' => 4,
+            'CONFIRMED' => 5, // 4 di M3 + quella del preventivo accettato (M5)
             'PAYMENT_FAILED' => 1,
             'REJECTED' => 1,
         ])
@@ -104,6 +111,51 @@ it('pubblica la struttura e crea prenotazioni di esempio coerenti con l\'inventa
 
     // I15: ogni prenotazione occupante ha la sua occupazione, nessuna occupazione orfana.
     expect(occupancyViolations($tenant))->toBe([]);
+});
+
+// Verifica di M5 (ADR-0013 punto 44): calendari importati dimostrativi, feed, conflitto, preventivi.
+it('crea i dati di M5 senza chiamate esterne', function () {
+    Http::preventStrayRequests();
+    $this->seed(DemoSeeder::class);
+    $tenant = demoTenantId();
+
+    inTenant($tenant, function () {
+        $garden = DB::table('units')->where('booking_mode', 'REQUEST')->value('id');
+        $calendars = DB::table('external_calendars')->orderBy('source')->get();
+
+        expect($calendars->pluck('source')->all())->toBe(['AIRBNB', 'BOOKING'])
+            ->and($calendars->every(fn ($c) => $c->demo && $c->unit_id === $garden && $c->status === 'ACTIVE' && $c->last_success_at !== null))->toBeTrue()
+            ->and(DB::table('external_calendar_events')->where('status', 'ACTIVE')->count())->toBe(4)
+            ->and(DB::table('sync_runs')->count())->toBe(0)
+            ->and(DB::table('ics_feeds')->where('status', 'ACTIVE')->count())->toBe(4)
+            ->and(DB::table('ics_feeds')->where('unit_id', $garden)->whereNotNull('paired_external_calendar_id')->count())->toBe(2);
+
+        $conflict = DB::table('inventory_conflicts')->sole();
+        expect($conflict->status)->toBe('OPEN')
+            ->and($conflict->unit_id)->toBe($garden)
+            ->and(DB::table('reservations')->where('id', DB::table('inventory_occupancies')->where('id', $conflict->occupancy_id)->value('reservation_id'))->value('status'))->toBe('CONFIRMED');
+
+        expect(DB::table('quotes')->orderBy('status')->pluck('status')->all())->toBe(['ACCEPTED', 'SENT'])
+            ->and(DB::table('reservations')->where('channel', 'QUOTE')->value('status'))->toBe('CONFIRMED');
+    });
+
+    expect(occupancyViolations($tenant))->toBe([]);
+});
+
+it('i calendari dimostrativi non si scaricano e restano sani (il dispatcher li esclude: IcalImportTest)', function () {
+    $this->seed(DemoSeeder::class);
+    $tenant = demoTenantId();
+    Carbon::setTestNow(now()->addDay());
+
+    try {
+        inTenant($tenant, function () {
+            $calendar = ExternalCalendar::query()->firstOrFail();
+            expect(SyncHealthService::healthFor($calendar, CarbonImmutable::now()))->toBe(ExternalCalendarStatus::ACTIVE)
+                ->and(app(IcalImportService::class)->sync($calendar->tenant_id, $calendar->id))->toBeNull();
+        });
+    } finally {
+        Carbon::setTestNow();
+    }
 });
 
 it('non duplica i dati se rieseguito', function () {

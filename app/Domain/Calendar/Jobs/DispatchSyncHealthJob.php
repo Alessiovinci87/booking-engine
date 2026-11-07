@@ -19,7 +19,7 @@ final class DispatchSyncHealthJob implements ShouldQueue
         $connection = $db->connection((string) config('payments.release_dispatcher_connection'));
 
         $rows = $connection->select(
-            "select tenant_id::text as tenant_id from external_calendars where status <> 'DISABLED'
+            "select tenant_id::text as tenant_id from external_calendars where status <> 'DISABLED' and not demo
              union select tenant_id::text from units where sync_health <> 'NONE' limit 1000",
         );
 

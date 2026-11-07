@@ -156,6 +156,7 @@ function CalendarRow({ calendar, onChange }: { calendar: ExternalCalendar; onCha
                     <p className="font-medium text-slate-900">
                         {t(`channelSource.${calendar.source}`)} · {calendar.url_host ?? '—'}
                     </p>
+                    {calendar.demo && <p className="text-xs text-slate-500">{t('calendars.demo')}</p>}
                     <p className="text-slate-700">
                         {calendar.last_success_at !== null
                             ? t('calendars.lastSuccess', { date: formatDateTime(calendar.last_success_at) })

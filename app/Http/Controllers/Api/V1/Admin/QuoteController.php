@@ -151,7 +151,7 @@ final class QuoteController extends Controller
             'checkout_attempts' => $quote->checkout_attempts,
             'max_checkout_attempts' => $quote->max_checkout_attempts,
             'reservation' => $reservation instanceof Reservation ? ['id' => $reservation->id, 'code' => $reservation->code, 'status' => $reservation->status->value] : null,
-            'link' => $linkActive ? QuoteLinks::url($quote->id) : null,
+            'link' => $linkActive ? QuoteLinks::url($quote) : null,
             'created_at' => $quote->created_at?->toIso8601ZuluString(),
         ];
     }

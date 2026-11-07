@@ -1,8 +1,8 @@
 # ADR-0013 — Precisazioni di calendari iCal e preventivi dopo M5
 
-- **Stato**: Proposta (da accettare con la verifica di M5, regola 2 di `CLAUDE.md`)
+- **Stato**: Accettata (verifica di M5)
 - **Data**: 2026-11-07
-- **Autori**: Alessio Vinci, Claude Code
+- **Autori**: Claude Code (stesura), verificata da Claude (chat) per Alessio
 - **Documenti di specifica toccati**: 06-CALENDAR-SYNC, 07-API-CONTRACT, 08-SECURITY-OPERATIONS
 
 ## Contesto
@@ -68,7 +68,7 @@ L'implementazione di M5 (import ed export iCal, conflitti, preventivi) ha incont
 
 ### Preventivi (5.7)
 
-36. **Link del preventivo**: il token è un HMAC-SHA256 dell'ID del preventivo con una chiave derivata da `APP_KEY`, in base64url (43 caratteri). Nel database resta solo `public_token_hash` (02), ma il pannello può mostrare di nuovo lo stesso link ("Copia link", WhatsApp, email) senza conservarlo in chiaro. Il link non si invalida cambiando token ma con lo stato (`REVOKED`, `EXPIRED`, `EXHAUSTED`). Pagina ospite `/q/{token}`, API `/public/quotes/{token}`; il tenant si ricava dall'hash con la funzione SECURITY DEFINER `app_tenant_by_quote` (stesso schema dei feed).
+36. **Link del preventivo** (rivisto dopo la verifica di M5): come i feed iCal (punto 24), token casuale di 32 byte in base64url (43 caratteri), cifrato a riposo in `quotes.public_token_encrypted` per mostrare di nuovo lo stesso link nel pannello ("Copia link", WhatsApp, email) e cercato per hash SHA-256 in `public_token_hash` (02). Il link non dipende da `APP_KEY`: ruotando la chiave (con la precedente in `APP_PREVIOUS_KEYS`) l'ospite apre ancora lo stesso link, perché la ricerca usa solo l'hash; la chiave serve solo a mostrare il link nel pannello. Migration `2027_01_18_000500`: i preventivi già presenti ricevono un token nuovo. Il link non si invalida cambiando token ma con lo stato (`REVOKED`, `EXPIRED`, `EXHAUSTED`). Pagina ospite `/q/{token}`, API `/public/quotes/{token}`; il tenant si ricava dall'hash con la funzione SECURITY DEFINER `app_tenant_by_quote` (stesso schema dei feed). La prima versione (HMAC dell'ID con una chiave derivata da `APP_KEY`) è stata scartata: vedi Alternative.
 37. **Invio**: `POST /quotes/{id}/send` con `channel` = `email` (outbox `quote.sent`, payload solo ID; 422 `QUOTE_EMAIL_MISSING` senza email) o `link` (copia del link e WhatsApp). Entrambi portano DRAFT → SENT e restituiscono `link`, `whatsapp_text` (nella lingua dell'ospite, senza dati personali) e `whatsapp_url` (`https://wa.me/?text=…`, senza numero di telefono). Un DRAFT non è leggibile dall'ospite (404).
 38. **Valuta congelata**: `quotes.currency` (nuova colonna, copiata dal piano alla creazione), così l'accettazione non rilegge le tariffe.
 39. **Accettazione**: in una transazione con la riga del preventivo bloccata si verificano scadenza (se superata il preventivo passa subito a EXPIRED e la risposta è 410), tentativi, capienza attuale (409 `OCCUPANCY_EXCEEDED`), unità prenotabile e disponibilità, poi T1 con prezzo, righe, caparra e modalità del preventivo (`NewReservation` porta le modalità congelate; con un calendario esterno attivo prevale REQUEST, I12). La sessione di pagamento si apre fuori dalla transazione (05). Il prezzo congelato non viene mai ricalcolato.
@@ -77,20 +77,30 @@ L'implementazione di M5 (import ed export iCal, conflitti, preventivi) ha incont
 42. **Scadenza**: oltre al controllo all'accettazione, un job ogni 5 minuti (dispatcher con app_admin_ops, un job per tenant) porta a EXPIRED i DRAFT e i SENT scaduti; il pannello non invia un preventivo scaduto (410). Scadenza personalizzabile alla creazione, al massimo 90 giorni.
 43. **Disponibilità alla creazione**: il pannello non crea preventivi su date già non vendibili (409 `DATES_UNAVAILABLE`); la disponibilità si verifica comunque di nuovo all'accettazione.
 
+### Decisioni dopo la verifica di M5
+
+44. **Calendari importati dimostrativi.** Nuova colonna `external_calendars.demo` (boolean, predefinita `false`; migration `2027_01_18_000600`). Un calendario `demo` non si scarica mai: è escluso da `DispatchCalendarSyncJob` e da `DispatchSyncHealthJob`, `IcalImportService::sync` non lo scarica (anche con "Sincronizza ora" o un cambio di URL) e la sua salute è sempre `ACTIVE`. I suoi eventi restano occupazioni a tutti gli effetti (disponibilità, conflitti, feed). Li crea solo il seeder demo tramite `Calendar\DemoCalendars`, con le stesse macchine a stati, la stessa rilevazione dei conflitti e lo stesso accoppiamento con i feed dell'import vero; l'URL è su un dominio `.invalid`. Il pannello li segnala come dimostrativi (`demo` nella risposta dell'API).
+45. **Seeder demo di M5**: sul Trilocale (su richiesta) i calendari "Booking demo" e "Airbnb demo" con due eventi ciascuno, uno dei quali in conflitto aperto con la prenotazione manuale confermata; feed per Booking e Airbnb di entrambe le unità; due preventivi, uno inviato (Trilocale) e uno accettato e pagato sul gateway finto (Bilocale).
+46. **Piano di M6** (11): nuova attività 6.9 (verifica dei calendari reali con i risultati della Fase 0, adeguamento di `EchoClassifier`, `IcsParser` e dei file di prova; issue #72) e 6.6 estesa agli E2E di `/app/calendari` e `/app/conflitti` (issue #59).
+
 ## Alternative considerate
 
 | Alternativa | Perché scartata |
 |---|---|
 | Client HTTP di Laravel (Guzzle) con un controllo dell'URL prima della richiesta | Guzzle risolve di nuovo il nome al momento della connessione: non protegge dal DNS rebinding senza lo stesso `CURLOPT_RESOLVE` |
 | Accettare il primo indirizzo pubblico ignorando quelli privati | Un nome che restituisce anche indirizzi interni è sospetto; nel dubbio si blocca (06) |
+| Link del preventivo come HMAC dell'ID con una chiave derivata da `APP_KEY` (prima versione del punto 36) | Ruotare `APP_KEY` avrebbe invalidato tutti i link aperti; scartata nella verifica di M5 a favore del token casuale cifrato, come i feed |
+| Calendari demo `DISABLED` per escluderli dal polling | Nel pannello comparirebbero come disattivati e la checklist non li conterebbe; il flag `demo` li tiene attivi ma mai scaricati |
 
 ## Conseguenze
 
 - Un calendario su porta non standard non si può importare; finora nessuna OTA nota lo richiede.
+- I link dei preventivi creati prima della migration `2027_01_18_000500` cambiano (nessun dato di produzione prima del pilota).
+- Il database demo locale va rigenerato (`php artisan migrate:fresh --database=pgsql_migrator --seed`) per vedere i dati di M5.
 
 ## Impatto sui test
 
-- Test aggiunti: `Unit/Calendar/SafeHttpFetcherTest`, `Unit/Calendar/IcsParserTest`, `Feature/Calendar/IcalImportTest`, `SyncErrorKeepsDatesTest`, `AntiWipeSafeguardTest`, `ConflictOnConfirmedTest`, `ConflictCloseKeepsDatesTest`, `EchoLoopTest`, `FeedMatrixTest`, `IcsUidStabilityTest`, `IcsFeedEndpointTest`, `FrozenFeedNeverEmptyTest`, `RetiredFeed410Test`, `SyncUnhealthyTest`, `ExternalCalendarApiTest`, `CalendarChecklistTest`, `Feature/Quotes/QuoteAcceptTest`, `QuoteExpiredTest`, `QuoteConcurrencyTest` (processi paralleli), `QuoteFrozenPriceTest`.
+- Test aggiunti: `Quotes/QuoteAcceptTest` (link casuale indipendente da `APP_KEY`, punto 36), `DemoSeederTest` (dati di M5, punti 44–45), `Unit/Calendar/SafeHttpFetcherTest`, `Unit/Calendar/IcsParserTest`, `Feature/Calendar/IcalImportTest`, `SyncErrorKeepsDatesTest`, `AntiWipeSafeguardTest`, `ConflictOnConfirmedTest`, `ConflictCloseKeepsDatesTest`, `EchoLoopTest`, `FeedMatrixTest`, `IcsUidStabilityTest`, `IcsFeedEndpointTest`, `FrozenFeedNeverEmptyTest`, `RetiredFeed410Test`, `SyncUnhealthyTest`, `ExternalCalendarApiTest`, `CalendarChecklistTest`, `Feature/Quotes/QuoteAcceptTest`, `QuoteExpiredTest`, `QuoteConcurrencyTest` (processi paralleli), `QuoteFrozenPriceTest`.
 - Test modificati: `Arch/ExternalHttpTest` (eccezione per `CurlTransport`), `Database/IcsFeedUniquenessTest` (`frozen_at` obbligatorio per i feed FROZEN), `Architecture/RlsCatalogTest` (policy `definer_lookup` su `ics_feeds` e `quotes`).
 
 ## Aggiornamento della specifica

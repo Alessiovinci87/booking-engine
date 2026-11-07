@@ -142,17 +142,18 @@ it('backoff 10, 20, 40, 60 minuti', function () {
     expect(array_map(fn ($n) => IcalImportService::backoffMinutes($n), [1, 2, 3, 4, 5, 10]))->toBe([10, 20, 40, 60, 60, 60]);
 });
 
-it('il dispatcher (app_admin_ops) accoda un job per ogni calendario scaduto o mai sincronizzato, non i disattivati', function () {
+it('il dispatcher (app_admin_ops) accoda un job per ogni calendario scaduto o mai sincronizzato, non i disattivati né i dimostrativi', function () {
     Queue::fake();
     $fx = committedTenantWithUnit();
     $db = DB::connection(committedConnection('pgsql_migrator', $fx['tenant']));
-    $ids = [uuid7(), uuid7(), uuid7(), uuid7()];
+    $ids = [uuid7(), uuid7(), uuid7(), uuid7(), uuid7()];
 
     try {
-        foreach ([[null, 'ACTIVE'], [now()->subMinute(), 'DEGRADED'], [now()->addMinutes(5), 'ACTIVE'], [null, 'DISABLED']] as $i => [$next, $status]) {
+        // L'ultimo è un calendario dimostrativo del seeder (ADR-0013 punto 44): mai nel polling.
+        foreach ([[null, 'ACTIVE', false], [now()->subMinute(), 'DEGRADED', false], [now()->addMinutes(5), 'ACTIVE', false], [null, 'DISABLED', false], [null, 'ACTIVE', true]] as $i => [$next, $status, $demo]) {
             $db->table('external_calendars')->insert([
                 'id' => $ids[$i], 'tenant_id' => $fx['tenant'], 'unit_id' => $fx['unit'], 'source' => 'BOOKING',
-                'url_encrypted' => 'x', 'status' => $status, 'next_poll_at' => $next, 'created_at' => now(), 'updated_at' => now(),
+                'url_encrypted' => 'x', 'status' => $status, 'next_poll_at' => $next, 'demo' => $demo, 'created_at' => now(), 'updated_at' => now(),
             ]);
         }
 

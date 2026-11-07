@@ -2,7 +2,6 @@
 
 use App\Domain\Inventory\Models\Unit;
 use App\Domain\Quotes\Models\Quote;
-use App\Domain\Quotes\QuoteLinks;
 use App\Domain\Quotes\QuoteService;
 use App\Domain\Reservations\LegalAcceptance;
 use App\Domain\Reservations\Models\Reservation;
@@ -43,9 +42,9 @@ function quoteFor(array $fx, array $options = []): Quote
     });
 }
 
-function quoteToken(Quote|string $quote): string
+function quoteToken(Quote $quote): string
 {
-    return QuoteLinks::token($quote instanceof Quote ? $quote->id : $quote);
+    return $quote->public_token_encrypted;
 }
 
 function freshQuote(array $fx, string $id): Quote

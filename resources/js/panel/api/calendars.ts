@@ -54,6 +54,8 @@ export interface ExternalCalendar {
     url_changed_at: string | null;
     active_events: number | null;
     poll_minutes: number;
+    /** Calendario dimostrativo del seeder: non viene mai scaricato (ADR-0013 punto 44). */
+    demo: boolean;
 }
 
 export interface SyncRun {

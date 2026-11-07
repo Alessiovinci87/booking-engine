@@ -69,6 +69,7 @@ final class QuoteService
         $this->availability->assertAvailable($unit, $stay);
         $price = $this->prices->quote($unit, new PriceRequest($stay, $adults, $children, $discountCents, true));
         $id = (string) Str::uuid7();
+        $token = QuoteLinks::newToken();
 
         return $this->machine->create([
             'id' => $id,
@@ -87,7 +88,8 @@ final class QuoteService
             'booking_mode_snapshot' => $unit->booking_mode,
             'payment_mode_snapshot' => $unit->payment_mode,
             'expires_at' => $expiresAt ?? CarbonImmutable::now()->addHours(self::DEFAULT_VALIDITY_HOURS),
-            'public_token_hash' => QuoteLinks::hash(QuoteLinks::token($id)),
+            'public_token_encrypted' => $token,
+            'public_token_hash' => QuoteLinks::hash($token),
         ]);
     }
 
@@ -117,7 +119,7 @@ final class QuoteService
             $this->outbox->enqueue('quote.sent', 'quote.sent:'.$quote->id.':'.Str::uuid7(), ['quote_id' => $quote->id]);
         }
 
-        $link = QuoteLinks::url($quote->id);
+        $link = QuoteLinks::url($quote);
         $text = self::whatsappText($quote, $link);
 
         return ['quote' => $quote, 'link' => $link, 'whatsapp_text' => $text, 'whatsapp_url' => 'https://wa.me/?text='.rawurlencode($text)];

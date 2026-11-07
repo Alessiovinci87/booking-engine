@@ -738,6 +738,7 @@
         "checklistIntro": "I passi automatici si spuntano da soli; gli altri confermali tu dopo averli fatti sull’OTA.",
         "checklistEmpty": "Aggiungi un calendario o crea un feed per vedere i passi.",
         "checklistComplete": "Collegamento completo.",
-        "confirmStep": "Fatto"
+        "confirmStep": "Fatto",
+        "demo": "Calendario dimostrativo: eventi di esempio, non viene scaricato dall’OTA."
     }
 }

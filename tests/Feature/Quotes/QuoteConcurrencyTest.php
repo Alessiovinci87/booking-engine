@@ -1,6 +1,7 @@
 <?php
 
 use App\Domain\Quotes\QuoteLinks;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 
 /*
@@ -24,7 +25,7 @@ it('10 accept paralleli dello stesso preventivo: un solo tentativo, stesso check
     $now = now();
     $policy = uuid7();
     $quote = uuid7();
-    $token = QuoteLinks::token($quote);
+    $token = QuoteLinks::newToken();
 
     $db->table('rate_plans')->insert(['id' => uuid7(), 'tenant_id' => $tenant, 'unit_id' => $this->setup['unit'], 'name' => 'Base', 'base_nightly_cents' => 12000, 'currency' => 'EUR', 'active' => true, 'created_at' => $now, 'updated_at' => $now]);
     $db->table('cancellation_policies')->insert(['id' => $policy, 'tenant_id' => $tenant, 'property_id' => $this->setup['property'], 'code' => 'FLEXIBLE_7D', 'created_at' => $now, 'updated_at' => $now]);
@@ -40,7 +41,7 @@ it('10 accept paralleli dello stesso preventivo: un solo tentativo, stesso check
             ['kind' => 'DISCOUNT', 'date' => null, 'quantity' => 1, 'unit_amount_cents' => -6000, 'amount_cents' => -6000, 'season_id' => null],
         ]),
         'booking_mode_snapshot' => 'INSTANT', 'payment_mode_snapshot' => 'FULL', 'expires_at' => $now->copy()->addDay(),
-        'public_token_hash' => QuoteLinks::hash($token), 'status' => 'SENT', 'created_at' => $now, 'updated_at' => $now,
+        'public_token_encrypted' => Crypt::encryptString($token), 'public_token_hash' => QuoteLinks::hash($token), 'status' => 'SENT', 'created_at' => $now, 'updated_at' => $now,
     ]);
 
     $results = runConcurrently('accept-quote.php', [$tenant, $token], 10);

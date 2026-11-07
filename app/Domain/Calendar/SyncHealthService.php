@@ -39,6 +39,10 @@ class SyncHealthService
 
     public static function healthFor(ExternalCalendar $calendar, CarbonImmutable $now): ExternalCalendarStatus
     {
+        if ($calendar->demo) {
+            return ExternalCalendarStatus::ACTIVE; // Dimostrativo: mai scaricato, sempre sano (ADR-0013 punto 44).
+        }
+
         $reference = $calendar->last_success_at ?? CarbonImmutable::instance($calendar->created_at ?? $now);
         $minutes = (int) floor($reference->diffInSeconds($now, true) / 60);
 

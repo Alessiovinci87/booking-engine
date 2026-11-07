@@ -71,7 +71,8 @@ class IcalImportService
         $prepared = $this->tenants->run($tenantId, function () use ($calendarId, $started): ?array {
             $calendar = ExternalCalendar::query()->find($calendarId);
 
-            if ($calendar === null || $calendar->status === ExternalCalendarStatus::DISABLED) {
+            // Un calendario dimostrativo non si scarica mai (ADR-0013 punto 44).
+            if ($calendar === null || $calendar->status === ExternalCalendarStatus::DISABLED || $calendar->demo) {
                 return null;
             }
 

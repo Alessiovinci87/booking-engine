@@ -11,6 +11,7 @@ use App\Domain\Reservations\Models\Reservation;
 use App\Domain\Tenancy\TenantContext;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
 
@@ -106,7 +107,7 @@ it('il dispatcher (app_admin_ops) accoda un job per tenant con preventivi scadut
         $db->table('quotes')->insert([
             'id' => $id, 'tenant_id' => $fx['tenant'], 'unit_id' => $fx['unit'], 'stay' => '[2027-07-10,2027-07-14)', 'adults' => 2,
             'computed_total_cents' => 1000, 'final_total_cents' => 1000, 'price_lines' => '[]', 'booking_mode_snapshot' => 'INSTANT',
-            'payment_mode_snapshot' => 'FULL', 'expires_at' => now()->subMinute(), 'public_token_hash' => QuoteLinks::hash(QuoteLinks::token($id)),
+            'payment_mode_snapshot' => 'FULL', 'expires_at' => now()->subMinute(), 'public_token_encrypted' => Crypt::encryptString($token = QuoteLinks::newToken()), 'public_token_hash' => QuoteLinks::hash($token),
             'status' => 'SENT', 'created_at' => now(), 'updated_at' => now(),
         ]);
 

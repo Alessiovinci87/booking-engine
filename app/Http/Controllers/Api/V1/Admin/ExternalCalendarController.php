@@ -160,6 +160,7 @@ final class ExternalCalendarController extends Controller
             'url_changed_at' => $c->url_changed_at?->toIso8601ZuluString(),
             'active_events' => $activeEvents,
             'poll_minutes' => IcalImportService::POLL_MINUTES,
+            'demo' => $c->demo,
         ];
     }
 

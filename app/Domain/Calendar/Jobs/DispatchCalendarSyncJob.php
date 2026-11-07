@@ -25,7 +25,7 @@ final class DispatchCalendarSyncJob implements ShouldQueue
 
         $rows = $connection->select(
             "select id::text as id, tenant_id::text as tenant_id from external_calendars
-             where status <> 'DISABLED' and (next_poll_at is null or next_poll_at <= ?)
+             where status <> 'DISABLED' and not demo and (next_poll_at is null or next_poll_at <= ?)
              order by next_poll_at nulls first limit ".self::BATCH,
             [CarbonImmutable::now()->toIso8601ZuluString('microsecond')],
         );

@@ -40,6 +40,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property PaymentMode $payment_mode_snapshot
  * @property CarbonImmutable $expires_at
  * @property string $public_token_hash
+ * @property string $public_token_encrypted token del link, cifrato a riposo (ADR-0013 punto 36)
  * @property QuoteStatus $status
  * @property string|null $active_reservation_id
  * @property int $checkout_attempts
@@ -53,12 +54,13 @@ class Quote extends TenantModel
     use GuardsStatusWrites;
 
     /** @var list<string> */
-    protected $hidden = ['public_token_hash'];
+    protected $hidden = ['public_token_hash', 'public_token_encrypted'];
 
     protected function casts(): array
     {
         return [
             'stay' => StayRangeCast::class,
+            'public_token_encrypted' => 'encrypted',
             'adults' => 'integer',
             'children' => 'integer',
             'guest_locale' => Locale::class,

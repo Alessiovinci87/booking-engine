@@ -44,7 +44,7 @@ final class SendQuoteEmail implements OutboxHandler
             subjectLine: (string) __('emails.quote_sent.subject', $replace, $locale),
             greeting: (string) __('emails.greeting', [], $locale),
             lines: $lines,
-            link: QuoteLinks::url($quote->id),
+            link: QuoteLinks::url($quote),
             signature: (string) __('emails.signature', ['property' => $property->name], $locale),
         ));
     }

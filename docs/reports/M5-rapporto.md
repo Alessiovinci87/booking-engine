@@ -59,6 +59,13 @@ Tutti nell'ADR-0013. I più visibili:
 4. **Porta 443 obbligatoria** per i calendari importati (punto 1).
 5. **Feed congelato senza elementi** → `503` con `Retry-After` invece di un calendario vuoto (punto 23).
 
+## Decisioni dopo la verifica
+Verifica di M5 completata: approvata con queste decisioni, applicate su questo branch.
+1. **Link del preventivo** (ADR-0013 punto 36): non più derivato da `APP_KEY`. Token casuale di 32 byte, cifrato a riposo in `quotes.public_token_encrypted` e cercato per hash, come i feed iCal (punto 24). Migration `2027_01_18_000500` (i preventivi esistenti ricevono un token nuovo). Test: `Quotes/QuoteAcceptTest` (token casuale, hash, link ancora valido dopo la rotazione di `APP_KEY`). Il punto aperto 4 (rotazione di `APP_KEY`) è chiuso.
+2. **Seeder demo con i dati di M5** (punti 44–45), senza chiamate esterne: calendari "Booking demo" e "Airbnb demo" sul Trilocale con eventi inseriti come da una sincronizzazione, marcati `external_calendars.demo` (esclusi da polling, "Sincronizza ora" e salute; segnalati nel pannello); feed per Booking e Airbnb di entrambe le unità; un conflitto aperto con la prenotazione manuale confermata; due preventivi, uno inviato e uno accettato e pagato. Test: `DemoSeederTest`, `Calendar/IcalImportTest` (dispatcher). Il punto aperto 2 è chiuso. Per vederli in locale: `php artisan migrate:fresh --database=pgsql_migrator --seed`.
+3. **Piano di M6** (`docs/11-MILESTONES.md`): nuova attività 6.9, verifica dei calendari reali con i risultati della Fase 0 e adeguamento di `EchoClassifier` e dei file di prova (issue #72); 6.6 estesa agli E2E di `/app/calendari` e `/app/conflitti` (issue #59). Chiude il punto aperto 3 rimandandolo a M6.
+4. **ADR-0013 "Accettata"**, autori "Claude Code (stesura), verificata da Claude (chat) per Alessio".
+
 ## Dopo la verifica di M3
 - Branch riallineato a `m4-pagamenti-stripe` aggiornato (che contiene `main` con M3 verificata e la finestra di approvazione per struttura) con un merge, senza riscrivere la storia.
 - ADR-0013 in stato "Proposta" fino alla verifica di M5 (nuova regola 2 di `CLAUDE.md`).

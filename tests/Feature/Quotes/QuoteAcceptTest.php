@@ -9,6 +9,7 @@ use App\Domain\Reservations\Outbox\ReservationEmail;
 use App\Domain\Tenancy\Models\AuditLog;
 use App\Domain\Tenancy\Models\OutboxMessage;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 
 /*
@@ -42,7 +43,7 @@ it('pannello: crea con sconto, copia il link (DRAFT → SENT) con testo WhatsApp
     $sent = panelPost($this, "/api/v1/admin/quotes/{$created['id']}/send", ['channel' => 'link'])->assertOk()->json('data');
 
     expect($sent['status'])->toBe('SENT')
-        ->and($sent['link'])->toBe(url('/q/'.quoteToken($created['id'])))
+        ->and($sent['link'])->toBe(url('/q/'.quoteToken(freshQuote($fx, $created['id']))))
         ->and($sent['whatsapp_text'])->toContain($sent['link'])->not->toContain('Ada')
         ->and($sent['whatsapp_url'])->toStartWith('https://wa.me/?text=')
         ->and(inTenant($fx['tenant'], fn () => OutboxMessage::query()->where('type', 'quote.sent')->count()))->toBe(0);
@@ -196,4 +197,23 @@ it('richiede le versioni correnti di condizioni e informativa', function () {
     acceptQuote($this, quoteToken($quote), ['accepted_privacy_version' => 'vecchia'])
         ->assertStatus(400)->assertJsonPath('error.code', 'VALIDATION_FAILED');
     expect(freshQuote($fx, $quote->id)->checkout_attempts)->toBe(0);
+});
+
+it('il link è un token casuale cercato per hash e non dipende da APP_KEY', function () {
+    $fx = bookableTenant();
+    $a = quoteFor($fx);
+    $b = quoteFor($fx, ['stay' => '[2027-07-20,2027-07-24)']);
+    $token = quoteToken($a);
+
+    expect($token)->toMatch('/^[A-Za-z0-9_-]{43}$/')
+        ->and($token)->not->toBe(quoteToken($b))
+        ->and($a->public_token_hash)->toBe(hash('sha256', $token))
+        ->and(inTenant($fx['tenant'], fn () => DB::table('quotes')->where('id', $a->id)->value('public_token_encrypted')))->not->toContain($token);
+
+    // Rotazione di APP_KEY (con la chiave precedente in app.previous_keys per leggere i token cifrati):
+    // l'ospite apre ancora lo stesso link, perché la ricerca usa solo l'hash.
+    config(['app.previous_keys' => [config('app.key')], 'app.key' => 'base64:'.base64_encode(random_bytes(32))]);
+    app()->forgetInstance('encrypter');
+
+    $this->getJson("/api/v1/public/quotes/{$token}")->assertOk()->assertJsonPath('status', 'SENT');
 });
