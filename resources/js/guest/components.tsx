@@ -7,6 +7,29 @@ import { publicApi, type Photo } from './api';
 import { guestLanguages } from './i18n';
 import { LanguageSelector } from './LanguageSelector';
 
+/**
+ * Contatti della struttura come link cliccabili (8.7): email e telefono sono dati della struttura,
+ * mai dell'ospite. Aree toccabili di 44 px sul telefono.
+ */
+export function ContactLinks({ email, phone }: { email: string | null; phone: string | null }) {
+    const link = 'inline-flex min-h-tap items-center font-medium text-brand-800 underline underline-offset-2 hover:text-brand-900';
+
+    return (
+        <span className="flex flex-wrap gap-x-4" data-testid="property-contacts">
+            {email !== null && (
+                <a className={link} href={`mailto:${email}`}>
+                    {email}
+                </a>
+            )}
+            {phone !== null && (
+                <a className={link} href={`tel:${phone.replace(/[^+\d]/g, '')}`}>
+                    {phone}
+                </a>
+            )}
+        </span>
+    );
+}
+
 /** Struttura pubblicata; ricaricata quando cambia la lingua (testi tradotti dal server). */
 export function useProperty() {
     const { i18n } = useTranslation();

@@ -7,7 +7,7 @@ import { ApiError, fieldErrors, publicApi, type GuestInput, type PublicQuote } f
 import { Notice, Shell, Spinner } from '../components';
 import { COUNTRY_CODES, countryName, formatDate, formatDateTime } from '../format';
 import { loadBooking, saveBooking } from '../storage';
-import { Checkbox, Field, PriceDetails, Section } from './BookingPage';
+import { BeforePayment, Checkbox, Field, PriceDetails, Section } from './BookingPage';
 
 const PHONE = /^\+?[0-9 ().-]{6,40}$/;
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -238,6 +238,13 @@ function QuoteForm({ token, quote }: { token: string; quote: PublicQuote }) {
                         <p className="text-xs text-warning">{t('booking.notesWarning')}</p>
                     </Section>
 
+                    <BeforePayment
+                        policy={quote.cancellation_policy}
+                        privacyUrl={property.privacy_policy_url}
+                        contactEmail={property.contact_email}
+                        contactPhone={property.contact_phone}
+                    />
+
                     <section className="space-y-3">
                         {property.terms_url !== null && (
                             <Checkbox checked={acceptTerms} onChange={setAcceptTerms} error={errors.terms} name="accept_terms">
@@ -267,7 +274,7 @@ function QuoteForm({ token, quote }: { token: string; quote: PublicQuote }) {
                 </form>
             )}
 
-            {(property.contact_email !== null || property.contact_phone !== null) && (
+            {quote.accepted && (property.contact_email !== null || property.contact_phone !== null) && (
                 <p className="mt-6 text-sm text-muted">
                     {t('reservation.contactProperty', { contact: [property.contact_email, property.contact_phone].filter(Boolean).join(' · ') })}
                 </p>

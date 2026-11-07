@@ -25,7 +25,9 @@
         "photoAlt": "Foto di {{name}}",
         "galleryPrevious": "Foto precedente",
         "galleryNext": "Foto successiva",
-        "galleryZoom": "Ingrandisci la foto"
+        "galleryZoom": "Ingrandisci la foto",
+        "privacyLink": "Informativa privacy della struttura",
+        "termsLink": "Condizioni di prenotazione"
     },
     "unit": {
         "guests": "Fino a {{count}} ospiti",
@@ -75,7 +77,7 @@
         "proceed": "Prosegui al pagamento",
         "proceedRequest": "Invia la richiesta e autorizza il pagamento",
         "sending": "Invio in corso…",
-        "paymentNote": "Il pagamento avviene su una pagina sicura del servizio di pagamento.",
+        "paymentNote": "Il pagamento avviene sulla pagina sicura di Stripe.",
         "openPayment": "Apri la pagina di pagamento",
         "popupBlocked": "Il browser ha bloccato l'apertura della pagina di pagamento. Usa il pulsante qui sotto.",
         "priceChanged": "Il prezzo è cambiato mentre compilavi il modulo: controlla il nuovo totale e conferma di nuovo.",
@@ -187,5 +189,14 @@
         "selected": "compreso nel soggiorno",
         "next": "Mese successivo",
         "previous": "Mese precedente"
+    },
+    "trust": {
+        "title": "Prima di pagare",
+        "policy": "Cancellazione: {{title}}",
+        "securePayment": "Pagamento sicuro con Stripe",
+        "securePaymentText": "Inserisci i dati della carta sulla pagina protetta di Stripe: né la struttura né questo sito li vedono o li conservano.",
+        "privacy": "I tuoi dati",
+        "privacyText": "Li riceve la struttura per gestire la prenotazione, come spiega la sua <privacyLink>informativa privacy</privacyLink>.",
+        "questions": "Domande prima di prenotare?"
     }
 }

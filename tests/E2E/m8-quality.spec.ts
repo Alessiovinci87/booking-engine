@@ -46,6 +46,29 @@ function inDays(days: number): string {
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
 
+/**
+ * Primo arrivo con tre giorni liberi di seguito nel calendario visibile (due notti): le date di domani
+ * possono essere occupate dagli spec precedenti, quindi non si dà per scontato nessun giorno.
+ */
+async function firstFreeStart(page: Page): Promise<number> {
+    await expect(page.getByTestId('calendar')).toBeVisible();
+
+    for (let start = 1; start < 50; start++) {
+        let free = true;
+
+        for (let day = start; day <= start + 2 && free; day++) {
+            const button = page.locator(`[data-day="${inDays(day)}"] button`);
+            free = (await button.count()) === 1 && (await button.isEnabled());
+        }
+
+        if (free) {
+            return start;
+        }
+    }
+
+    throw new Error('Nessuna data libera nel calendario visibile.');
+}
+
 async function signIn(page: Page): Promise<void> {
     await page.goto('/app');
     await page.getByLabel('Email').fill(OWNER_EMAIL);
@@ -122,13 +145,24 @@ test.describe('M8 qualità del frontend', () => {
         await page.goto(GUEST_PAGE);
         await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
         await snap(page, 'm8-ospite-struttura');
+        await expect(page.getByTestId('property-contact').getByTestId('property-privacy')).toHaveAttribute('href', /^https:/);
 
         await page.getByTestId('unit-card').first().getByRole('link').first().click();
         await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-        await page.locator(`[data-day="${inDays(1)}"] button`).click();
-        await page.locator(`[data-day="${inDays(3)}"] button`).click();
+        const start = await firstFreeStart(page);
+        await page.locator(`[data-day="${inDays(start)}"] button`).click();
+        await page.locator(`[data-day="${inDays(start + 2)}"] button`).click();
         await expect(page.getByTestId('price-total')).toBeVisible();
         await snap(page, 'm8-ospite-alloggio');
+
+        // 8.7: prima del pagamento politica di cancellazione, pagamento sicuro, dati e contatti.
+        const before = page.getByTestId('before-payment');
+        await expect(before.getByTestId('trust-policy')).toContainText('Cancellazione:');
+        await expect(before.getByTestId('trust-payment')).toContainText('Stripe');
+        await expect(before.getByTestId('trust-privacy').getByRole('link', { name: 'informativa privacy' })).toHaveAttribute('href', /^https:/);
+        await expect(before.getByTestId('trust-contact').getByRole('link').first()).toHaveAttribute('href', /^(mailto|tel):/);
+        await before.scrollIntoViewIfNeeded();
+        await snap(page, 'm8-ospite-prima-di-pagare');
 
         // Errore di validazione visibile: invio senza dati.
         await page.getByRole('button', { name: /pagamento|Invia/ }).last().click();
@@ -161,7 +195,8 @@ test.describe('M8 qualità del frontend', () => {
         await page.getByTestId('unit-card').first().getByRole('link').first().click();
         await expect(page.getByTestId('calendar')).toBeVisible();
         // Il giorno di arrivo ha un nome accessibile in italiano; poi solo tastiera.
-        const first = page.locator(`[data-day="${inDays(1)}"] button`);
+        const start = await firstFreeStart(page);
+        const first = page.locator(`[data-day="${inDays(start)}"] button`);
         await expect(first).toHaveAccessibleName(/novembre|dicembre|gennaio|febbraio|marzo|aprile|maggio|giugno|luglio|agosto|settembre|ottobre/);
         await first.focus();
         await page.keyboard.press('Enter');
@@ -170,7 +205,7 @@ test.describe('M8 qualità del frontend', () => {
         await page.keyboard.press('Enter');
         await expect(page.getByTestId('stay-summary')).toContainText('2 notti');
         await expect(page.getByTestId('stay-summary')).toHaveAttribute('aria-live', 'polite');
-        await expect(page.locator(`[data-day="${inDays(1)}"] button`)).toHaveAccessibleName(/arrivo/);
+        await expect(page.locator(`[data-day="${inDays(start)}"] button`)).toHaveAccessibleName(/arrivo/);
 
         // Invio con campi vuoti: focus sul primo campo non valido, collegato al messaggio.
         await page.getByRole('button', { name: /Prosegui/ }).click();
@@ -290,8 +325,9 @@ test.describe('M8 qualità del frontend', () => {
 
             await page.getByTestId('unit-card').first().getByRole('link').first().click();
             await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-            await page.locator(`[data-day="${inDays(1)}"] button`).click();
-            await page.locator(`[data-day="${inDays(3)}"] button`).click();
+            const start = await firstFreeStart(page);
+            await page.locator(`[data-day="${inDays(start)}"] button`).click();
+            await page.locator(`[data-day="${inDays(start + 2)}"] button`).click();
             await expect(page.getByTestId('price-total')).toBeVisible();
             const booking = await layoutProblems(page);
             await page.evaluate(() => window.scrollTo(0, 0));

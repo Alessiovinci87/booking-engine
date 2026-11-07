@@ -6,8 +6,8 @@ import { enGB, it } from 'react-day-picker/locale';
 import { Trans, useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router';
 
-import { ApiError, fieldErrors, publicApi, type GuestInput, type PriceQuote, type PublicProperty, type PublicUnit } from '../api';
-import { Gallery, Notice, Shell, Spinner, useProperty } from '../components';
+import { ApiError, fieldErrors, publicApi, type CancellationPolicy, type GuestInput, type PriceQuote, type PublicProperty, type PublicUnit } from '../api';
+import { ContactLinks, Gallery, Notice, Shell, Spinner, useProperty } from '../components';
 import { addDays, COUNTRY_CODES, countryName, formatDate, formatMoney, toIsoDate } from '../format';
 import { saveBooking } from '../storage';
 
@@ -424,6 +424,13 @@ function BookingForm({ property, unit, embed }: { property: PublicProperty; unit
                     </p>
                 </Section>
 
+                <BeforePayment
+                    policy={quote.data?.cancellation_policy ?? unit.cancellation_policy ?? property.cancellation_policy}
+                    privacyUrl={property.privacy_policy_url}
+                    contactEmail={property.contact_email}
+                    contactPhone={property.contact_phone}
+                />
+
                 <section className="space-y-3">
                     {property.terms_url !== null && (
                         <Checkbox checked={acceptTerms} onChange={setAcceptTerms} error={errors.terms} name="accept_terms">
@@ -551,15 +558,78 @@ export function PriceDetails({ quote, requestMode }: { quote: PriceQuote; reques
                 )}
             </dl>
             {requestMode && <Notice>{t('booking.requestNote')}</Notice>}
-            {quote.cancellation_policy !== null && (
-                <div className="rounded-card bg-canvas p-3 text-sm text-ink">
-                    <p className="font-medium">
-                        {t('booking.cancellation')}: {quote.cancellation_policy.title}
-                    </p>
-                    {quote.cancellation_policy.text !== null && <p className="mt-1">{quote.cancellation_policy.text}</p>}
-                </div>
-            )}
         </div>
+    );
+}
+
+/**
+ * Riquadro "Prima di pagare" (8.7): politica di cancellazione, pagamento sicuro con Stripe, uso dei
+ * dati con l'informativa della struttura e contatti. Solo dati già presenti nelle risposte pubbliche.
+ */
+export function BeforePayment({
+    policy,
+    privacyUrl,
+    contactEmail,
+    contactPhone,
+}: {
+    policy: CancellationPolicy | null;
+    privacyUrl: string | null;
+    contactEmail: string | null;
+    contactPhone: string | null;
+}) {
+    const { t } = useTranslation();
+    const titleId = useId();
+
+    return (
+        <section aria-labelledby={titleId} className="rounded-card border border-line-soft bg-surface p-4 shadow-card sm:p-5" data-testid="before-payment">
+            <h2 id={titleId} className="text-lg font-semibold text-ink">
+                {t('trust.title')}
+            </h2>
+            <ul className="mt-3 space-y-4 text-sm">
+                {policy !== null && (
+                    <TrustItem icon="calendar" title={t('trust.policy', { title: policy.title ?? '' })} testId="trust-policy">
+                        {policy.text}
+                    </TrustItem>
+                )}
+                <TrustItem icon="lock" title={t('trust.securePayment')} testId="trust-payment">
+                    {t('trust.securePaymentText')}
+                </TrustItem>
+                {privacyUrl !== null && (
+                    <TrustItem icon="shield" title={t('trust.privacy')} testId="trust-privacy">
+                        <Trans
+                            i18nKey="trust.privacyText"
+                            components={{ privacyLink: <a href={privacyUrl} target="_blank" rel="noopener noreferrer" className="font-medium text-brand-800 underline" /> }}
+                        />
+                    </TrustItem>
+                )}
+                {(contactEmail !== null || contactPhone !== null) && (
+                    <TrustItem icon="chat" title={t('trust.questions')} testId="trust-contact">
+                        <ContactLinks email={contactEmail} phone={contactPhone} />
+                    </TrustItem>
+                )}
+            </ul>
+        </section>
+    );
+}
+
+const TRUST_ICONS = {
+    calendar: 'M8 2v3m8-3v3M3.5 9h17M5 4.5h14A1.5 1.5 0 0 1 20.5 6v13a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 19V6A1.5 1.5 0 0 1 5 4.5Z',
+    lock: 'M7 10.5V8a5 5 0 0 1 10 0v2.5M6 10.5h12a1.5 1.5 0 0 1 1.5 1.5v7a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 19v-7A1.5 1.5 0 0 1 6 10.5Z',
+    shield: 'M12 3 4.5 6v5.5c0 4.5 3.2 8.2 7.5 9.5 4.3-1.3 7.5-5 7.5-9.5V6L12 3Zm-3 9 2 2 4-4',
+    chat: 'M4.5 5.5h15A1.5 1.5 0 0 1 21 7v9a1.5 1.5 0 0 1-1.5 1.5H10l-4.5 3.5v-3.5h-1A1.5 1.5 0 0 1 3 16V7a1.5 1.5 0 0 1 1.5-1.5Z',
+} as const;
+
+function TrustItem({ icon, title, testId, children }: { icon: keyof typeof TRUST_ICONS; title: string; testId: string; children: ReactNode }) {
+    return (
+        <li className="flex gap-3" data-testid={testId}>
+            <svg viewBox="0 0 24 24" aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 fill-none stroke-brand-700" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
+                <path d={TRUST_ICONS[icon]} />
+            </svg>
+            <div className="min-w-0">
+                <p className="font-medium text-ink">{title}</p>
+                {children !== null && <div className="mt-0.5 text-muted">{children}</div>}
+            </div>
+        </li>
     );
 }
 

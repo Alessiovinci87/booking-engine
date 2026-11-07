@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
 
 import type { PublicUnit } from '../api';
-import { Gallery, Notice, Shell, Spinner, useProperty } from '../components';
+import { ContactLinks, Gallery, Notice, Shell, Spinner, useProperty } from '../components';
 
 /**
  * Pagina della struttura (3.7): galleria, descrizione, orari, alloggi prenotabili. Struttura senza
@@ -74,10 +74,22 @@ export function PropertyPage() {
                     </section>
                 )}
 
-                {(p.contact_email !== null || p.contact_phone !== null) && (
-                    <section className="text-sm text-muted">
+                {(p.contact_email !== null || p.contact_phone !== null || p.privacy_policy_url !== null || p.terms_url !== null) && (
+                    <section className="space-y-2 text-sm text-muted" data-testid="property-contact">
                         <h2 className="text-lg font-semibold text-ink">{t('property.contact')}</h2>
-                        <p className="mt-2">{[p.contact_email, p.contact_phone].filter(Boolean).join(' · ')}</p>
+                        {(p.contact_email !== null || p.contact_phone !== null) && <ContactLinks email={p.contact_email} phone={p.contact_phone} />}
+                        <p className="flex flex-wrap gap-x-4">
+                            {p.privacy_policy_url !== null && (
+                                <a href={p.privacy_policy_url} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-tap items-center underline" data-testid="property-privacy">
+                                    {t('property.privacyLink')}
+                                </a>
+                            )}
+                            {p.terms_url !== null && (
+                                <a href={p.terms_url} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-tap items-center underline">
+                                    {t('property.termsLink')}
+                                </a>
+                            )}
+                        </p>
                     </section>
                 )}
             </div>

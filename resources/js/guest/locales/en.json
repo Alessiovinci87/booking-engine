@@ -25,7 +25,9 @@
         "photoAlt": "Photo of {{name}}",
         "galleryPrevious": "Previous photo",
         "galleryNext": "Next photo",
-        "galleryZoom": "Enlarge photo"
+        "galleryZoom": "Enlarge photo",
+        "privacyLink": "Property's privacy policy",
+        "termsLink": "Booking terms"
     },
     "unit": {
         "guests": "Up to {{count}} guests",
@@ -75,7 +77,7 @@
         "proceed": "Continue to payment",
         "proceedRequest": "Send request and authorise payment",
         "sending": "Sending…",
-        "paymentNote": "Payment takes place on a secure page of the payment provider.",
+        "paymentNote": "Payment takes place on Stripe's secure page.",
         "openPayment": "Open the payment page",
         "popupBlocked": "Your browser blocked the payment page. Use the button below.",
         "priceChanged": "The price changed while you were filling in the form: check the new total and confirm again.",
@@ -187,5 +189,14 @@
         "selected": "part of your stay",
         "next": "Next month",
         "previous": "Previous month"
+    },
+    "trust": {
+        "title": "Before you pay",
+        "policy": "Cancellation: {{title}}",
+        "securePayment": "Secure payment with Stripe",
+        "securePaymentText": "You enter your card details on Stripe's secure page: neither the property nor this site sees or stores them.",
+        "privacy": "Your data",
+        "privacyText": "The property receives it to manage your booking, as explained in its <privacyLink>privacy policy</privacyLink>.",
+        "questions": "Questions before booking?"
     }
 }
