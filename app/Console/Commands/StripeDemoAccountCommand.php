@@ -12,11 +12,13 @@ use Illuminate\Support\Facades\DB;
  * Collega il tenant demo a un account Stripe connesso vero in modalità test (M4, 4.1): crea l'account
  * (o riusa quello già creato con la stessa idempotency key), sostituisce l'account finto del seeder e
  * stampa il link di onboarding ospitato da Stripe, da completare con i dati di prova di Stripe.
- * Non stampa mai chiavi o segreti.
+ * Con --account=acct_… collega invece un account connesso già esistente (onboarding già completato),
+ * per esempio dopo aver rigenerato il database (E2E). Non stampa mai chiavi o segreti.
  */
 final class StripeDemoAccountCommand extends Command
 {
-    protected $signature = 'stripe:demo-account {--tenant='.DemoSeeder::TENANT_SLUG.' : Slug del tenant}';
+    protected $signature = 'stripe:demo-account {--tenant='.DemoSeeder::TENANT_SLUG.' : Slug del tenant}
+        {--account= : Account connesso esistente da collegare (acct_…)}';
 
     protected $description = 'Crea l\'account Stripe connesso (modalità test) del tenant demo e stampa il link di onboarding';
 
@@ -41,6 +43,26 @@ final class StripeDemoAccountCommand extends Command
             $this->error(__('payments.demo_account.tenant_missing', ['slug' => $slug]));
 
             return self::FAILURE;
+        }
+
+        $existing = (string) $this->option('account');
+
+        if ($existing !== '') {
+            try {
+                $attached = $accounts->attach($tenantId, $existing);
+            } catch (PaymentGatewayException $e) {
+                $this->error($e->getMessage());
+
+                return self::FAILURE;
+            }
+
+            $this->info(__('payments.demo_account.attached', ['account' => $attached->stripe_account_id]));
+
+            if (! $attached->charges_enabled) {
+                $this->warn(__('payments.demo_account.not_enabled'));
+            }
+
+            return self::SUCCESS;
         }
 
         $page = rtrim((string) config('app.url'), '/').'/app/pagamenti';

@@ -52,6 +52,15 @@ final class StripeAccountService
     }
 
     /**
+     * Collega al tenant un account connesso già esistente sulla piattaforma, con lo stato riletto dal
+     * fornitore (solo stripe:demo-account --account, per riusare un onboarding già completato).
+     */
+    public function attach(string $tenantId, string $accountId): StripeAccount
+    {
+        return $this->store($tenantId, $this->accounts->retrieve($accountId), created: true);
+    }
+
+    /**
      * Rilegge lo stato dal fornitore e lo salva (account.updated, rientro dall'onboarding). Un account
      * finto del seeder non si rilegge.
      */

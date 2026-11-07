@@ -119,6 +119,24 @@ it('stripe:demo-account sostituisce l\'account finto del seeder e stampa il link
     expect($account->stripe_account_id)->toBe('acct_test_demo')->and($account->charges_enabled)->toBeFalse();
 });
 
+it('stripe:demo-account --account collega un account già completato, con lo stato riletto da Stripe', function () {
+    $tenant = createTenantRow('demo-alghero');
+    inTenant($tenant, fn () => DB::table('stripe_accounts')->insert([
+        'id' => uuid7(), 'tenant_id' => $tenant, 'stripe_account_id' => StripeAccountService::DEMO_PREFIX.'abc', 'charges_enabled' => true,
+        'created_at' => now(), 'updated_at' => now(),
+    ]));
+    $this->stripe->on('get', '/v2/core/accounts/acct_test_ready', stripeV2Account('acct_test_ready'));
+
+    $this->artisan('stripe:demo-account', ['--account' => 'acct_test_ready'])
+        ->expectsOutputToContain('acct_test_ready')
+        ->doesntExpectOutputToContain('sk_test_simulated')
+        ->assertSuccessful();
+
+    $account = accountOf($tenant);
+    expect($account->stripe_account_id)->toBe('acct_test_ready')->and($account->charges_enabled)->toBeTrue()
+        ->and($this->stripe->requestsTo('post', '/v2/core/accounts'))->toBe([]);
+});
+
 it('stripe:demo-account rifiuta il gateway finto e le chiavi live', function () {
     config(['payments.gateway' => 'fake']);
     $this->artisan('stripe:demo-account')->assertFailed();

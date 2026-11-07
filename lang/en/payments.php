@@ -19,5 +19,7 @@ return [
         'tenant_missing' => 'Tenant ":slug" does not exist: run php artisan db:seed --class=DemoSeeder first.',
         'created' => 'Connected Stripe account: :account',
         'link' => 'Complete the onboarding with Stripe test data at this link (it expires in a few minutes; run the command again for a new one):',
+        'attached' => 'Connected Stripe account linked: :account',
+        'not_enabled' => 'The account cannot accept payments yet: complete onboarding (php artisan stripe:demo-account without --account).',
     ],
 ];
