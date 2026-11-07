@@ -1,7 +1,8 @@
 <?php
 
 /*
- * Controllo statico (10): nessuna chiamata HTTP verso URL esterni fuori da SafeHttpFetcher (06, 08;
+ * Controllo statico (10): nessuna chiamata HTTP verso URL esterni fuori da SafeHttpFetcher e dal suo
+ * trasporto CurlTransport (06, 08;
  * CLAUDE.md regola 10). Eccezioni, solo verso URL fissi e mai forniti dagli utenti:
  * - gli adapter Stripe in App\Domain\Payments\Stripe, che parlano solo con l'API di Stripe;
  * - PwnedPasswordsVerifier, che chiama solo l'API range di Have I Been Pwned (ADR-0009).
@@ -9,6 +10,7 @@
 
 const HTTP_ALLOWED = [
     'App\Domain\Calendar\SafeHttpFetcher',
+    'App\Domain\Calendar\Http\CurlTransport',
     'App\Domain\Payments\Stripe',
     'App\Domain\Tenancy\Auth\PwnedPasswordsVerifier',
 ];

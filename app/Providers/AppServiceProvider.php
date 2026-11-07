@@ -2,6 +2,10 @@
 
 namespace App\Providers;
 
+use App\Domain\Calendar\Http\CurlTransport;
+use App\Domain\Calendar\Http\HostResolver;
+use App\Domain\Calendar\Http\HttpTransport;
+use App\Domain\Calendar\Http\SystemHostResolver;
 use App\Domain\Payments\Gateway\ConnectedAccounts;
 use App\Domain\Payments\Gateway\Fake\FakeConnectedAccounts;
 use App\Domain\Payments\Gateway\Fake\FakePaymentGateway;
@@ -37,6 +41,9 @@ class AppServiceProvider extends ServiceProvider
 
         // Dispatcher dell'outbox: lettura cross-tenant degli ID con app_admin_ops (08).
         $this->app->bind(PendingOutboxMessages::class, AdminOpsPendingOutboxMessages::class);
+        // SafeHttpFetcher (5.1): DNS e trasporto sostituibili nei test.
+        $this->app->bind(HostResolver::class, SystemHostResolver::class);
+        $this->app->bind(HttpTransport::class, CurlTransport::class);
 
         // Fornitore di pagamento (05), scelto con PAYMENT_GATEWAY: "stripe" (Stripe Connect) oppure
         // "fake" (checkout simulato, che rifiuta di partire fuori da local e testing).
