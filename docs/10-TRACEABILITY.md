@@ -1,6 +1,6 @@
 # 10 — Matrice di tracciabilità
 
-Versione: 1.6 · Data: 06/11/2026 · Modifiche: servizi, tabelle, endpoint e test di M1; stato dell'implementazione a fine M1; decisioni dopo la verifica di M1 (ADR-0008, ADR-0009); servizi, endpoint e test di M2 e stato a fine M2; 1.6: decisioni dopo la verifica di M2 (ADR-0010 accettata), primo test E2E
+Versione: 1.7 · Data: 07/11/2026 · Modifiche: servizi, tabelle, endpoint e test di M1; stato dell'implementazione a fine M1; decisioni dopo la verifica di M1 (ADR-0008, ADR-0009); servizi, endpoint e test di M2 e stato a fine M2; 1.6: decisioni dopo la verifica di M2 (ADR-0010 accettata), primo test E2E; 1.7: servizi, endpoint e test di M3 (ADR-0011) e stato a fine M3
 
 Ogni requisito (criteri di accettazione `AC` da 01, invarianti `I` da 02) è collegato a servizio, tabelle, endpoint e test. I nomi di servizi e test sono quelli da usare nel codice; Claude Code aggiorna questa matrice quando li crea o li rinomina.
 
@@ -111,7 +111,7 @@ Convenzioni dei test: `Unit/…` (Pest, senza database), `Feature/…` (Pest con
 
 ## Stato dell'implementazione
 
-Aggiornato a fine M2 (06/11/2026). Tutte le tabelle di 02 con RLS forzata e FK composite; accesso al pannello con MFA; API admin di strutture, unità, foto, tariffe, stagioni, pubblicazione e anteprima prezzo; API pubblica `GET /public/{t}/{p}` e `POST quote-price`; pannello di configurazione.
+Aggiornato a fine M3 (07/11/2026). Tutte le tabelle di 02 con RLS forzata e FK composite; accesso al pannello con MFA; API admin di strutture, unità, foto, tariffe, stagioni, pubblicazione e anteprima prezzo; inventario con `InventoryService`, disponibilità, macchina a stati T1–T18 con gateway di pagamento finto, rilascio delle occupazioni, prenotazioni manuali, pagamenti offline, blocchi, modifica e cancellazione; API pubblica di struttura, disponibilità, prezzo, prenotazione e stato; pagina ospite IT/EN; pannello di configurazione, calendario e prenotazioni. Restano per M4 i test `Stripe/*` e i servizi Stripe reali (`StripeWebhookHandler`, `PaymentReconciler`).
 
 | Elemento | Classe / file | Test |
 |---|---|---|
