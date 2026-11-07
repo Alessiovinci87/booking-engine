@@ -119,6 +119,8 @@ Scritto per: modifiche a struttura, unità, tariffe, stagioni, politiche; ogni t
 | Backup o test di ripristino falliti | qualsiasi | push |
 | Uptime pagina ospite | 2 controlli falliti | push |
 
+Fino a 6.4 il canale "push" è sostituito da log ed email agli indirizzi della piattaforma (`ALERT_EMAILS`), una email per segnale ogni 60 minuti (ADR-0014 punti 19–21, `OperationalAlerts`).
+
 Health check: `GET /up` (applicazione, database, Redis, coda).
 
 ## Ambienti

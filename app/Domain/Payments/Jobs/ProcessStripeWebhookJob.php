@@ -2,12 +2,13 @@
 
 namespace App\Domain\Payments\Jobs;
 
+use App\Domain\Communications\Alerts\AlertSignal;
+use App\Domain\Communications\Alerts\OperationalAlerts;
 use App\Domain\Payments\Models\WebhookEvent;
 use App\Domain\Payments\StateMachines\WebhookEventStateMachine;
 use App\Domain\Payments\Stripe\StripeEventProcessor;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
-use Illuminate\Support\Facades\Log;
 use Throwable;
 
 /**
@@ -51,7 +52,7 @@ final class ProcessStripeWebhookJob implements ShouldQueue
             $events->failed($event, class_basename($e));
 
             if ($event->attempts >= 3) {
-                Log::error('stripe.webhook_failing', ['event_id' => $event->event_id, 'type' => $event->type, 'attempts' => $event->attempts]);
+                app(OperationalAlerts::class)->raise(AlertSignal::WEBHOOK_FAILING, ['event_id' => $event->event_id, 'type' => $event->type, 'attempts' => $event->attempts], key: 'webhooks');
             }
 
             throw $e;

@@ -38,6 +38,12 @@ M6 parte senza gli account esterni (hosting, dominio, Resend, Sentry): si fanno 
 17. **DPA**: `tenants.dpa_signed_at` e `dpa_version` si registrano dalla piattaforma con `php artisan tenant:dpa {slug} {versione} [--signed-at=]` (audit `tenant.dpa_recorded`); il pannello li vede in `GET /admin/me` e mostra un avviso finché mancano. La pubblicazione di una struttura richiede il DPA (`422 DPA_NOT_SIGNED`, dopo `PRIVACY_POLICY_MISSING` e prima di `PAYMENTS_NOT_ENABLED`): 09 requisito 1 "prima dell'attivazione".
 18. **Informative**: l'informativa della struttura era già collegata nel checkout (`privacy_policy_url`, ADR-0011). Il piè di pagina della pagina ospite (anche preventivo ed embed) collega l'informativa della piattaforma e l'elenco dei sub-responsabili da `config/privacy.php` (`PLATFORM_PRIVACY_NOTICE_URL`, `PLATFORM_SUBPROCESSORS_URL`); senza configurazione il link non compare, e la checklist di rilascio lo richiede. I testi sono documenti legali da redigere con il professionista (09).
 
+### Allerte operative (6.5)
+
+19. **Canale provvisorio delle allerte "push"**: finché le notifiche push e Sentry non arrivano con 6.4, i segnali con canale push di 08 vanno nel log al loro livello e per email agli indirizzi della piattaforma (`ALERT_EMAILS`, `config/alerts.php`), tramite `OperationalAlerts`. Le email al gestore restano nell'outbox del tenant, come prima.
+20. **Segnali coperti** (`AlertSignal`): coda in ritardo (messaggi dell'outbox pronti da più di 5 minuti, controllo ogni 5 minuti con `app_admin_ops`), webhook Stripe che falliscono (3 tentativi dello stesso evento), prenotazione in `CAPTURING` da oltre 1 ora, occupazione scaduta non rilasciata da oltre 30 minuti, incoerenza I15, rimborso riuscito annullato da Stripe, webhook con tenant non corrispondente, riepilogo giornaliero interno dei calendari `UNHEALTHY` (alle 7, ora italiana). Il rimborso fallito dopo 3 tentativi resta log ed email al gestore (08). Fuori da 6.5: errori applicativi, backup e ripristino, uptime (6.4); feed non letto dall'OTA (avviso nel pannello, già in M5).
+21. **Limiti**: al più una email per segnale e chiave ogni 60 minuti (`ALERT_THROTTLE_MINUTES`); il log registra ogni occorrenza. L'email parte dopo il commit della transazione in corso; un errore di invio resta nel log (`alerts.email_failed`) e non blocca il chiamante. Contesto: solo identificativi e conteggi.
+
 ## Alternative considerate
 
 | Alternativa | Perché scartata |
@@ -55,7 +61,7 @@ M6 parte senza gli account esterni (hosting, dominio, Resend, Sentry): si fanno 
 
 ## Impatto sui test
 
-- Test aggiunti: `Feature/Communications/TransactionalMailTest`, `Feature/Metrics/MetricsTest`, `Feature/AnonymizationCoverageTest` (I22), `Feature/Public/PlatformPrivacyLinksTest`, casi DPA in `Feature/PropertyPublishTest`.
+- Test aggiunti: `Feature/Communications/TransactionalMailTest`, `Feature/Metrics/MetricsTest`, `Feature/AnonymizationCoverageTest` (I22), `Feature/Public/PlatformPrivacyLinksTest`, casi DPA in `Feature/PropertyPublishTest`, `Feature/Communications/OperationalAlertsTest`.
 - Test modificati: `Feature/Reservations/ReservationTransitionsTest` (T3 genera anche `reservation.confirmed_manager`).
 - Invarianti toccati: I22 (ora coperto da `Feature/AnonymizationCoverageTest`).
 

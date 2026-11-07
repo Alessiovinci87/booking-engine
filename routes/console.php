@@ -3,6 +3,8 @@
 use App\Domain\Calendar\Jobs\DispatchCalendarSyncJob;
 use App\Domain\Calendar\Jobs\DispatchFeedRetirementJob;
 use App\Domain\Calendar\Jobs\DispatchSyncHealthJob;
+use App\Domain\Communications\Alerts\Jobs\CheckQueueDelayJob;
+use App\Domain\Communications\Alerts\Jobs\UnhealthyCalendarsSummaryJob;
 use App\Domain\Payments\Jobs\DispatchPaymentReconciliationJob;
 use App\Domain\Payments\Jobs\ReconcilePaymentsJob;
 use App\Domain\Quotes\Jobs\DispatchQuoteExpiryJob;
@@ -36,6 +38,11 @@ Schedule::job(new DispatchFeedRetirementJob)->hourly()->withoutOverlapping()->na
 
 // Salute della sincronizzazione dei calendari importati (06): dispatcher ogni 5 minuti, un job per tenant.
 Schedule::job(new DispatchSyncHealthJob)->everyFiveMinutes()->withoutOverlapping()->name('calendars:health');
+
+// Allerte operative (08, 6.5): coda in ritardo ogni 5 minuti; riepilogo interno dei calendari
+// UNHEALTHY ogni mattina alle 7 (ora italiana).
+Schedule::job(new CheckQueueDelayJob)->everyFiveMinutes()->withoutOverlapping()->name('alerts:queue-delay');
+Schedule::job(new UnhealthyCalendarsSummaryJob)->dailyAt('07:00')->timezone('Europe/Rome')->name('alerts:calendars-daily');
 
 // Scadenza dei preventivi (03, sezione 4): dispatcher ogni 5 minuti, un job per tenant.
 Schedule::job(new DispatchQuoteExpiryJob)->everyFiveMinutes()->withoutOverlapping()->name('quotes:expire');

@@ -2,6 +2,8 @@
 
 namespace App\Domain\Payments\Jobs;
 
+use App\Domain\Communications\Alerts\AlertSignal;
+use App\Domain\Communications\Alerts\OperationalAlerts;
 use App\Domain\Payments\CheckoutService;
 use App\Domain\Payments\Enums\PaymentPurpose;
 use App\Domain\Payments\Enums\PaymentStatus;
@@ -134,7 +136,7 @@ final class ReconcilePaymentsJob implements ShouldBeUnique, ShouldQueue
             $current = $tenants->run($this->tenantId, fn (): ?PaymentStatus => Payment::query()->find($payment->id)?->status);
 
             if ($current === PaymentStatus::CAPTURE_PENDING) {
-                Log::error('payments.capturing_overdue', ['tenant_id' => $this->tenantId, 'payment_id' => $payment->id, 'reservation_id' => $payment->reservation_id]);
+                app(OperationalAlerts::class)->raise(AlertSignal::CAPTURING_OVERDUE, ['tenant_id' => $this->tenantId, 'payment_id' => $payment->id, 'reservation_id' => $payment->reservation_id], key: $payment->id);
             }
         }
 

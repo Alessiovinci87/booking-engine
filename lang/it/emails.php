@@ -8,6 +8,11 @@ return [
         'subject' => 'Prenotazione confermata :code',
         'lines' => ['La prenotazione :code per :unit dal :check_in al :check_out è confermata.', 'Totale del soggiorno: :amount.'],
     ],
+    'ops_alert' => [
+        'subject' => '[Allerta] :signal',
+        'intro' => 'Allerta operativa: :signal (livello :level). Dettagli tecnici, solo identificativi:',
+        'signature' => 'Monitoraggio della piattaforma',
+    ],
     'confirmed_manager' => [
         'subject' => 'Nuova prenotazione confermata :code',
         'lines' => ['La prenotazione :code di :guest per :unit dal :check_in al :check_out è confermata e pagata online.', 'Totale del soggiorno: :amount. Le date sono bloccate su tutti i canali al prossimo aggiornamento dei calendari.'],

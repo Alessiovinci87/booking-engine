@@ -2,6 +2,8 @@
 
 namespace App\Domain\Payments;
 
+use App\Domain\Communications\Alerts\AlertSignal;
+use App\Domain\Communications\Alerts\OperationalAlerts;
 use App\Domain\Payments\Enums\RefundMethod;
 use App\Domain\Payments\Enums\RefundStatus;
 use App\Domain\Payments\Gateway\Exceptions\PaymentProviderUnavailable;
@@ -95,7 +97,7 @@ final class RefundService
 
             $this->refunds->markReversedByProvider($refund);
             $payment = Payment::query()->findOrFail($refund->payment_id);
-            Log::critical('payments.refund_reversed', ['refund_id' => $refund->id, 'payment_id' => $payment->id]);
+            app(OperationalAlerts::class)->raise(AlertSignal::REFUND_REVERSED, ['refund_id' => $refund->id, 'payment_id' => $payment->id], key: $refund->id);
             $this->outbox->enqueue('reservation.refund_reversed', 'reservation.refund_reversed:'.$refund->id.':'.$result->refundId, [
                 'reservation_id' => $payment->reservation_id, 'refund_id' => $refund->id,
             ]);
@@ -180,7 +182,7 @@ final class RefundService
         if ($refund->next_attempt_at === null) {
             // Esauriti i tentativi automatici: allerta al gestore (05, 08).
             $payment = Payment::query()->findOrFail($refund->payment_id);
-            Log::error('payments.refund_failed_final', ['refund_id' => $refund->id, 'attempts' => $refund->attempts]);
+            app(OperationalAlerts::class)->raise(AlertSignal::REFUND_FAILED_FINAL, ['refund_id' => $refund->id, 'attempts' => $refund->attempts]);
             $this->outbox->enqueue('reservation.refund_failed', 'reservation.refund_failed:'.$refund->id.':'.$refund->attempts, [
                 'reservation_id' => $payment->reservation_id, 'refund_id' => $refund->id,
             ]);
