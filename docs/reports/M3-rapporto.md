@@ -37,7 +37,7 @@ Documentazione: ADR-0011 (nuova, accettata), ADR-0006 (integrazione `react-day-p
   - `composer lint`, `composer analyse` (Larastan livello 6);
   - `npm run typecheck`, `npm run build`, `npm run test:e2e` (3 test);
   - `composer audit`: nessuna vulnerabilità.
-- **Risultato CI**: RISULTATO_CI
+- **Risultato CI**: verde su `83263f6`, run [42316620555](https://github.com/Alessiovinci87/booking-engine/actions/runs/42316620555). Il primo run della PR era rosso: `NoConfirmOnRedirectTest` apriva la pagina ospite senza `withoutVite()` e in CI i test girano prima della build; corretto in `83263f6`. Il commit di questo rapporto avvia un nuovo run.
 - **Test aggiunti**:
   - `Feature/Inventory/InventoryServiceTest`, `Feature/OccupancyExclusionTest`, `Feature/ConcurrentAcquireTest`, `Arch/InventoryWritesTest` (attivo sul modello reale)
   - `Feature/Public/AvailabilityApiTest`
