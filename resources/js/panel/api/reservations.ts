@@ -81,7 +81,7 @@ export interface ReservationDetail extends Omit<ReservationSummary, 'guest'> {
     cancel_reason: string | null;
     actions: ReservationAction[];
     cancellation_refund: { proposed: Money; max: Money } | null;
-    price_lines: { kind: string; date: string | null; quantity: number; unit_amount: Money; amount: Money }[];
+    price_lines: PriceLine[];
     payments: {
         id: string;
         purpose: string;
@@ -198,12 +198,32 @@ function query(filters: ReservationFilters): string {
     return text === '' ? '' : `?${text}`;
 }
 
+export type PriceLine = { kind: string; date: string | null; quantity: number; unit_amount: Money; amount: Money };
+
+export type StayPrice = {
+    check_in: string;
+    check_out: string;
+    nights: number;
+    adults: number;
+    children: number;
+    price_lines: PriceLine[];
+    contract_total: Money;
+    deposit_due: Money;
+    balance_due: Money;
+};
+
+export type ModifyInput = { check_in?: string; check_out?: string; adults?: number; children?: number; note?: string | null };
+
+/** Anteprima della modifica (ADR-0011 punto 28): prima e dopo, senza salvare. */
+export type ModifyPreview = { version: number; current: StayPrice; proposed: StayPrice; difference: Money };
+
 export const reservationsApi = {
     list: (filters: ReservationFilters) =>
         apiRequest<{ data: ReservationSummary[]; next_cursor: string | null }>('GET', `/reservations${query(filters)}`),
     get: (id: string) => apiRequest<ReservationDetail>('GET', `/reservations/${id}`),
     create: (input: ManualReservationInput) => apiRequest<ReservationDetail>('POST', '/reservations', input),
-    modify: (id: string, version: number, input: { check_in?: string; check_out?: string; adults?: number; children?: number; note?: string | null }) =>
+    previewModify: (id: string, input: ModifyInput) => apiRequest<ModifyPreview>('POST', `/reservations/${id}/modify-preview`, input),
+    modify: (id: string, version: number, input: ModifyInput & { expected_total_cents?: number }) =>
         apiRequest<ReservationDetail>('PATCH', `/reservations/${id}`, input, { version }),
     approve: (id: string) => apiRequest<ReservationDetail>('POST', `/reservations/${id}/approve`),
     reject: (id: string, reason: string | null) => apiRequest<ReservationDetail>('POST', `/reservations/${id}/reject`, { reason }),

@@ -5,7 +5,15 @@ import { Link, useParams } from 'react-router';
 
 import type { Money } from '../api/admin';
 import { ApiError, fieldErrors } from '../api/client';
-import { OFFLINE_METHODS, type OfflineMethod, type ReservationAction, type ReservationDetail, reservationsApi } from '../api/reservations';
+import {
+    type ModifyInput,
+    OFFLINE_METHODS,
+    type OfflineMethod,
+    type ReservationAction,
+    type ReservationDetail,
+    reservationsApi,
+    type StayPrice,
+} from '../api/reservations';
 import { useErrorMessage } from '../auth/session';
 import { dangerButton, Field, FormError, inputClass, primaryButton, secondaryButton, Section, TextInput } from '../components/Form';
 import { StatusBadge } from '../components/Reservations';
@@ -410,23 +418,53 @@ function ModifyForm({ reservation, onDone }: { reservation: ReservationDetail; o
     const [adults, setAdults] = useState(String(reservation.adults));
     const [children, setChildren] = useState(String(reservation.children));
     const [note, setNote] = useState('');
+    const input = (): ModifyInput => ({
+        check_in: checkIn,
+        check_out: checkOut,
+        adults: Number.parseInt(adults, 10),
+        children: Number.parseInt(children, 10),
+        note: note.trim() === '' ? null : note.trim(),
+    });
+    // Prima il server calcola l'anteprima (nulla viene salvato), poi il gestore conferma (ADR-0011 punto 28).
+    const preview = useMutation({ mutationFn: () => reservationsApi.previewModify(reservation.id, input()) });
     const action = useAction(
         reservation,
-        () =>
-            reservationsApi.modify(reservation.id, reservation.version, {
-                check_in: checkIn,
-                check_out: checkOut,
-                adults: Number.parseInt(adults, 10),
-                children: Number.parseInt(children, 10),
-                note: note.trim() === '' ? null : note.trim(),
-            }),
+        (expected: number) => reservationsApi.modify(reservation.id, reservation.version, { ...input(), expected_total_cents: expected }),
         onDone,
     );
-    const errors = fieldErrors(action.error);
+    const errors = fieldErrors(preview.error ?? action.error);
+    const back = () => {
+        preview.reset();
+    };
+
+    if (preview.data !== undefined) {
+        const { current, proposed, difference } = preview.data;
+
+        return (
+            <>
+                <ActionForm
+                    onSubmit={() => action.mutate(proposed.contract_total.amount_cents)}
+                    pending={action.isPending}
+                    submitLabel={t('reservation.confirmModify')}
+                    onCancel={back}
+                >
+                    <p className="text-sm text-slate-700">{t('reservation.modifyPreviewHint')}</p>
+                    <div className="grid gap-4 sm:grid-cols-2" data-testid="modify-preview">
+                        <StayPriceColumn title={t('reservation.before')} price={current} />
+                        <StayPriceColumn title={t('reservation.after')} price={proposed} />
+                    </div>
+                    <p className="text-sm font-medium text-slate-900" data-testid="modify-difference">
+                        {t('reservation.difference', { amount: formatMoney(difference) })}
+                    </p>
+                </ActionForm>
+                <ActionError error={action.error} />
+            </>
+        );
+    }
 
     return (
         <>
-            <ActionForm onSubmit={() => action.mutate(undefined)} pending={action.isPending} submitLabel={t('reservationActions.modify')} onCancel={onDone}>
+            <ActionForm onSubmit={() => preview.mutate()} pending={preview.isPending} submitLabel={t('reservation.previewModify')} onCancel={onDone}>
                 <p className="text-sm text-slate-700">{t('reservation.modifyHint')}</p>
                 <div className="grid gap-3 sm:grid-cols-4">
                     <Field label={t('reservation.checkIn')} errors={errors.check_in}>
@@ -446,8 +484,43 @@ function ModifyForm({ reservation, onDone }: { reservation: ReservationDetail; o
                     <TextInput value={note} onChange={setNote} />
                 </Field>
             </ActionForm>
-            <ActionError error={action.error} />
+            <ActionError error={preview.error ?? action.error} />
         </>
+    );
+}
+
+function StayPriceColumn({ title, price }: { title: string; price: StayPrice }) {
+    const { t } = useTranslation();
+
+    return (
+        <div className="rounded-md border border-slate-200 p-3 text-sm">
+            <p className="font-medium text-slate-900">{title}</p>
+            <p className="text-slate-700">
+                {t('reservation.previewStay', {
+                    checkIn: formatDate(price.check_in),
+                    checkOut: formatDate(price.check_out),
+                    count: price.nights,
+                    adults: price.adults,
+                    children: price.children,
+                })}
+            </p>
+            <ul className="mt-2 divide-y divide-slate-100">
+                {price.price_lines.map((line, index) => (
+                    <li key={`${line.kind}-${line.date ?? ''}-${index}`} className="flex justify-between gap-4 py-1">
+                        <span className="text-slate-700">
+                            {t(`priceLines.${line.kind}`, { defaultValue: line.kind })}
+                            {line.date !== null && ` · ${formatDate(line.date)}`}
+                            {line.quantity > 1 && ` × ${line.quantity}`}
+                        </span>
+                        <span className="tabular-nums">{formatMoney(line.amount)}</span>
+                    </li>
+                ))}
+            </ul>
+            <p className="mt-2 flex justify-between font-medium text-slate-900">
+                <span>{t('reservation.total')}</span>
+                <span className="tabular-nums">{formatMoney(price.contract_total)}</span>
+            </p>
+        </div>
     );
 }
 

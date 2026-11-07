@@ -74,6 +74,13 @@ Tutti nell'**ADR-0011**, in sintesi:
 - **E2E in CI**: ancora solo in locale (in CI da M6, attività 6.6). Lo spec di M3 riusa la MFA configurata da quello di M2 nello stesso processo di Playwright: se si lancia da solo, il test del pannello viene saltato.
 - La pagina ospite non ha ancora foto nella demo (il seeder non carica immagini); la galleria mostra "Nessuna foto".
 
+## Decisioni dopo la verifica
+Verifica di M3 completata: approvata con correzioni, applicate su questo branch prima del merge.
+1. **ADR-0011** resta "Accettata". Autori corretti in "Claude Code (stesura), verificata da Claude (chat) per Alessio"; il riferimento del punto 21 (pagina di ritorno) è I2, non I6. Nuova regola in `CLAUDE.md`: le ADR scritte durante una milestone hanno stato "Proposta" finché la verifica non le accetta.
+2. **Anteprima della modifica** (ADR-0011 punto 28): prima di salvare un `PATCH` il pannello mostra vecchio e nuovo prezzo (righe e totale) calcolati dal server con `POST /admin/reservations/{id}/modify-preview`, che non salva nulla, e chiede una conferma esplicita. Il `PATCH` porta `expected_total_cents`: se il prezzo nel frattempo è cambiato → `409 PRICE_CHANGED`. Test: `Admin/ReservationModifyPreviewTest`.
+3. **Link dei documenti legali** (ADR-0011 punto 16): accanto ai campi dell'informativa privacy e delle condizioni il pannello avvisa "Se aggiorni il documento, cambia anche il link (per esempio aggiungendo ?v=2): così agli ospiti verrà chiesto di accettare la nuova versione".
+4. **Finestra di approvazione configurabile per struttura**: 1–48 ore, predefinita 12, e comunque non oltre `capture_before − 6 h` dell'autorizzazione. Da completare in M4 (campo su `properties`, impostabile nel pannello, con test).
+
 ## Ore impiegate (stima) rispetto al previsto
 Previsto: sprint di due settimane (7–18 dicembre 2026). Impiegato: circa due giornate di lavoro di Claude Code, concentrate il 6–7 novembre 2026. Nessun superamento della stima.
 
