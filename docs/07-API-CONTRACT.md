@@ -174,7 +174,7 @@ Tutte richiedono utente autenticato con MFA verificata nella sessione e membersh
 | POST | `/reservations` | manuale, confermata anche senza pagamento (stato economico `UNPAID`) · Idempotency-Key |
 | POST | `/reservations/{id}/approve` | Idempotency-Key; `409 CONFLICT_OPEN` se ci sono conflitti sulle date |
 | POST | `/reservations/{id}/reject` | Idempotency-Key, `reason` opzionale |
-| POST | `/reservations/{id}/cancel` | Idempotency-Key; body `refund_cents` (default = proposto dalla policy, max = incassato online). Risposta: prenotazione `CANCELLED` e `refund_status` (`PENDING`/`NONE`), mai "rimborsato" |
+| POST | `/reservations/{id}/cancel` | Idempotency-Key; body `refund_cents` (default = proposto dalla policy, max = incassato online); rimborso > 0 → ri-autenticazione (08, `403 REAUTH_REQUIRED`, ADR-0012 punto 24). Risposta: prenotazione `CANCELLED` e `refund_status` (`PENDING`/`NONE`), mai "rimborsato" |
 | POST | `/reservations/{id}/modify-preview` | anteprima della modifica: stesso body del `PATCH`, risponde `current`, `proposed` (righe e totale), `difference`, `version`; non salva nulla (ADR-0011 punto 28) |
 | PATCH | `/reservations/{id}` | modifica date/ospiti/note · If-Match; `expected_total_cents` facoltativo dall'anteprima → `409 PRICE_CHANGED` se il prezzo è cambiato (ADR-0011 punto 28) |
 | POST | `/reservations/{id}/offline-payments` | registra pagamento fuori piattaforma |

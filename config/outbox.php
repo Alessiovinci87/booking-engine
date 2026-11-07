@@ -26,6 +26,7 @@ return [
         'reservation.refund_completed' => SendReservationEmail::class,
         'reservation.dispute_opened' => SendReservationEmail::class,
         'reservation.refund_failed' => SendReservationEmail::class,
+        'reservation.refund_reversed' => SendReservationEmail::class,
         'reservation.capture_failed_reminder' => SendReservationEmail::class,
     ],
 

@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\DB;
 beforeEach(function () {
     Carbon::setTestNow('2027-06-01 10:00:00');
     $this->fx = bookableTenant('INSTANT');
-    signedInOwner($this, $this->fx['tenant']);
+    signedInOwner($this, $this->fx['tenant'], passwordConfirmed: true); // rimborsi > 0: ri-autenticazione (ADR-0012 punto 24)
     $this->reservation = reservationIn($this->fx, ReservationStatus::CONFIRMED);
 });
 afterEach(fn () => Carbon::setTestNow());

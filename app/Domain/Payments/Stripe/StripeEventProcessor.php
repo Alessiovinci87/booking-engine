@@ -117,7 +117,8 @@ final class StripeEventProcessor
         }
 
         foreach ($targets as [$refundId, $providerId]) {
-            $this->retryable($this->refunds->reconcile($tenantId, $refundId, $providerId));
+            // Un evento sul singolo rimborso può annullare un rimborso già riuscito (ADR-0012 punto 23).
+            $this->retryable($this->refunds->reconcile($tenantId, $refundId, $providerId, allowReversal: $type !== 'charge.refunded'));
         }
 
         return 'processed';

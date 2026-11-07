@@ -2,6 +2,7 @@
 
 namespace App\Domain\Payments;
 
+use App\Domain\Payments\Enums\RefundMethod;
 use App\Domain\Payments\Enums\RefundStatus;
 use App\Domain\Payments\Gateway\Exceptions\PaymentProviderUnavailable;
 use App\Domain\Payments\Gateway\PaymentGateway;
@@ -38,10 +39,14 @@ final class RefundService
      *
      * @return 'applied'|'unchanged'|'retry'
      */
-    public function reconcile(string $tenantId, string $refundId, ?string $providerRefundId = null): string
+    public function reconcile(string $tenantId, string $refundId, ?string $providerRefundId = null, bool $allowReversal = false): string
     {
-        $loaded = $this->tenants->run($tenantId, function () use ($refundId): ?array {
-            $refund = Refund::query()->whereKey($refundId)->where('status', RefundStatus::PENDING->value)->first();
+        // Un rimborso SUCCEEDED si rilegge solo per un evento di Stripe su quel rimborso (ADR-0012 punto 23).
+        $statuses = $allowReversal ? [RefundStatus::PENDING->value, RefundStatus::SUCCEEDED->value] : [RefundStatus::PENDING->value];
+
+        $loaded = $this->tenants->run($tenantId, function () use ($refundId, $statuses): ?array {
+            $refund = Refund::query()->whereKey($refundId)->whereIn('status', $statuses)
+                ->where('method', RefundMethod::STRIPE->value)->first();
 
             return $refund === null ? null : [$refund, Payment::query()->findOrFail($refund->payment_id)];
         });
@@ -64,7 +69,39 @@ final class RefundService
             return 'retry';
         }
 
+        if ($refund->status === RefundStatus::SUCCEEDED) {
+            return $this->reverse($tenantId, $refund->id, $result) ? 'applied' : 'unchanged';
+        }
+
         return $this->apply($tenantId, $refund->id, $result) ? 'applied' : 'unchanged';
+    }
+
+    /**
+     * Rimborso già riuscito che Stripe, riletto via API, dà per fallito: SUCCEEDED → FAILED, allerta
+     * urgente ed email al gestore; nessuna email automatica all'ospite (ADR-0012 punto 23).
+     */
+    private function reverse(string $tenantId, string $refundId, RefundResult $result): bool
+    {
+        if ($result->status !== RefundResultStatus::FAILED) {
+            return false;
+        }
+
+        return $this->tenants->run($tenantId, function () use ($refundId, $result): bool {
+            $refund = Refund::query()->lockForUpdate()->findOrFail($refundId);
+
+            if ($refund->status !== RefundStatus::SUCCEEDED || $refund->stripe_refund_id !== $result->refundId) {
+                return false;
+            }
+
+            $this->refunds->markReversedByProvider($refund);
+            $payment = Payment::query()->findOrFail($refund->payment_id);
+            Log::critical('payments.refund_reversed', ['refund_id' => $refund->id, 'payment_id' => $payment->id]);
+            $this->outbox->enqueue('reservation.refund_reversed', 'reservation.refund_reversed:'.$refund->id.':'.$result->refundId, [
+                'reservation_id' => $payment->reservation_id, 'refund_id' => $refund->id,
+            ]);
+
+            return true;
+        });
     }
 
     /**

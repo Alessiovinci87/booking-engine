@@ -54,6 +54,11 @@ L'integrazione con Stripe (M4) ha incontrato punti che 05 lascia aperti o che di
 
 22. **Finestra di approvazione per struttura** (03 "Tempi"): nuova colonna `properties.approval_window_hours` (smallint, predefinita 12, vincolo 1–48; migration `2027_01_04_000200`), impostabile dal pannello nella scheda della struttura (`PATCH /admin/properties/{id}`, `400 VALIDATION_FAILED` fuori intervallo). All'autorizzazione (T4) `approval_deadline` = ora + finestra della struttura, ma mai oltre `capture_before − 6 h` (`ReservationStateMachine::approvalDeadline`). Sostituisce la configurazione globale `payments.approval_window_hours`. La finestra vale per le autorizzazioni successive al cambio: le richieste già in attesa mantengono la loro scadenza.
 
+### Decisioni dopo la verifica di M4
+
+23. **Rimborso `SUCCEEDED → FAILED`** (03 sezione 3): ammesso solo quando lo comunica Stripe, cioè per un evento sul singolo rimborso (`refund.updated`, `refund.failed`, `charge.refund.updated`) riletto via API con esito `failed` e lo stesso `stripe_refund_id`; mai da `charge.refunded`, dalla riconciliazione periodica o per decisione locale, e solo per rimborsi con metodo `STRIPE`. Effetti nella stessa transazione: rimborso `FAILED` senza tentativi automatici (`next_attempt_at` nullo, `completed_at` azzerato, audit con `reported_by = stripe`); rimborsato del `Payment` ricalcolato (`PaymentStateMachine::revertRefund`, evento `refund_reversed`), quindi `refund_status` derivato; log `critical` `payments.refund_reversed` e outbox `reservation.refund_reversed` → email urgente al gestore con nome dell'ospite e importo ("il rimborso a X non è andato a buon fine: contatta l'ospite"); nessuna email automatica all'ospite, che aveva già ricevuto "rimborso completato". Il gestore può usare "Riprova" o "Segna come rimborsato fuori piattaforma".
+24. **Ri-autenticazione dei rimborsi** (08): `POST /admin/reservations/{id}/cancel` con rimborso effettivo > 0 (anche quello proposto dalla politica quando `refund_cents` manca) → `403 REAUTH_REQUIRED` se la password non è stata confermata negli ultimi 15 minuti, prima di qualsiasi scrittura; senza rimborso nessuna richiesta. "Riprova" e "Segna come rimborsato fuori piattaforma" la richiedevano già. Il pannello mostra la richiesta della password e ripete la cancellazione dopo la conferma; ogni tentativo usa una `Idempotency-Key` nuova, quindi il 403 memorizzato non viene rigiocato.
+
 ## Alternative considerate
 
 | Alternativa | Perché scartata |
@@ -73,7 +78,7 @@ L'integrazione con Stripe (M4) ha incontrato punti che 05 lascia aperti o che di
 
 ## Impatto sui test
 
-- Test aggiunti: `Payments/ApprovalWindowTest` (punto 22), `Payments/StripeConnectOnboardingTest`, `Payments/StripeCheckoutTest`, `WebhookIdempotencyTest`, `Payments/StripeFlowsTest`, `ApprovalDeadlineTest`, `Payments/StripeReleaseTest`, `CaptureFailedTimeoutTest`, `RefundRetryTest`, `RefundEmailTimingTest`, `Payments/PaymentReconciliationTest`, `Payments/GuestReturnPageTest`, `Payments/DisputeApiTest`, `Stripe/*` (dieci test), `E2E/m4-stripe-checkout.spec`.
+- Test aggiunti: `Payments/ApprovalWindowTest` (punto 22), `Payments/RefundReversedTest` e `Stripe/RefundFailureTest` (punto 23), `Payments/RefundReauthTest` ed E2E `m3-guest-booking` (punto 24), `Payments/StripeConnectOnboardingTest`, `Payments/StripeCheckoutTest`, `WebhookIdempotencyTest`, `Payments/StripeFlowsTest`, `ApprovalDeadlineTest`, `Payments/StripeReleaseTest`, `CaptureFailedTimeoutTest`, `RefundRetryTest`, `RefundEmailTimingTest`, `Payments/PaymentReconciliationTest`, `Payments/GuestReturnPageTest`, `Payments/DisputeApiTest`, `Stripe/*` (dieci test), `E2E/m4-stripe-checkout.spec`.
 - Test modificati: `Reservations/ReservationTransitionsTest` e `Public/PublicReservationApiTest` (scadenze con il margine).
 
 ## Aggiornamento della specifica

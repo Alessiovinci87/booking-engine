@@ -28,13 +28,13 @@ final class PaymentStateMachine
      */
     private const TRANSITIONS = [
         'AUTHORIZED' => [S::PENDING, S::EXPIRED, S::FAILED],
-        'SUCCEEDED' => [S::PENDING, S::CAPTURE_PENDING, S::EXPIRED, S::FAILED],
+        'SUCCEEDED' => [S::PENDING, S::CAPTURE_PENDING, S::EXPIRED, S::FAILED, S::PARTIALLY_REFUNDED, S::REFUNDED],
         'EXPIRED' => [S::PENDING],
         'FAILED' => [S::PENDING],
         'CAPTURE_PENDING' => [S::AUTHORIZED],
         'AUTHORIZATION_CANCELLED' => [S::AUTHORIZED],
         'CAPTURE_FAILED' => [S::CAPTURE_PENDING],
-        'PARTIALLY_REFUNDED' => [S::SUCCEEDED, S::PARTIALLY_REFUNDED],
+        'PARTIALLY_REFUNDED' => [S::SUCCEEDED, S::PARTIALLY_REFUNDED, S::REFUNDED],
         'REFUNDED' => [S::SUCCEEDED, S::PARTIALLY_REFUNDED],
     ];
 
@@ -134,7 +134,22 @@ final class PaymentStateMachine
         $this->move($payment, $refundedCents >= $payment->captured_cents ? S::REFUNDED : S::PARTIALLY_REFUNDED, null, $refundedCents);
     }
 
-    private function move(Payment $payment, S $to, ?string $objectId, ?int $amount = null): void
+    /**
+     * Rimborso riuscito poi dichiarato fallito da Stripe (ADR-0012 punto 23): il rimborsato scende e il
+     * pagamento torna PARTIALLY_REFUNDED o SUCCEEDED. Evento `refund_reversed`.
+     */
+    public function revertRefund(Payment $payment, int $refundedCents): void
+    {
+        $to = match (true) {
+            $refundedCents <= 0 => S::SUCCEEDED,
+            $refundedCents >= $payment->captured_cents => S::REFUNDED,
+            default => S::PARTIALLY_REFUNDED,
+        };
+
+        $this->move($payment, $to, null, $refundedCents, 'refund_reversed');
+    }
+
+    private function move(Payment $payment, S $to, ?string $objectId, ?int $amount = null, ?string $eventType = null): void
     {
         $from = $payment->status;
 
@@ -145,7 +160,7 @@ final class PaymentStateMachine
         $payment->status = $to;
         $payment->save();
 
-        $this->event($payment, strtolower($to->value), $amount, $objectId);
+        $this->event($payment, $eventType ?? strtolower($to->value), $amount, $objectId);
         $this->audit->record('payment.'.strtolower($to->value), 'payment', $payment->id, [
             'status' => ['from' => $from->value, 'to' => $to->value], 'reservation_id' => $payment->reservation_id,
         ]);

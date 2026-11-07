@@ -96,6 +96,12 @@ Tutti nell'**ADR-0012**, in sintesi:
    - Allerte: `CAPTURING` da oltre 1 h, autorizzazione non annullata dopo 24 h, `capture_before` vicina.
 6. **Ri-autenticazione (08).** Applicata a "Riprova", "Segna come rimborsato" e al link di onboarding Stripe.
 
+## Decisioni dopo la verifica di M4
+Applicate con Stripe simulato; le prove con Stripe vero (onboarding, `tests/Stripe/*`, E2E `m4-stripe-checkout`) restano da fare. ADR-0012 resta "Proposta" fino ad allora.
+- **3a — Ri-autenticazione dei rimborsi** (ADR-0012 punto 24): cancellazione con rimborso > 0 → `403 REAUTH_REQUIRED` senza password confermata negli ultimi 15 minuti; "Riprova" e "Segna come rimborsato" la richiedevano già. Il pannello chiede la password e ripete la cancellazione. Test: `Payments/RefundReauthTest`, `CancelHistoryTest`, E2E `m3-guest-booking` (passo "cancellazione con rimborso"). Chiude il punto aperto 1.
+- **3b — Rimborso `SUCCEEDED → FAILED`** (ADR-0012 punto 23, 03 sezione 3): solo su evento di Stripe sul rimborso riletto via API; rimborsato e `refund_status` ricalcolati, allerta `critical` ed email urgente al gestore, nessuna email all'ospite, nessun tentativo automatico. Test: `Payments/RefundReversedTest` (simulato); `Stripe/RefundFailureTest` copre entrambi i percorsi della carta `refundFail` (da eseguire). Chiude il punto aperto 2.
+- **3c — Finestra di approvazione per struttura**: già completata dopo la verifica di M3 (sotto).
+
 ## Decisioni dopo la verifica di M3
 - **Finestra di approvazione per struttura** (ADR-0012 punto 22): `properties.approval_window_hours` 1–48 h (predefinita 12), impostabile nella scheda della struttura nel pannello; la scadenza resta limitata a `capture_before − 6 h`. Test: `Payments/ApprovalWindowTest`.
 - Branch riallineato a `main` dopo il merge di M3 (merge di `main`, nessuna riscrittura della storia); PR #70 ora verso `main`.
