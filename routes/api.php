@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\Admin\Auth\MfaVerifyController;
 use App\Http\Controllers\Api\V1\Admin\Auth\SessionController;
 use App\Http\Controllers\Api\V1\Admin\BlockController;
 use App\Http\Controllers\Api\V1\Admin\CalendarController;
+use App\Http\Controllers\Api\V1\Admin\DisputeController;
 use App\Http\Controllers\Api\V1\Admin\MeController;
 use App\Http\Controllers\Api\V1\Admin\PricePreviewController;
 use App\Http\Controllers\Api\V1\Admin\PropertyController;
@@ -106,6 +107,7 @@ Route::prefix('admin')->middleware(EnsureFrontendRequestsAreStateful::class)->gr
         Route::get('reservations/{reservation}', [ReservationController::class, 'show'])->name('admin.reservations.show');
         Route::patch('reservations/{reservation}', [ReservationController::class, 'update'])->name('admin.reservations.update');
         Route::get('refunds', [RefundController::class, 'index'])->name('admin.refunds.index');
+        Route::get('disputes', [DisputeController::class, 'index'])->name('admin.disputes.index');
     });
 });
 

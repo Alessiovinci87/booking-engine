@@ -16,6 +16,7 @@ import { MfaSetupPage } from './pages/MfaSetupPage';
 import { MfaVerifyPage } from './pages/MfaVerifyPage';
 import { NewReservationPage } from './pages/NewReservationPage';
 import { NotFoundPage } from './pages/NotFoundPage';
+import { PaymentsPage } from './pages/PaymentsPage';
 import { PropertiesPage } from './pages/PropertiesPage';
 import { PropertyPage } from './pages/PropertyPage';
 import { ReservationDetailPage } from './pages/ReservationDetailPage';
@@ -92,6 +93,7 @@ createRoot(container).render(
                             <Route path="prenotazioni" element={<ReservationsPage />} />
                             <Route path="prenotazioni/nuova" element={<NewReservationPage />} />
                             <Route path="prenotazioni/:reservationId" element={<ReservationDetailPage />} />
+                            <Route path="pagamenti" element={<PaymentsPage />} />
                             <Route path="*" element={<NotFoundPage />} />
                         </Route>
                     </Routes>

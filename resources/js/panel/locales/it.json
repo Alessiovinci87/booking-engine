@@ -49,7 +49,8 @@
         "logout": "Esci",
         "properties": "Strutture",
         "calendar": "Calendario",
-        "reservations": "Prenotazioni"
+        "reservations": "Prenotazioni",
+        "payments": "Pagamenti"
     },
     "notFound": {
         "title": "Pagina non trovata",
@@ -450,7 +451,7 @@
         "history": "Storico",
         "actions": "Azioni",
         "confirm": "Conferma",
-        "approveHint": "L'importo autorizzato viene incassato; la prenotazione diventa confermata quando arriva l'esito.",
+        "approveHint": "Prima di approvare verifica Booking e Airbnb: le date potrebbero essere già occupate lì. L'importo autorizzato viene incassato; la prenotazione diventa confermata quando arriva l'esito.",
         "releaseHint": "Le date tornano disponibili e la prenotazione passa a \"Pagamento non riuscito\".",
         "rejectHint": "L'autorizzazione sulla carta dell'ospite viene annullata e le date si liberano.",
         "reasonLabel": "Motivo (facoltativo, solo per il pannello)",
@@ -488,5 +489,56 @@
         "payNow": "Registra subito un pagamento ricevuto fuori piattaforma",
         "unpaidNote": "Senza pagamento la prenotazione resta confermata con stato \"Non pagata\".",
         "submit": "Crea la prenotazione"
+    },
+    "payments": {
+        "title": "Pagamenti",
+        "stripe": {
+            "title": "Account Stripe",
+            "status": {
+                "NOT_CONNECTED": "Non collegato",
+                "ENABLED": "Collegato: pagamenti attivi",
+                "IN_REVIEW": "Dati inviati: Stripe sta verificando",
+                "ONBOARDING_INCOMPLETE": "Collegamento da completare"
+            },
+            "hint": {
+                "NOT_CONNECTED": "Collega un account Stripe per ricevere i pagamenti online e pubblicare le strutture.",
+                "ENABLED": "Gli ospiti possono pagare online; gli incassi arrivano sul tuo account Stripe.",
+                "IN_REVIEW": "Non serve fare altro per ora: la pagina si aggiorna quando Stripe attiva i pagamenti.",
+                "ONBOARDING_INCOMPLETE": "Stripe chiede ancora alcuni dati. Riprendi il collegamento per completarli."
+            },
+            "connect": "Collega Stripe",
+            "continue": "Riprendi il collegamento",
+            "demo": "Account dimostrativo: i pagamenti sono simulati.",
+            "linkExpired": "Il link di collegamento è scaduto: aprine uno nuovo."
+        },
+        "remaining": {
+            "label": "Tempo rimasto: {{remaining}}",
+            "value": "{{hours}} h {{minutes}} min",
+            "expired": "scaduto"
+        },
+        "approvals": {
+            "title": "Richieste da approvare",
+            "reminder": "Verifica Booking e Airbnb prima di approvare: approvando incassi l'importo autorizzato.",
+            "empty": "Nessuna richiesta in attesa."
+        },
+        "recovery": {
+            "title": "Pagamenti da recuperare",
+            "hint": "L'incasso non è riuscito. Apri la prenotazione per inviare un link di pagamento all'ospite o cancellarla."
+        },
+        "refunds": {
+            "title": "Rimborsi da gestire",
+            "empty": "Nessun rimborso in sospeso.",
+            "retry": "Riprova",
+            "markOffline": "Segna come rimborsato fuori piattaforma",
+            "offlineNote": "Nota (come e quando hai rimborsato)",
+            "offlineHint": "Conferma di aver restituito {{amount}} all'ospite fuori dalla piattaforma: il rimborso risulterà completato e l'ospite riceverà l'email.",
+            "confirmOffline": "Conferma",
+            "nextAttempt": "Prossimo tentativo automatico: {{at}}"
+        },
+        "disputes": {
+            "title_one": "{{count}} contestazione aperta",
+            "title_other": "{{count}} contestazioni aperte",
+            "hint": "Un ospite ha contestato un pagamento con la banca. Rispondi dalla dashboard Stripe entro la scadenza indicata da Stripe."
+        }
     }
 }
