@@ -16,4 +16,7 @@ return [
     // 09 punto 6: cancellazione dei dati almeno 30 giorni dopo l'export (salvo istruzione scritta).
     'purge_after_export_days' => 30,
 
+    // 09 punto 2 e "Anonimizzazione effettiva": l'export completo è scaricabile per 30 giorni, poi si cancella.
+    'export_valid_days' => 30,
+
 ];

@@ -451,6 +451,23 @@ final class InventoryService
         return $retention->table(self::OCCUPANCY_TABLE)->where('tenant_id', $tenantId)->delete();
     }
 
+    /**
+     * Cancellazione delle occupazioni di prenotazioni concluse oltre la durata della categoria A (7.2,
+     * ADR-0018): solo dentro RetentionDatabase (ruolo app_retention), insieme alle prenotazioni stesse.
+     *
+     * @param  list<string>  $reservationIds
+     */
+    public function purgeReservations(ConnectionInterface $retention, string $tenantId, array $reservationIds): int
+    {
+        $deleted = 0;
+
+        foreach (array_chunk($reservationIds, 500) as $chunk) {
+            $deleted += $retention->table(self::OCCUPANCY_TABLE)->where('tenant_id', $tenantId)->whereIn('reservation_id', $chunk)->delete();
+        }
+
+        return $deleted;
+    }
+
     private function lockUnit(string $unitId): Unit
     {
         return Unit::query()->lockForUpdate()->findOrFail($unitId);

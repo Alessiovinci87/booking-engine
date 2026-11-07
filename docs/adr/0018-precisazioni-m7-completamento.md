@@ -59,6 +59,32 @@ M7 completa le parti di 06 e 09 rimaste fuori dalla 1.0 del pilota: uscita del c
 
     Testi in `lang/{it,en}/api.php` e nel pannello.
 
+### 7.2 Conservazione dei dati
+
+11. **Durate provvisorie**: la migration `2027_04_08_000100` inserisce le categorie A–G con le ipotesi di lavoro di 09. La categoria H c'era già (ADR-0016). Nessuna è validata.
+12. **Simulazione o esecuzione per categoria** (`RetentionService`):
+    - **simulazione**, finché `validated_at` è vuoto: il job calcola le righe che tratterebbe e registra solo i conteggi, senza modificare nulla;
+    - **esecuzione**, per le categorie validate: la stessa selezione, poi anonimizzazione o cancellazione.
+
+    La selezione è la stessa nelle due modalità, quindi la simulazione mostra esattamente cosa farebbe il job una volta validata la categoria.
+13. **Validazione**: `php artisan retention validate {A–H} --by="Nome" --date=AAAA-MM-GG [--days=N]`, con conferma, registra chi ha validato e la data nella riga di `retention_policies`. L'audit di piattaforma `retention.validated` contiene categoria, durata e data, non il nome (regola 17). Altri comandi: `retention status`, che mostra le categorie non validate, e `retention run [--tenant=slug]`, che esegue subito il job.
+14. **Selezione e azione per categoria** (durata sempre da `retention_policies`):
+
+    | Cat. | Righe | Azione |
+    |---|---|---|
+    | A | prenotazioni concluse (`CONFIRMED`, `CANCELLED`, `REJECTED`, `EXPIRED`, `PAYMENT_FAILED`) con check-out oltre la durata, con righe di prezzo, modifiche, pagamenti, occupazioni (tramite `InventoryService::purgeReservations`), conflitti, preventivo (solo se tutti i suoi tentativi sono selezionati) e ospite (se non ha altre prenotazioni) | cancellazione con `app_retention` |
+    | B | ospiti non anonimizzati il cui ultimo check-out è oltre la durata | anonimizzazione con `GuestPrivacyService::erase` (tutte le copie, I22) |
+    | C | pagamenti, eventi di pagamento e rimborsi di prenotazioni concluse con check-out oltre la durata | cancellazione |
+    | D | ospiti con soli tentativi non conclusi (`EXPIRED`, `PAYMENT_FAILED`, `REJECTED`) fermi oltre la durata; nome ed email dei preventivi `EXPIRED`, `REVOKED`, `EXHAUSTED` | anonimizzazione (09: "cancellazione dei dati personali") |
+    | E | eventi iCal importati con check-out oltre la durata, salvo quelli di un conflitto aperto; i conflitti chiusi collegati | cancellazione |
+    | F | righe di audit del tenant oltre la durata; righe di piattaforma (senza tenant) una volta per esecuzione | cancellazione |
+    | G | messaggi in uscita `SENT` o `FAILED` oltre la durata dall'invio | cancellazione (09: "svuotamento / cancellazione") |
+    | H | link di reimpostazione usati o scaduti oltre la durata, tabella globale, una volta per esecuzione | cancellazione |
+
+15. **Ruolo**: le anonimizzazioni B e D sono aggiornamenti e girano con `app_runtime` tramite `GuestPrivacyService`, come la richiesta dell'ospite. Tutte le cancellazioni girano con `app_retention`. Per le righe di piattaforma dell'audit, `app_retention` ha due politiche RLS dedicate (`SELECT` e `DELETE` dove `tenant_id IS NULL` e senza contesto tenant).
+16. **Job notturno** `retention:nightly` alle 02:30 (ora italiana): `DispatchRetentionJob` accoda `RunGlobalRetentionJob` e, con `app_admin_ops` che legge solo gli ID, un `RunTenantRetentionJob` per ogni tenant, anche `CLOSED`, perché restano le righe di audit. Ogni esecuzione registra `retention.run` con modalità, durata e righe per categoria (09: "registra in AuditLog quante righe ha trattato per categoria").
+17. La validità di 30 giorni degli export completi passa in `config/offboarding.php` (`export_valid_days`).
+
 ## Alternative considerate
 
 | Alternativa | Perché scartata |
@@ -69,6 +95,8 @@ M7 completa le parti di 06 e 09 rimaste fuori dalla 1.0 del pilota: uscita del c
 | Cancellare anche la riga `tenants` | 09 prevede di conservare i dati necessari alla fatturazione della piattaforma; la riga non contiene dati degli ospiti. |
 | Link di download dell'export nell'email | Un link valido 30 giorni in una casella di posta è un rischio; il pannello chiede la password. |
 | Feed ancora letto ritirato comunque dopo 30 giorni | Contraddice 06 punto 5 e I19: un'OTA vedrebbe date libere già vendute. |
+| Job di conservazione spento finché le categorie non sono validate | Nessun riscontro prima della validazione; la simulazione mostra al professionista e alla piattaforma cosa succederà. |
+| Anonimizzazione B/D con `app_retention` e `UPDATE` | `app_retention` deve solo leggere e cancellare; `GuestPrivacyService` tratta già tutte le copie (I22). |
 
 ## Conseguenze
 
@@ -81,6 +109,7 @@ M7 completa le parti di 06 e 09 rimaste fuori dalla 1.0 del pilota: uscita del c
 
 - Test aggiunti:
   - `Feature/OffboardingFeedsTest` (AC18);
+  - `Feature/Privacy/RetentionServiceTest` (simulazione ed esecuzione per ogni categoria, I22 sulla categoria B, privilegi, dispatcher, comandi);
   - `Feature/Tenancy/{TenantExportTest, TenantPurgeTest}`;
   - in `Feature/Database/DatabaseRolesTest` i privilegi di `app_retention`.
 - Test modificati:

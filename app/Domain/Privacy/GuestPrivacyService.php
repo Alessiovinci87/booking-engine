@@ -190,6 +190,24 @@ final class GuestPrivacyService
     }
 
     /**
+     * Dati dell'ospite dei preventivi non accettati (categoria D di 09, job di conservazione 7.2): nome
+     * sostituito ed email tolta, come nell'anonimizzazione; payload dell'outbox svuotati.
+     *
+     * @param  list<string>  $quoteIds
+     */
+    public function anonymizeQuotes(array $quoteIds): int
+    {
+        if ($quoteIds === []) {
+            return 0;
+        }
+
+        $updated = Quote::query()->whereIn('id', $quoteIds)->update(['guest_name' => self::REMOVED, 'guest_email' => null]);
+        $this->purgeOutbox(collect(), collect(), collect($quoteIds));
+
+        return $updated;
+    }
+
+    /**
      * @param  Builder<covariant \Illuminate\Database\Eloquent\Model>  $query
      */
     private function redact(Builder $query, string $column): int

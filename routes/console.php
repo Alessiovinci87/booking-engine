@@ -7,6 +7,7 @@ use App\Domain\Communications\Alerts\Jobs\CheckQueueDelayJob;
 use App\Domain\Communications\Alerts\Jobs\UnhealthyCalendarsSummaryJob;
 use App\Domain\Payments\Jobs\DispatchPaymentReconciliationJob;
 use App\Domain\Payments\Jobs\ReconcilePaymentsJob;
+use App\Domain\Privacy\Jobs\DispatchRetentionJob;
 use App\Domain\Quotes\Jobs\DispatchQuoteExpiryJob;
 use App\Domain\Reservations\Jobs\DispatchOccupancyReleaseJob;
 use App\Domain\Tenancy\Jobs\DispatchOutboxJob;
@@ -51,3 +52,7 @@ Schedule::job(new DispatchQuoteExpiryJob)->everyFiveMinutes()->withoutOverlappin
 // Uscita del cliente (06, 09, 7.1): ogni notte export scaduti cancellati e ritiro automatico dei feed non
 // più letti dopo 30 giorni dall'avvio. Dispatcher con app_admin_ops, un job per tenant.
 Schedule::job(new DispatchOffboardingChecksJob)->dailyAt('03:30')->timezone('Europe/Rome')->withoutOverlapping()->name('offboarding:checks');
+
+// Conservazione dei dati (09, 7.2): ogni notte categorie globali e un job per tenant; le categorie non
+// validate dal professionista girano in simulazione (solo conteggi nell'audit).
+Schedule::job(new DispatchRetentionJob)->dailyAt('02:30')->timezone('Europe/Rome')->withoutOverlapping()->name('retention:nightly');

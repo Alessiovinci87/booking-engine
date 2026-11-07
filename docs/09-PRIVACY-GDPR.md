@@ -64,6 +64,8 @@ Le categorie sono separate perché hanno basi giuridiche e durate diverse:
 
 Il job di retention gira ogni notte, per tenant, e registra in `AuditLog` quante righe ha trattato per categoria. La categoria H riguarda una tabella globale (senza tenant): il job la tratta una volta per esecuzione, non per tenant.
 
+Finché una categoria non è validata il job gira **in simulazione**: registra quante righe tratterebbe, senza modificare nulla; agisce solo sulle categorie validate. La validazione si registra con `php artisan retention validate` (nome del professionista e data). Selezione per categoria, ruolo e comandi: ADR-0018 punti 11–16.
+
 ### Anonimizzazione effettiva
 
 Anonimizzare un ospite significa togliere i suoi dati da **tutte** le copie che controlliamo, non solo dalla tabella `guests`:

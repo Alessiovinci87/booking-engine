@@ -76,7 +76,8 @@ it('nessuna policy permissiva aggiuntiva apre le tabelle tenant-scoped ad app_ru
     // l'isolamento. Ammesse solo tenant_isolation e definer_lookup (riservata ad app_migrator, cioè
     // alle funzioni SECURITY DEFINER: risoluzione del tenant per slug, membership e, da M3, per
     // codice + token della prenotazione, da M4, per account Stripe del webhook e, da M5, per token
-    // del feed iCal).
+    // del feed iCal). Da M7 (ADR-0018 punto 15) le due policy di app_retention sulle righe di piattaforma
+    // dell'audit log (tenant_id NULL, senza contesto tenant), mai per app_runtime.
     $extra = DB::select(<<<'SQL'
         SELECT c.relname AS table_name, p.polname,
                ARRAY(SELECT CASE WHEN r = 0 THEN 'public' ELSE pg_get_userbyid(r) END FROM unnest(p.polroles) r) AS roles
@@ -88,7 +89,8 @@ it('nessuna policy permissiva aggiuntiva apre le tabelle tenant-scoped ad app_ru
 
     $violations = array_values(array_filter(
         array_map(fn ($row) => "{$row->table_name}.{$row->polname} {$row->roles}", $extra),
-        fn (string $line) => ! preg_match('/^(tenants|tenant_members|reservations|stripe_accounts|ics_feeds|quotes)\.definer_lookup \{app_migrator\}$/', $line),
+        fn (string $line) => ! preg_match('/^(tenants|tenant_members|reservations|stripe_accounts|ics_feeds|quotes)\.definer_lookup \{app_migrator\}$/', $line)
+            && ! preg_match('/^audit_log\.retention_platform_(select|delete) \{app_retention\}$/', $line),
     ));
 
     expect($violations)->toBe([]);

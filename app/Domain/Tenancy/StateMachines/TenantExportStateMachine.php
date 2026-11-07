@@ -23,8 +23,6 @@ use Illuminate\Support\Str;
  */
 final class TenantExportStateMachine
 {
-    public const VALID_DAYS = 30;
-
     public function __construct(private readonly AuditLogger $audit) {}
 
     public function request(?string $userId): TenantExport
@@ -47,7 +45,7 @@ final class TenantExportStateMachine
             'size_bytes' => $size,
             'future_reservations' => $futureReservations,
             'completed_at' => $now,
-            'expires_at' => $now->addDays(self::VALID_DAYS),
+            'expires_at' => $now->addDays((int) config('offboarding.export_valid_days')),
         ])->save();
         $this->audit->record('tenant.export_ready', 'tenant_export', $export->id, ['size_bytes' => $size, 'future_reservations' => $futureReservations]);
     }
