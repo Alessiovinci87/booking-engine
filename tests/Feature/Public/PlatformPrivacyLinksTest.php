@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
  */
 
 it('la pagina ospite passa i link della piattaforma al piè di pagina', function () {
+    $this->withoutVite();
     $fx = bookableTenant('INSTANT');
     config(['privacy.platform_notice_url' => 'https://piattaforma.example/privacy', 'privacy.subprocessors_url' => 'https://piattaforma.example/sub-responsabili']);
     $slugs = inTenant($fx['tenant'], fn () => [
