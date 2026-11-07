@@ -12,6 +12,8 @@ use Illuminate\Support\Carbon;
  */
 
 beforeEach(function () {
+    // La pagina ospite si rende senza asset: in CI i test girano prima della build di Vite.
+    $this->withoutVite();
     Carbon::setTestNow('2027-06-01 10:00:00');
     $this->fx = bookableTenant('INSTANT');
     $this->reservation = startCheckout($this->fx);
