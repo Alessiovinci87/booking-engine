@@ -51,11 +51,11 @@ test.describe('M5 preventivi', () => {
 
             const form = manager.getByTestId('quote-form');
             await form.locator('select[name="unit_id"]').selectOption({ label: 'Bilocale Vista Mare' });
-            await form.getByLabel('Check-in').fill(inDays(20));
-            await form.getByLabel('Check-out').fill(inDays(23));
+            await form.getByLabel('Check-in').fill(inDays(50));
+            await form.getByLabel('Check-out').fill(inDays(53));
             await form.getByLabel('Sconto', { exact: false }).first().fill('20,00');
             await form.getByLabel('Nome dell’ospite').fill('Marta Esempio');
-            await form.getByLabel('Email').fill('marta.esempio@example.test');
+            await form.locator('input[type="email"]').fill('marta.esempio@example.test');
             await form.getByRole('button', { name: 'Crea preventivo' }).click();
 
             await expect(manager.getByTestId('quote-row').first()).toHaveAttribute('data-status', 'DRAFT');
