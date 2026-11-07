@@ -18,4 +18,19 @@ return [
             'password_mismatch' => 'Le due password non coincidono.',
         ],
     ],
+    'embed' => [
+        'unknown_tenant' => 'Tenant sconosciuto.',
+        'invalid' => 'Origin non valido: ":origin". Usa https://dominio[:porta], senza percorso, query o credenziali.',
+        'nothing_to_do' => 'Indica --add, --remove oppure --list.',
+        'too_many' => 'Al massimo :max domini per tenant.',
+        'empty' => 'Nessun dominio registrato: la vista embed non è incorporabile.',
+    ],
+    'mfa_reset' => [
+        'reminder' => 'Verifica l\'identità del gestore per telefono prima di eseguire questo comando.',
+        'invalid_reason' => 'Motivazione obbligatoria: 10-200 caratteri, senza email né numeri di telefono.',
+        'unknown_user' => 'Nessun utente con questa email.',
+        'confirm' => 'Hai verificato l\'identità per telefono e vuoi azzerare MFA e codici di recupero?',
+        'aborted' => 'Nessuna modifica.',
+        'done' => 'MFA azzerata per l\'utente :id: sessioni chiuse, al prossimo accesso dovrà configurarla di nuovo.',
+    ],
 ];

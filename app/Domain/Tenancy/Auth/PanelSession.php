@@ -68,6 +68,17 @@ final class PanelSession
         return $now - $lastActivityAt >= $idleSeconds || $now - $authenticatedAt >= $absoluteSeconds;
     }
 
+    /**
+     * La sessione è iniziata prima della revoca delle sessioni dell'utente (6.10, user:reset-mfa).
+     * Stesso secondo compreso: meglio un accesso in più che una sessione sopravvissuta alla revoca.
+     */
+    public function startedNotAfter(CarbonImmutable $revokedAt): bool
+    {
+        $authenticatedAt = $this->session->get(self::AUTHENTICATED_AT);
+
+        return ! is_int($authenticatedAt) || $authenticatedAt <= $revokedAt->getTimestamp();
+    }
+
     public function touch(): void
     {
         $this->session->put(self::LAST_ACTIVITY_AT, CarbonImmutable::now()->getTimestamp());

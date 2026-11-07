@@ -18,6 +18,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
  * @property string $password_hash
  * @property string|null $mfa_secret_encrypted
  * @property CarbonImmutable|null $mfa_enabled_at
+ * @property CarbonImmutable|null $sessions_revoked_at
  * @property Locale $locale
  */
 #[PersonalData('email')]
@@ -39,6 +40,7 @@ class User extends Authenticatable
             'password_hash' => 'hashed',
             'mfa_secret_encrypted' => 'encrypted',
             'mfa_enabled_at' => 'immutable_datetime',
+            'sessions_revoked_at' => 'immutable_datetime',
             'locale' => Locale::class,
         ];
     }

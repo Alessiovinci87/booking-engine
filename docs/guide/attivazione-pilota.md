@@ -6,6 +6,7 @@ Chi la usa: la piattaforma (Alessio, con Giuseppe per il rapporto con il gestore
 
 ## 0. Prima di iniziare (una volta per ambiente)
 
+- ☐ **Fase 0 con esito positivo** (gate pilota, ADR-0007): senza, questa procedura non si esegue.
 - ☐ Produzione attiva e verificata **[6.4]**: configurazione obbligatoria del rapporto [M6-revisione-sicurezza](../reports/M6-revisione-sicurezza.md) (in particolare `APP_DEBUG=false`, `TRUSTED_PROXIES`, chiavi Stripe live, `MAIL_MAILER=resend`, `ALERT_EMAILS`); backup giornaliero attivo e un ripristino di prova riuscito (AC12).
 - ☐ Testi legali pubblicati e collegati: informativa della piattaforma (`PLATFORM_PRIVACY_NOTICE_URL`), elenco dei sub-responsabili (`PLATFORM_SUBPROCESSORS_URL`), modello di DPA e condizioni di servizio, con le fasce di supporto (08 "Gestione incidenti", 09).
 - ☐ Criteri di accettazione verdi su staging (6.6) e verifica dei calendari reali di Booking e Airbnb (6.9).
@@ -40,7 +41,13 @@ php artisan tenant:dpa <slug> <versione-del-dpa> --signed-at=<AAAA-MM-GG>
 - `tenant:create` chiede due volte la password iniziale, senza mostrarla. Si comunica al gestore per telefono, mai per email o chat insieme all'indirizzo di accesso.
 - La versione del DPA è quella del documento firmato (per esempio `2027-01`). La data non può essere futura.
 - ☐ Registrare nel documento del pilota la data di creazione e la versione del DPA.
-- ☐ Domini della vista embed: **oggi non c'è un comando** (colonna `tenants.embed_allowed_origins`). Va aggiunto prima del primo pilota che usa l'embed (punto aperto, vedi in fondo).
+- ☐ Domini della vista embed, se il gestore la usa (solo https, senza percorso; ogni modifica va in audit):
+
+  ```
+  php artisan tenant:embed-origins <slug> --add=https://www.sito-del-gestore.it
+  php artisan tenant:embed-origins <slug> --list
+  php artisan tenant:embed-origins <slug> --remove=https://vecchio-sito.it
+  ```
 
 ## 4. Primo accesso del gestore (in videochiamata, consigliato)
 
@@ -88,11 +95,10 @@ Su una data lontana, con una carta reale del gestore o della piattaforma e impor
 
 - **Doppia prenotazione reale, pagamento senza prenotazione, accesso tra tenant**: incidente P1 (08). Sospendere le vendite dell'unità dal pannello ("Sospendi le vendite"), avvisare il gestore, poi l'analisi.
 - **Calendario non sincronizzato da oltre 3 ore**: le date già importate restano bloccate; controllare l'indirizzo con il gestore.
-- **Il gestore perde la MFA**: usa un codice di recupero. Senza codici serve un intervento della piattaforma (procedura da definire, vedi sotto).
+- **Il gestore perde la MFA**: usa un codice di recupero. Senza codici: [azzeramento della MFA](azzeramento-mfa.md), con verifica dell'identità per telefono prima di `php artisan user:reset-mfa`.
 
 ## Punti aperti di questa procedura
 
-1. Nessun comando per registrare i domini della vista embed: da aggiungere prima del primo pilota che la usa.
-2. Nessuna procedura per azzerare la MFA di un gestore che ha perso anche i codici di recupero (oggi solo intervento manuale sul database, da evitare).
-3. Accesso di supporto al tenant (08) non implementato: per ora si assiste il gestore in condivisione dello schermo.
-4. Testi legali, fasce di supporto e prezzi dell'abbonamento: da definire prima della firma.
+1. Accesso di supporto al tenant (08): attività 7.5 di M7. Fino ad allora si assiste il gestore in condivisione dello schermo.
+2. Testi legali, fasce di supporto e prezzi dell'abbonamento: da definire prima della firma.
+3. Hosting: proposta in [ADR-0015](../adr/0015-hosting-railway-eu.md) (Railway, regione EU West), in attesa delle verifiche.
