@@ -1,8 +1,8 @@
 # ADR-0014 — Precisazioni di M6: comunicazioni, privacy, metriche e allerte
 
-- **Stato**: Proposta
+- **Stato**: Accettata (verifica parziale di M6, 07/11/2026). I punti 19 e 22–24 sono **provvisori fino a 6.4**
 - **Data**: 2026-11-07
-- **Autori**: Claude Code (da verificare con Alessio)
+- **Autori**: Claude Code, verificata da Claude per Alessio
 - **Documenti di specifica toccati**: 01-SCOPE, 02-DOMAIN-MODEL, 07-API-CONTRACT, 08-SECURITY-OPERATIONS, 09-PRIVACY-GDPR, 10-TRACEABILITY
 
 ## Contesto
@@ -40,15 +40,15 @@ M6 parte senza gli account esterni (hosting, dominio, Resend, Sentry): si fanno 
 
 ### Allerte operative (6.5)
 
-19. **Canale provvisorio delle allerte "push"**: finché le notifiche push e Sentry non arrivano con 6.4, i segnali con canale push di 08 vanno nel log al loro livello e per email agli indirizzi della piattaforma (`ALERT_EMAILS`, `config/alerts.php`), tramite `OperationalAlerts`. Le email al gestore restano nell'outbox del tenant, come prima.
+19. *(Provvisorio fino a 6.4.)* **Canale provvisorio delle allerte "push"**: finché le notifiche push e Sentry non arrivano con 6.4, i segnali con canale push di 08 vanno nel log al loro livello e per email agli indirizzi della piattaforma (`ALERT_EMAILS`, `config/alerts.php`), tramite `OperationalAlerts`. Le email al gestore restano nell'outbox del tenant, come prima.
 20. **Segnali coperti** (`AlertSignal`): coda in ritardo (messaggi dell'outbox pronti da più di 5 minuti, controllo ogni 5 minuti con `app_admin_ops`), webhook Stripe che falliscono (3 tentativi dello stesso evento), prenotazione in `CAPTURING` da oltre 1 ora, occupazione scaduta non rilasciata da oltre 30 minuti, incoerenza I15, rimborso riuscito annullato da Stripe, webhook con tenant non corrispondente, riepilogo giornaliero interno dei calendari `UNHEALTHY` (alle 7, ora italiana). Il rimborso fallito dopo 3 tentativi resta log ed email al gestore (08). Fuori da 6.5: errori applicativi, backup e ripristino, uptime (6.4); feed non letto dall'OTA (avviso nel pannello, già in M5).
 21. **Limiti**: al più una email per segnale e chiave ogni 60 minuti (`ALERT_THROTTLE_MINUTES`); il log registra ogni occorrenza. L'email parte dopo il commit della transazione in corso; un errore di invio resta nel log (`alerts.email_failed`) e non blocca il chiamante. Contesto: solo identificativi e conteggi.
 
 ### Test E2E in locale (6.6, parziale)
 
-22. **Prima tranche in locale**: 11 chiede gli E2E dei criteri di accettazione su staging con Stripe in modalità test e un server iCal finto in https. Senza staging (6.4) e con i risultati della Fase 0 ancora attesi (6.9, da fare prima di 6.6), questa tranche li esegue in locale sul database demo (`tests/E2E/m6-acceptance.spec.ts`) con il gateway finto (ADR-0011); 6.6 resta aperta finché la stessa serie non gira su staging. Coperti nel browser: AC2 (UID stabili nel feed, gateway finto), AC3, AC4, AC5, AC6, AC9 (rimborso avviato, gateway finto), AC13, AC17, I22 dal pannello; AC1 e AC8 erano già coperti da `m2-panel` e `m5-quote`.
-23. **Da ripetere su staging**: tutti i passi di pagamento (checkout, autorizzazione, incasso, rimborso) con Stripe in modalità test e webhook firmati; l'import di un calendario da un URL https reale (in locale `SafeHttpFetcher` rifiuta, giustamente, gli indirizzi privati, e i calendari dimostrativi coprono solo la parte del pannello); AC7, AC14, AC15, AC19, AC10 e AC16, che richiedono il passare del tempo, l'iniezione di errori nel gateway o richieste a Stripe, restano coperti dai test Feature e `Stripe/*` finché non si scrivono gli scenari su staging; AC11 è coperto da `Feature/TenantIsolationApiTest` e dal catalogo RLS; AC12 è 6.4.
-24. **Supporto E2E**: le email si verificano nella casella `/dev/mail` dopo un giro del dispatcher dell'outbox (`schedule:test --name=outbox:dispatch`, `tests/E2E/support/artisan.ts`); il setup globale azzera il contatore del limite di frequenza della prenotazione pubblica per 127.0.0.1 nella cache con prefisso E2E, perché tutti gli spec arrivano dallo stesso indirizzo.
+22. *(Provvisorio fino a 6.4.)* **Prima tranche in locale**: 11 chiede gli E2E dei criteri di accettazione su staging con Stripe in modalità test e un server iCal finto in https. Senza staging (6.4) e con i risultati della Fase 0 ancora attesi (6.9, da fare prima di 6.6), questa tranche li esegue in locale sul database demo (`tests/E2E/m6-acceptance.spec.ts`) con il gateway finto (ADR-0011); 6.6 resta aperta finché la stessa serie non gira su staging. Coperti nel browser: AC2 (UID stabili nel feed, gateway finto), AC3, AC4, AC5, AC6, AC9 (rimborso avviato, gateway finto), AC13, AC17, I22 dal pannello; AC1 e AC8 erano già coperti da `m2-panel` e `m5-quote`.
+23. *(Provvisorio fino a 6.4.)* **Da ripetere su staging**: tutti i passi di pagamento (checkout, autorizzazione, incasso, rimborso) con Stripe in modalità test e webhook firmati; l'import di un calendario da un URL https reale (in locale `SafeHttpFetcher` rifiuta, giustamente, gli indirizzi privati, e i calendari dimostrativi coprono solo la parte del pannello); AC7, AC14, AC15, AC19, AC10 e AC16, che richiedono il passare del tempo, l'iniezione di errori nel gateway o richieste a Stripe, restano coperti dai test Feature e `Stripe/*` finché non si scrivono gli scenari su staging; AC11 è coperto da `Feature/TenantIsolationApiTest` e dal catalogo RLS; AC12 è 6.4.
+24. *(Provvisorio fino a 6.4.)* **Supporto E2E**: le email si verificano nella casella `/dev/mail` dopo un giro del dispatcher dell'outbox (`schedule:test --name=outbox:dispatch`, `tests/E2E/support/artisan.ts`); il setup globale azzera il contatore del limite di frequenza della prenotazione pubblica per 127.0.0.1 nella cache con prefisso E2E, perché tutti gli spec arrivano dallo stesso indirizzo.
 
 ### Revisione di sicurezza (6.7, parte sul codice)
 
@@ -59,6 +59,21 @@ Rapporto: `docs/reports/M6-revisione-sicurezza.md`.
 27. **HSTS**: `Strict-Transport-Security: max-age=31536000; includeSubDomains` su ogni risposta https (`SECURITY_HSTS_MAX_AGE`, 0 = disattivato).
 28. **Proxy fidati**: `TRUSTED_PROXIES` (indirizzi separati da virgole o `*`) decide da quali indirizzi valgono gli header `X-Forwarded-*`. È obbligatorio dietro un load balancer: senza, i limiti per IP diventerebbero un unico contatore e le richieste https risulterebbero http.
 29. **Dependabot**: aggiornamenti settimanali di composer, npm e GitHub Actions (`.github/dependabot.yml`), senza merge automatico.
+
+### Decisioni della verifica parziale (07/11/2026)
+
+30. **Strumenti di piattaforma (6.10)**:
+    - `php artisan tenant:embed-origins {slug} [--add=…] [--remove=…] [--list]`: origin solo https, con un nome di dominio (niente IP, localhost, percorso, query, frammento o credenziali), normalizzati come `https://host[:porta]`, al massimo 20; ogni modifica va in audit (`tenant.embed_origins_updated`).
+    - `php artisan user:reset-mfa {email} --reason="…"`:
+      - stampa il promemoria sulla verifica dell'identità per telefono e chiede conferma;
+      - cancella segreto TOTP e codici di recupero;
+      - chiude tutte le sessioni dell'utente con la nuova colonna `users.sessions_revoked_at`: le sessioni iniziate fino a quell'istante si chiudono alla richiesta successiva;
+      - al prossimo accesso la MFA va riconfigurata;
+      - audit `user.mfa_reset` in ogni tenant dell'utente, con ID e motivazione. La motivazione è di 10–200 caratteri e non può contenere email o numeri di telefono.
+    - Procedura in `docs/guide/azzeramento-mfa.md`.
+31. **Accesso di supporto** (08): attività 7.5 in M7, in sola lettura, con motivazione obbligatoria, durata massima di 2 ore e audit visibile al gestore nel pannello.
+32. **Gate della Fase 0**: serve per attivare i piloti (procedura 6.8), non per proseguire lo sviluppo (aggiornamento di ADR-0007).
+33. **Hosting**: proposta separata in ADR-0015 (Railway, regione EU West), in stato Proposta.
 
 ## Alternative considerate
 
@@ -77,7 +92,7 @@ Rapporto: `docs/reports/M6-revisione-sicurezza.md`.
 
 ## Impatto sui test
 
-- Test aggiunti: `Feature/Communications/TransactionalMailTest`, `Feature/Metrics/MetricsTest`, `Feature/AnonymizationCoverageTest` (I22), `Feature/Public/PlatformPrivacyLinksTest`, casi DPA in `Feature/PropertyPublishTest`, `Feature/Communications/OperationalAlertsTest`, `E2E/m6-acceptance.spec` (in locale); per 6.7 casi nuovi in `Feature/SecurityHeadersTest` (HSTS, proxy fidati), `Feature/Public/PublicReservationApiTest` (scadenza del link), `Feature/Metrics/MetricsTest` e `Feature/AnonymizationCoverageTest` (`REAUTH_REQUIRED` sugli export).
+- Test aggiunti: `Feature/Communications/TransactionalMailTest`, `Feature/Metrics/MetricsTest`, `Feature/AnonymizationCoverageTest` (I22), `Feature/Public/PlatformPrivacyLinksTest`, casi DPA in `Feature/PropertyPublishTest`, `Feature/Communications/OperationalAlertsTest`, `E2E/m6-acceptance.spec` (in locale); per 6.7 casi nuovi in `Feature/SecurityHeadersTest` (HSTS, proxy fidati), `Feature/Public/PublicReservationApiTest` (scadenza del link), `Feature/Metrics/MetricsTest` e `Feature/AnonymizationCoverageTest` (`REAUTH_REQUIRED` sugli export); per 6.10 `Feature/Tenancy/PlatformToolsTest`.
 - Test modificati: `Feature/Reservations/ReservationTransitionsTest` (T3 genera anche `reservation.confirmed_manager`).
 - Invarianti toccati: I22 (ora coperto da `Feature/AnonymizationCoverageTest`).
 

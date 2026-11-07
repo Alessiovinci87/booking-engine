@@ -1,10 +1,10 @@
 # 11 — Piano di sviluppo a milestone
 
-Versione: 1.2 · Data: 06/11/2026 · Modifiche 1.2: criterio di uscita della demo di M2, attività 3.2 e 3.7 dopo la verifica di M2 (ADR-0010) · Scelte tecniche: [ADR-0006](adr/0006-scelte-di-implementazione.md) · Calendario: [ADR-0007](adr/0007-sviluppo-anticipato.md) (sviluppo anticipato)
+Versione: 1.3 · Data: 07/11/2026 · Modifiche 1.2: criterio di uscita della demo di M2, attività 3.2 e 3.7 dopo la verifica di M2 (ADR-0010) · 1.3: gate pilota sull'attivazione dei piloti (ADR-0007 aggiornata), attività 6.10 e 7.5 (ADR-0014) · Scelte tecniche: [ADR-0006](adr/0006-scelte-di-implementazione.md) · Calendario: [ADR-0007](adr/0007-sviluppo-anticipato.md) (sviluppo anticipato)
 
 Questo documento è **vincolante**: lo sviluppo procede una milestone alla volta, nell'ordine indicato, e si passa alla successiva solo quando i criteri di uscita sono soddisfatti. Le decisioni tecniche sono già prese (specifica 01–10 e ADR-0006). Durante lo sviluppo non si discutono scelte, salvo i casi elencati in "Quando ci si ferma".
 
-**Sviluppo e Fase 0 (ADR-0007).** Lo sviluppo non aspetta la decisione della Fase 0. Interviste, piloti e verifica dei calendari proseguono in parallelo: il loro esito positivo è la condizione per avviare il pilota (gate prima di M6), non per sviluppare. Restano due condizioni:
+**Sviluppo e Fase 0 (ADR-0007).** Lo sviluppo non aspetta la decisione della Fase 0. Interviste, piloti e verifica dei calendari proseguono in parallelo: il loro esito positivo è la condizione per attivare i piloti (procedura di 6.8), non per sviluppare, M6 compresa. Restano due condizioni:
 - accordo preliminare tra i soci (riservatezza e titolarità del codice) entro il **27/11/2026**;
 - risultati della verifica dei calendari reali **prima di M5**. Se mancano, M5 procede con la specifica e la verifica passa in M6.
 
@@ -18,8 +18,8 @@ Questo documento è **vincolante**: lo sviluppo procede una milestone alla volta
 | M3 | Inventario, prenotazioni e pagina ospite | 7 – 18 dic 2026 | anti-overbooking, macchina a stati, prenotazioni manuali, pagina ospite senza pagamento | M2 | un ospite sceglie le date e vede il prezzo |
 | M4 | Pagamenti Stripe | 21 dic 2026 – 15 gen 2027 (comprese le festività) | checkout, pre-autorizzazione, approvazione, rimborsi | M3 | prenotazione pagata in modalità test |
 | M5 | Calendari iCal e preventivi | 18 – 29 gen 2027 | import, export per destinazione, conflitti, preventivi | M4 | data presa su Airbnb che si blocca da noi |
-| — | **Gate pilota: esito Fase 0 positivo** | prima di M6 | M6 (staging, produzione, attivazione dei piloti) parte solo con la Fase 0 positiva (ADR-0007) | | |
 | M6 | Comunicazioni, privacy e rilascio | 1 – 19 feb 2027 | email, metriche, privacy, staging e produzione, collaudo | M5 | collaudo completo |
+| — | **Gate pilota: esito Fase 0 positivo** | prima dell'attivazione dei piloti | la procedura di attivazione (6.8) si esegue solo con la Fase 0 positiva; lo sviluppo di M6 non la aspetta (ADR-0007) | | |
 | — | **Gate: pilota online** | aprile 2027 (invariato) | margine tra la fine di M6 e il pilota per Fase 0, collaudo e correzioni | | |
 | M7 | Completamento durante il pilota | apr – 31 mag 2027 | uscita del cliente, conservazione automatica, correzioni | M6 | — |
 
@@ -212,7 +212,7 @@ Alla fine apri la pull request e scrivi il rapporto di fine milestone.
 ## M6 — Comunicazioni, privacy e rilascio del pilota
 
 **Periodo:** 1 – 19 febbraio 2027 (sprint 6, scadenza 2027-02-19).
-**Gate pilota (ADR-0007):** M6 parte solo con l'esito positivo della Fase 0 (interviste, piloti, verifica dei calendari).
+**Gate pilota (ADR-0007, aggiornata il 07/11/2026):** l'esito positivo della Fase 0 serve per attivare i piloti (6.8), non per svolgere M6.
 **Documenti:** 01, 08, 09.
 **Prerequisiti esterni:** account Resend, Sentry, hosting e dominio (Claude Code si ferma e chiede).
 **Obiettivo:** il sistema online, sicuro e collaudato, pronto per i gestori pilota.
@@ -227,6 +227,7 @@ Alla fine apri la pull request e scrivi il rapporto di fine milestone.
 | 6.6 | Test Playwright E2E per AC1–AC17 e AC19 su staging, compresi `/app/calendari` e `/app/conflitti` (calendari importati, feed, checklist, presa in carico e chiusura di un conflitto) con un server iCal finto in https (verifica di M5) |
 | 6.7 | Revisione di sicurezza con la checklist di 08; test di ripristino del backup (AC12, I10) |
 | 6.8 | Procedura di attivazione dei piloti e guida rapida per i gestori, insieme a Giuseppe |
+| 6.10 | Strumenti di piattaforma per il pilota: `tenant:embed-origins` (domini della vista embed, con audit) e `user:reset-mfa` (azzeramento della MFA con chiusura delle sessioni e audit), procedura in `docs/guide/` (ADR-0014 punto 30) |
 | 6.9 | Verifica dei calendari reali di Booking e Airbnb con i risultati della Fase 0 (ADR-0007): formati, etichette di `SUMMARY`, eventi con orario, frequenza di lettura del nostro feed, risposta a `503`; adeguamento di `EchoClassifier`, `IcsParser` e dei file di prova (verifica di M5, ADR-0013). Da fare appena arrivano i risultati, prima di 6.6 |
 
 **Criteri di uscita:** tutti i criteri di accettazione tranne AC18 verdi su staging; backup ripristinato; prima struttura pilota configurata in produzione.
@@ -245,6 +246,7 @@ Alla fine apri la pull request e scrivi il rapporto di fine milestone.
 | 7.2 | `RetentionPolicy` configurabile e job di conservazione, con le durate validate dal professionista. Ruolo PostgreSQL dedicato `app_retention`, con `DELETE` solo sulle tabelle soggette a conservazione (compresi `audit_log` e `payment_events`, append-only per `app_runtime`), usato solo dal job di conservazione (ADR-0009) |
 | 7.3 | Correzioni e miglioramenti emersi dal pilota, in ordine di gravità |
 | 7.4 | Larastan a livello 8 |
+| 7.5 | Accesso di supporto al tenant in sola lettura (08): motivazione obbligatoria, durata massima 2 ore, audit visibile al gestore nel pannello (ADR-0014 punto 31) |
 
 **Criteri di uscita:** AC18 verde; job di conservazione attivo con durate validate; nessun problema grave aperto dal pilota.
 

@@ -1,6 +1,6 @@
 # ADR-0007 — Sviluppo anticipato rispetto alla decisione della Fase 0
 
-- **Stato**: Accettata
+- **Stato**: Accettata (aggiornata il 2026-11-07: gate pilota)
 - **Data**: 2026-11-06
 - **Autori**: Alessio (decisione), Claude Code (stesura)
 - **Documenti di specifica toccati**: 11-MILESTONES, README (indice). Nessun documento di comportamento (01–10).
@@ -19,7 +19,7 @@ Le milestone M1–M3 (modello dati, accesso, strutture, prezzi, inventario, pren
 
 Dettagli:
 
-- La Fase 0 (interviste, piloti, verifica dei calendari) prosegue in parallelo. Il suo esito positivo diventa il **gate pilota**, da superare prima di M6 (staging, produzione e attivazione dei piloti).
+- La Fase 0 (interviste, piloti, verifica dei calendari) prosegue in parallelo. Il suo esito positivo è il **gate pilota**: serve per **attivare i piloti** (procedura di 6.8, `docs/guide/attivazione-pilota.md`), non per proseguire lo sviluppo. *(Aggiornamento del 07/11/2026; prima il gate stava prima di M6.)*
 - Condizioni che restano:
   - **accordo preliminare tra i soci** (riservatezza e titolarità del codice) entro il **27/11/2026**;
   - **risultati della verifica dei calendari reali** (Booking, Airbnb) **prima di M5**. Se mancano, M5 procede con la specifica (06) e la verifica diventa un'attività di M6, come già previsto in 11.
@@ -38,6 +38,10 @@ Dettagli:
 
 - Il **pilota resta ad aprile 2027**, come prima.
 
+## Aggiornamento del 07/11/2026 (verifica parziale di M6)
+
+Il gate pilota non blocca più l'inizio di M6. Lo sviluppo di M6 può procedere, compresi staging e produzione (6.4), senza l'esito della Fase 0. Senza esito positivo, invece, non si esegue la procedura di attivazione (6.8) e nessun gestore pilota viene messo in produzione. La verifica dei calendari reali (6.9) resta legata ai risultati della Fase 0.
+
 ## Alternative considerate
 
 | Alternativa | Perché scartata |
@@ -49,7 +53,7 @@ Dettagli:
 ## Conseguenze
 
 - Nessun effetto sul comportamento del sistema né sui dati: cambia solo il calendario del piano.
-- Rischio introdotto: lavoro su M4–M5 che potrebbe dover essere adattato se la Fase 0 cambia requisiti (es. comportamento reale dei feed OTA). Mitigazioni: la verifica dei calendari prima di M5 e il gate pilota prima di M6.
+- Rischio introdotto: lavoro su M4–M6 che potrebbe dover essere adattato se la Fase 0 cambia requisiti (es. comportamento reale dei feed OTA). Mitigazioni: la verifica dei calendari (6.9) e il gate pilota prima dell'attivazione dei piloti.
 - Rischio introdotto: sviluppare codice prima dell'accordo sulla titolarità. Mitigazione: scadenza dell'accordo preliminare tra i soci al 27/11/2026, durante M1.
 - Tra la fine di M6 (19/02/2027) e il pilota (aprile 2027) resta un margine di circa sei settimane, utile per gli esiti della Fase 0, il collaudo e le correzioni.
 
