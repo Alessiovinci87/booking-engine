@@ -38,7 +38,7 @@ Convenzioni dei test: `Unit/…` (Pest, senza database), `Feature/…` (Pest con
 | `IcsParser`, `FeedContents` | parsing iCal (sabre/vobject), contenuto per destinazione | 06, ADR-0013 |
 | `IcsFeedBuilder` | contenuto del feed per destinazione | 06 |
 | `IcsFeedLifecycle` | `ACTIVE` / `FROZEN` / `RETIRED`, rotazione | 06 |
-| `OffboardingService` | uscita del cliente | 06, 09 |
+| `OffboardingService`, `TenantDataPurger`, `TenantExportBuilder` | uscita del cliente: avvio, export, ritiro dei feed, cancellazione secondo il DPA | 06, 09, ADR-0018 |
 | `RetentionService`, `AnonymizationService` | conservazione e anonimizzazione | 09 |
 | `AuditLogger` | audit senza valori personali | 02, 08 |
 | `SafeHttpFetcher` | download di URL forniti dagli utenti | 06, 08 |
@@ -76,7 +76,7 @@ Convenzioni dei test: `Unit/…` (Pest, senza database), `Feature/…` (Pest con
 | AC15 | Sessione completata scoperta dal job: nessun rilascio | `OccupancyReleaseJob` | `inventory_occupancies`, `payments` | — | `Stripe/ReleaseJobCompletedSessionTest`, `Feature/Payments/StripeReleaseTest` |
 | AC16 | Preventivo: un solo tentativo, prezzo congelato | `QuoteService` | `quotes` | `POST /public/quotes/{token}/accept` | `Feature/Quotes/QuoteConcurrencyTest`, `Feature/Quotes/QuoteFrozenPriceTest` |
 | AC17 | Manuale senza pagamento, poi pagamento offline | `ReservationStateMachine` | `reservations`, `payments` | `POST /admin/reservations`, `…/offline-payments` | `Feature/ManualUnpaidTest`, `E2E/m6-acceptance.spec` (in locale) |
-| AC18 | Uscita del cliente: feed mai vuoti, ritiro controllato | `OffboardingService`, `IcsFeedLifecycle` | `tenants`, `ics_feeds` | `/admin/tenant/offboarding/*`, `GET /ical/{token}.ics` | `Feature/OffboardingFeedsTest` |
+| AC18 | Uscita del cliente: feed mai vuoti, ritiro controllato | `OffboardingService`, `IcsFeedLifecycle` | `tenants`, `ics_feeds`, `tenant_exports` | `/admin/tenant/offboarding/*`, `/admin/tenant/export*`, `GET /ical/{token}.ics` | `Feature/OffboardingFeedsTest`, `Feature/Tenancy/{TenantExportTest, TenantPurgeTest}` |
 | AC19 | Rimborso fallito: retry, allerta, chiusura offline | `RefundService` | `refunds` | `POST /admin/refunds/{id}/retry`, `…/mark-offline` | `Feature/RefundRetryTest`, `Stripe/RefundFailureTest` |
 
 ## Invarianti
@@ -104,7 +104,7 @@ Convenzioni dei test: `Unit/…` (Pest, senza database), `Feature/…` (Pest con
 | I19 | Feed disattivato mai vuoto | `IcsFeedLifecycle` | `ics_feeds.status` | `GET /ical/{token}.ics` | `Feature/Calendar/FrozenFeedNeverEmptyTest`, `Feature/Calendar/RetiredFeed410Test` |
 | I20 | Rimborso non comunicato prima dell'esito | `RefundService` | `refunds`, `outbox_messages` | `…/cancel` | `Feature/RefundEmailTimingTest` |
 | I21 | Un tentativo attivo per preventivo | `QuoteService` | `quotes.active_reservation_id` (unico) | `…/accept` | `Feature/Quotes/QuoteConcurrencyTest` |
-| I22 | Anonimizzazione su tutte le copie | `GuestPrivacyService` | `guests`, `reservations`, `quotes`, `audit_log`, `outbox_messages`, export | `POST /admin/guests/{id}/erase` | `Feature/AnonymizationCoverageTest`, `Feature/AuditLogNoPersonalDataTest`, `E2E/m6-acceptance.spec` (pannello) |
+| I22 | Anonimizzazione su tutte le copie | `GuestPrivacyService` | `guests`, `reservations`, `quotes`, `audit_log`, `outbox_messages`, export | `POST /admin/guests/{id}/erase` | `Feature/AnonymizationCoverageTest`, `Feature/AuditLogNoPersonalDataTest`, `Feature/Tenancy/TenantExportTest` (export completi), `E2E/m6-acceptance.spec` (pannello) |
 
 ## Controlli statici in CI
 
@@ -199,5 +199,6 @@ Aggiornato a fine M4 (07/11/2026): pagamenti Stripe (Connect, checkout, webhook,
 | Attivazione dei piloti e guida per i gestori (6.8, bozza) | `docs/guide/attivazione-pilota.md`, `docs/guide/guida-rapida-gestori.md` (da rivedere con Giuseppe); campo "Commissione OTA abituale" nel modulo della struttura (`PropertyPage.tsx`, `ota_commission_bps` già accettato dall'API) | `Feature/Admin/PropertyApiTest`, `npm run typecheck`, E2E `m2-panel` |
 | Strumenti di piattaforma (6.10) | `TenantEmbedOriginsCommand` (`tenant:embed-origins`), `App\Domain\Tenancy\EmbedOrigins`; `ResetUserMfaCommand` (`user:reset-mfa`), `App\Domain\Tenancy\Auth\MfaReset`, colonna `users.sessions_revoked_at` (`2027_02_01_000100`) controllata da `EnsurePanelSessionIsFresh`; procedura `docs/guide/azzeramento-mfa.md` (ADR-0014 punto 30) | `Feature/Tenancy/PlatformToolsTest` |
 | Gestione password del gestore (6.11) | `PasswordController` (`POST /admin/auth/password/forgot`, `/password/reset`, `/password`), `App\Domain\Tenancy\Auth\PasswordManagement`, tabella globale `user_password_resets` (`2027_02_08_000100`, modello `UserPasswordReset`), `PanelSession::acknowledgeRevocation` in `EnsurePanelSessionIsFresh`, outbox `account.password_reset` e `account.password_changed` (`SendAccountEmail`), pagine `/app/password-dimenticata`, `/app/reimposta-password`, `/app/account`; `users.sessions_revoked_at` in `timestamptz(6)` (`2027_02_08_000300`, confronto al microsecondo); categoria di conservazione `H_PASSWORD_RESET_LINKS` (`2027_02_08_000200`, cancellazione nel job di 7.2) (ADR-0016) | `Feature/Auth/PasswordManagementTest`, `Feature/Privacy/RetentionPolicyTest`, `Feature/Database/SchemaTest`, `Feature/Frontend/SpaRoutesTest`, E2E `m6-password.spec.ts` |
+| Uscita del cliente (7.1) | `App\Domain\Tenancy\Offboarding\{OffboardingService, TenantExportBuilder, TenantDataPurger, SendOffboardingEmail, Jobs\DispatchOffboardingChecksJob, Jobs\RunOffboardingChecksJob}` (`offboarding:checks` ogni notte), `Jobs\GenerateTenantExportJob`, `StateMachines\TenantExportStateMachine`, `TenantLifecycleService::{startOffboarding, close}`, middleware `tenant.writable` (`EnsureTenantAcceptsChanges`), `Admin\TenantOffboardingController`, comando `tenant:offboarding`, `App\Domain\Privacy\RetentionDatabase` e ruolo `app_retention`, tabella `tenant_exports` e FK cicliche `DEFERRABLE` (`2027_04_01_000100`), controllo del tenant `ACTIVE` in `QuoteService`, pannello `OffboardingPage.tsx` (`/app/uscita`) e banner in `PanelLayout.tsx`, guida `docs/guide/uscita-cliente.md` (ADR-0018) | `Feature/OffboardingFeedsTest`, `Feature/Tenancy/{TenantExportTest, TenantPurgeTest}`, `Feature/Database/{DatabaseRolesTest, SchemaTest}`, `Feature/Calendar/{FrozenFeedNeverEmptyTest, RetiredFeed410Test}`, `Feature/Frontend/SpaRoutesTest` |
 | Struttura del codice (ADR-0006) | `app/Domain/<Area>`, `app/Http/Controllers/Api/V1/{Admin,Public}` | `Arch/DomainStructureTest` |
 | SPA pannello e ospite | `resources/js/panel/main.tsx` su `/app`, `resources/js/guest/main.tsx` su `/p/{t}/{p}` | `Feature/Frontend/SpaRoutesTest` |

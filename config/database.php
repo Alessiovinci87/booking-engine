@@ -92,6 +92,8 @@ return [
          * pgsql_migrator   app_migrator: proprietario delle tabelle, usato solo dalle migration
          *                  (php artisan migrate --database=pgsql_migrator).
          * pgsql_admin_ops  app_admin_ops: lettura cross-tenant, solo nei dispatcher dei job.
+         * pgsql_retention  app_retention: SELECT e DELETE sulle tabelle soggette a conservazione, solo nel
+         *                  job di conservazione e nella cancellazione all'uscita del cliente (7.1, 7.2).
          */
         'pgsql' => [
             'driver' => 'pgsql',
@@ -116,6 +118,21 @@ return [
             'database' => env('DB_DATABASE', 'booking_engine'),
             'username' => env('DB_MIGRATOR_USERNAME', 'app_migrator'),
             'password' => env('DB_MIGRATOR_PASSWORD', ''),
+            'charset' => env('DB_CHARSET', 'utf8'),
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'search_path' => 'public',
+            'sslmode' => env('DB_SSLMODE', 'prefer'),
+            'timezone' => 'UTC',
+        ],
+
+        'pgsql_retention' => [
+            'driver' => 'pgsql',
+            'host' => env('DB_HOST', '127.0.0.1'),
+            'port' => env('DB_PORT', '5434'),
+            'database' => env('DB_DATABASE', 'booking_engine'),
+            'username' => env('DB_RETENTION_USERNAME', 'app_retention'),
+            'password' => env('DB_RETENTION_PASSWORD', ''),
             'charset' => env('DB_CHARSET', 'utf8'),
             'prefix' => '',
             'prefix_indexes' => true,

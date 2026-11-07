@@ -28,6 +28,10 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property list<string> $embed_allowed_origins
  * @property CarbonImmutable|null $dpa_signed_at
  * @property string|null $dpa_version
+ * @property CarbonImmutable|null $offboarding_started_at
+ * @property CarbonImmutable|null $channels_disconnected_confirmed_at
+ * @property CarbonImmutable|null $feeds_disabled_at
+ * @property CarbonImmutable|null $data_purged_at
  */
 class Tenant extends Model
 {
@@ -47,6 +51,7 @@ class Tenant extends Model
             'offboarding_started_at' => 'immutable_datetime',
             'channels_disconnected_confirmed_at' => 'immutable_datetime',
             'feeds_disabled_at' => 'immutable_datetime',
+            'data_purged_at' => 'immutable_datetime',
         ];
     }
 

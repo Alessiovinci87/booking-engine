@@ -47,6 +47,11 @@ return [
         'QUOTE_EMAIL_MISSING' => 'Il preventivo non ha un indirizzo email dell’ospite.',
         'QUOTE_ALREADY_ACCEPTED' => 'Il preventivo è già stato accettato o ha un pagamento in corso.',
         'QUOTE_CHECKOUT_IN_PROGRESS' => 'Il pagamento avviato in precedenza è in chiusura. Riprova tra qualche minuto.',
+        'TENANT_OFFBOARDING' => 'L’uscita dalla piattaforma è in corso: il pannello è in sola lettura, salvo cancellazioni, rimborsi ed export.',
+        'TENANT_NOT_OFFBOARDING' => 'L’uscita dalla piattaforma non è stata avviata.',
+        'TENANT_CLOSED' => 'L’account è chiuso.',
+        'OFFBOARDING_NOT_READY' => 'Non è ancora possibile cancellare i dati.',
+        'EXPORT_EXPIRED' => 'L’export è scaduto o non è più disponibile. Richiedine uno nuovo.',
     ],
     'idempotency' => [
         'key_required' => 'Header Idempotency-Key mancante o non valido (UUID).',

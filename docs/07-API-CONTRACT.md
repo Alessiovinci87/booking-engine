@@ -44,9 +44,9 @@ L'API pubblica non usa cookie di sessione e quindi non usa il token CSRF (ADR-00
 | 401 | `UNAUTHENTICATED`, `MFA_REQUIRED`, `MFA_SETUP_REQUIRED`, `INVALID_CREDENTIALS`, `INVALID_MFA_CODE` |
 | 403 | `FORBIDDEN` (anche per l'API pubblica chiamata da un'origine non ammessa, ADR-0011), `REAUTH_REQUIRED` |
 | 404 | `NOT_FOUND` (anche per risorse di altri tenant: mai `403`) |
-| 409 | `IDEMPOTENCY_KEY_IN_USE` (ADR-0011), `DATES_UNAVAILABLE`, `CHECKOUT_EXPIRED`, `CONFLICT_OPEN`, `ILLEGAL_TRANSITION`, `PRICE_CHANGED`, `MFA_ALREADY_ENABLED`, `EXTERNAL_CALENDARS_ACTIVE`, `UNIT_NOT_BOOKABLE`, `ICS_FEED_EXISTS`, `UNIT_IS_INSTANT`, `QUOTE_ALREADY_ACCEPTED`, `QUOTE_CHECKOUT_IN_PROGRESS` (ADR-0013), `GUEST_HAS_ACTIVE_RESERVATION` (ADR-0014) |
+| 409 | `IDEMPOTENCY_KEY_IN_USE` (ADR-0011), `DATES_UNAVAILABLE`, `CHECKOUT_EXPIRED`, `CONFLICT_OPEN`, `ILLEGAL_TRANSITION`, `PRICE_CHANGED`, `MFA_ALREADY_ENABLED`, `EXTERNAL_CALENDARS_ACTIVE`, `UNIT_NOT_BOOKABLE`, `ICS_FEED_EXISTS`, `UNIT_IS_INSTANT`, `QUOTE_ALREADY_ACCEPTED`, `QUOTE_CHECKOUT_IN_PROGRESS` (ADR-0013), `GUEST_HAS_ACTIVE_RESERVATION` (ADR-0014), `TENANT_OFFBOARDING`, `TENANT_NOT_OFFBOARDING`, `TENANT_CLOSED`, `OFFBOARDING_NOT_READY` (`details.missing`: `feeds_retired` o `export_wait`) (ADR-0018) |
 | 419 | `CSRF_TOKEN_EXPIRED` (la SPA richiede un nuovo cookie CSRF e ripete una volta) |
-| 410 | `QUOTE_EXPIRED`, `QUOTE_REVOKED`, `QUOTE_EXHAUSTED`, `FEED_RETIRED` |
+| 410 | `QUOTE_EXPIRED`, `QUOTE_REVOKED`, `QUOTE_EXHAUSTED`, `FEED_RETIRED`, `EXPORT_EXPIRED` (ADR-0018) |
 | 412 | `VERSION_MISMATCH` |
 | 422 | `MIN_NIGHTS_NOT_MET`, `OCCUPANCY_EXCEEDED`, `AMOUNT_BELOW_MINIMUM`, `PAYMENTS_NOT_ENABLED`, `IDEMPOTENCY_KEY_REUSED`, `INVALID_ICAL_URL`, `CANCELLATION_POLICY_MISSING`, `PRIVACY_POLICY_MISSING`, `DPA_NOT_SIGNED` (ADR-0014), `NO_ACTIVE_UNITS`, `TRANSLATION_IT_MISSING`, `QUOTE_EMAIL_MISSING`, `CHECKLIST_STEP_INVALID` (ADR-0013), `PASSWORD_RESET_INVALID` (ADR-0016) |
 | 429 | `RATE_LIMITED` |
@@ -219,10 +219,14 @@ Tutte richiedono utente autenticato con MFA verificata nella sessione e membersh
 |---|---|
 | GET | `/guests/{id}/export` (JSON scaricabile; versione stampabile nel pannello; ADR-0014 punto 13; ri-autenticazione, ADR-0014 punto 25) |
 | POST | `/guests/{id}/erase` (anonimizzazione, se non soggetta a conservazione obbligatoria; ri-autenticazione; `409 GUEST_HAS_ACTIVE_RESERVATION`; ADR-0014 punti 14–16) |
-| POST | `/tenant/export` (export completo per uscita cliente, asincrono) |
+| POST | `/tenant/export` (export completo per uscita cliente, asincrono: `202` con l'export `PENDING`; ri-autenticazione; `409 TENANT_CLOSED`; ADR-0018 punto 6) |
+| GET | `/tenant/exports` (ultimi 20 export con stato, scadenza e `download_path` firmato) |
+| GET | `/tenant/exports/{id}/download` (ZIP; link firmato valido fino alla scadenza, 30 giorni, più ri-autenticazione; `410 EXPORT_EXPIRED`; ADR-0018 punto 7) |
 | POST | `/tenant/offboarding/start` (feed `FROZEN`, vendite chiuse; ri-autenticazione) |
-| GET | `/tenant/offboarding` (stato dei feed, ultima lettura per OTA, conferme) |
-| POST | `/tenant/offboarding/channels/{feedId}/confirm-removed` |
+| GET | `/tenant/offboarding` (stato dei feed, ultima lettura per OTA, conferme, export) |
+| POST | `/tenant/offboarding/channels/{feedId}/confirm-removed` (ri-autenticazione; `409 TENANT_NOT_OFFBOARDING`) |
+
+Con il tenant `OFFBOARDING` o `CLOSED` ogni richiesta del pannello che modifica dati risponde `409 TENANT_OFFBOARDING`, salvo cancellazione e rifiuto delle prenotazioni, rimborsi, anonimizzazione dell'ospite, export e conferme dei feed (ADR-0018 punto 5).
 
 ---
 

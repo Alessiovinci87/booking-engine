@@ -1,6 +1,7 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { type FormEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router';
 
 import { api, ApiError, fieldErrors } from '../api/client';
 import { useErrorMessage } from '../auth/session';
@@ -99,6 +100,13 @@ export function AccountPage() {
                         {change.isPending ? t('common.wait') : t('account.submit')}
                     </button>
                 </form>
+            </section>
+            <section className="mt-6 max-w-md rounded-lg border border-slate-200 bg-white p-6">
+                <h2 className="font-semibold text-slate-900">{t('offboarding.title')}</h2>
+                <p className="mt-1 text-sm text-slate-600">{t('offboarding.accountHint')}</p>
+                <Link to="/uscita" className="mt-3 inline-block text-sm font-medium text-blue-700 hover:underline" data-testid="account-offboarding-link">
+                    {t('offboarding.open')}
+                </Link>
             </section>
         </main>
     );

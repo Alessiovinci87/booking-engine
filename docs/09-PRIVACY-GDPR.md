@@ -127,6 +127,8 @@ La disattivazione dei calendari esportati è la parte delicata: se un feed spari
 6. **Cancellazione o restituzione dei dati secondo il DPA**: dopo il ritiro dei feed e almeno 30 giorni dall'export, o su istruzione scritta; restano solo i dati che la piattaforma deve conservare per obblighi propri (fatturazione SaaS). I backup scadono con la rotazione naturale.
 7. **Chiusura**: conferma scritta al cliente; `Tenant.status = CLOSED`.
 
+Dettagli tecnici (ruolo `app_retention`, cosa si cancella e cosa resta, formato dell'export, rotte ammesse in sola lettura): ADR-0018. Procedura per la piattaforma: `docs/guide/uscita-cliente.md`.
+
 ## Privacy by design nel codice
 
 - Nessun dato personale dell'ospite in URL, log, nomi di file, export ICS o metadata Stripe (solo ID interni).

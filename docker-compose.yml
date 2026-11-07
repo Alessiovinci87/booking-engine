@@ -18,6 +18,9 @@ services:
       APP_MIGRATOR_PASSWORD: ${DB_MIGRATOR_PASSWORD:-}
       APP_RUNTIME_PASSWORD: ${DB_PASSWORD:-}
       APP_ADMIN_OPS_PASSWORD: ${DB_ADMIN_OPS_PASSWORD:-}
+      APP_RETENTION_PASSWORD: ${DB_RETENTION_PASSWORD:-}
+      # Solo in locale: i test eseguono SET ROLE app_retention dentro la loro transazione (ADR-0018).
+      APP_RETENTION_SET_ROLE_FOR_TESTS: "1"
     volumes:
       # Da PostgreSQL 18 il volume va montato su /var/lib/postgresql (non più .../data).
       - pgdata:/var/lib/postgresql

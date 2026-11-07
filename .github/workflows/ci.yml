@@ -57,6 +57,9 @@ jobs:
       DB_MIGRATOR_PASSWORD: ci-migrator
       DB_ADMIN_OPS_USERNAME: app_admin_ops
       DB_ADMIN_OPS_PASSWORD: ci-admin-ops
+      DB_RETENTION_USERNAME: app_retention
+      DB_RETENTION_PASSWORD: ci-retention
+      RETENTION_DB_MODE: set_role
       REDIS_HOST: 127.0.0.1
       REDIS_PORT: 6379
 
@@ -75,6 +78,8 @@ jobs:
           APP_MIGRATOR_PASSWORD: ci-migrator
           APP_RUNTIME_PASSWORD: ci-runtime
           APP_ADMIN_OPS_PASSWORD: ci-admin-ops
+          APP_RETENTION_PASSWORD: ci-retention
+          APP_RETENTION_SET_ROLE_FOR_TESTS: '1'
         run: |
           for script in docker/postgres/init/*.sh; do
             echo "::group::$script"

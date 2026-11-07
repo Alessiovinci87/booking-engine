@@ -64,6 +64,14 @@ export function PanelLayout() {
                     {t('privacy.dpaMissing')}
                 </p>
             )}
+            {me.data !== undefined && (me.data.tenant.status === 'OFFBOARDING' || me.data.tenant.status === 'CLOSED') && (
+                <p className="border-b border-red-200 bg-red-50 px-4 py-2 text-center text-sm text-red-900" data-testid="offboarding-banner">
+                    {t(me.data.tenant.status === 'CLOSED' ? 'offboarding.bannerClosed' : 'offboarding.banner')}{' '}
+                    <Link to="/uscita" className="font-medium underline">
+                        {t('offboarding.bannerLink')}
+                    </Link>
+                </p>
+            )}
             <Outlet />
         </div>
     );

@@ -24,6 +24,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string|null $last_fetch_user_agent
  * @property CarbonImmutable|null $rotated_at
  * @property CarbonImmutable|null $frozen_at
+ * @property CarbonImmutable|null $removal_confirmed_at conferma del gestore: feed tolto dall'OTA (7.1)
  */
 class IcsFeed extends TenantModel
 {
@@ -39,6 +40,7 @@ class IcsFeed extends TenantModel
             'last_fetched_at' => 'immutable_datetime',
             'rotated_at' => 'immutable_datetime',
             'frozen_at' => 'immutable_datetime',
+            'removal_confirmed_at' => 'immutable_datetime',
         ];
     }
 

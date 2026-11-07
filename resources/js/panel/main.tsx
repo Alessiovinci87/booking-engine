@@ -21,6 +21,7 @@ import { MfaVerifyPage } from './pages/MfaVerifyPage';
 import { GuestDataPage } from './pages/GuestDataPage';
 import { MetricsPage } from './pages/MetricsPage';
 import { NewReservationPage } from './pages/NewReservationPage';
+import { OffboardingPage } from './pages/OffboardingPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { PaymentsPage } from './pages/PaymentsPage';
 import { PropertiesPage } from './pages/PropertiesPage';
@@ -118,6 +119,7 @@ createRoot(container).render(
                             <Route path="metriche" element={<MetricsPage />} />
                             <Route path="ospiti/:guestId/dati" element={<GuestDataPage />} />
                             <Route path="account" element={<AccountPage />} />
+                            <Route path="uscita" element={<OffboardingPage />} />
                             <Route path="*" element={<NotFoundPage />} />
                         </Route>
                     </Routes>

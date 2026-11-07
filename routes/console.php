@@ -10,6 +10,7 @@ use App\Domain\Payments\Jobs\ReconcilePaymentsJob;
 use App\Domain\Quotes\Jobs\DispatchQuoteExpiryJob;
 use App\Domain\Reservations\Jobs\DispatchOccupancyReleaseJob;
 use App\Domain\Tenancy\Jobs\DispatchOutboxJob;
+use App\Domain\Tenancy\Offboarding\Jobs\DispatchOffboardingChecksJob;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -46,3 +47,7 @@ Schedule::job(new UnhealthyCalendarsSummaryJob)->dailyAt('07:00')->timezone('Eur
 
 // Scadenza dei preventivi (03, sezione 4): dispatcher ogni 5 minuti, un job per tenant.
 Schedule::job(new DispatchQuoteExpiryJob)->everyFiveMinutes()->withoutOverlapping()->name('quotes:expire');
+
+// Uscita del cliente (06, 09, 7.1): ogni notte export scaduti cancellati e ritiro automatico dei feed non
+// più letti dopo 30 giorni dall'avvio. Dispatcher con app_admin_ops, un job per tenant.
+Schedule::job(new DispatchOffboardingChecksJob)->dailyAt('03:30')->timezone('Europe/Rome')->withoutOverlapping()->name('offboarding:checks');

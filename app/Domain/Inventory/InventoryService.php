@@ -438,6 +438,19 @@ final class InventoryService
         }
     }
 
+    /** Tabella delle occupazioni, per i cataloghi che devono nominarla (cancellazione del tenant, 7.1). */
+    public const OCCUPANCY_TABLE = 'inventory_occupancies';
+
+    /**
+     * Cancellazione di tutte le occupazioni del tenant secondo il DPA (7.1, ADR-0018): solo dentro
+     * RetentionDatabase (ruolo app_retention), con il tenant in uscita e senza vendite. Non è
+     * un rilascio: le righe spariscono insieme a prenotazioni, eventi esterni e conflitti.
+     */
+    public function purgeTenant(ConnectionInterface $retention, string $tenantId): int
+    {
+        return $retention->table(self::OCCUPANCY_TABLE)->where('tenant_id', $tenantId)->delete();
+    }
+
     private function lockUnit(string $unitId): Unit
     {
         return Unit::query()->lockForUpdate()->findOrFail($unitId);

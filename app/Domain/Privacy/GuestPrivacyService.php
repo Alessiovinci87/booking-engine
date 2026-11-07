@@ -16,6 +16,7 @@ use App\Domain\Reservations\Models\ReservationChange;
 use App\Domain\Tenancy\Audit\AuditLogger;
 use App\Domain\Tenancy\Exceptions\BusinessRuleViolation;
 use App\Domain\Tenancy\Models\OutboxMessage;
+use App\Domain\Tenancy\Offboarding\OffboardingService;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -39,6 +40,7 @@ final class GuestPrivacyService
     public function __construct(
         private readonly InventoryService $inventory,
         private readonly AuditLogger $audit,
+        private readonly OffboardingService $offboarding,
     ) {}
 
     /**
@@ -178,6 +180,8 @@ final class GuestPrivacyService
             'refund_reasons' => $this->redact(Refund::query()->whereIn('id', $refundIds), 'reason'),
             'quotes' => Quote::query()->whereIn('id', $quoteIds)->update(['guest_name' => self::REMOVED, 'guest_email' => null]),
             'outbox_payloads' => $this->purgeOutbox($reservationIds, $refundIds, $quoteIds),
+            // Export completi ancora scaricabili creati dopo l'ospite: lo contengono (09, I22; 7.1).
+            'tenant_exports' => $this->offboarding->expireExportsContaining(CarbonImmutable::parse($guest->created_at)),
         ];
 
         $this->audit->record('guest.erased', 'guest', $guest->id, $counts);

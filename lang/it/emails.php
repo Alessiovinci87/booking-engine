@@ -114,4 +114,12 @@ return [
         'subject' => 'La tua password è stata cambiata',
         'lines' => ['La password del tuo account del pannello è stata cambiata il :changed_at (UTC). Tutte le altre sessioni aperte sono state chiuse.', 'Se non hai cambiato tu la password, reimpostala subito dal link qui sotto e contatta l’assistenza.'],
     ],
+    'tenant_export_ready' => [
+        'subject' => 'L’export dei tuoi dati è pronto',
+        'lines' => ['L’export completo dei dati della tua struttura è pronto: lo trovi nella pagina "Uscita dalla piattaforma" del pannello, dove ti chiederemo la password.', 'Si può scaricare fino al :expires_at; dopo questa data il file viene cancellato.'],
+    ],
+    'offboarding_feed_still_read' => [
+        'subject' => 'Il calendario di :unit è ancora letto da :destination',
+        'lines' => [':destination ha letto il calendario di :unit l’ultima volta il :last_fetched_at: il collegamento è ancora attivo, quindi non lo disattiviamo per non lasciare date libere per errore.', 'Togli il calendario dalle impostazioni di :destination e conferma nella pagina "Uscita dalla piattaforma" del pannello.'],
+    ],
 ];
