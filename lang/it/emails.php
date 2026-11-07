@@ -60,4 +60,16 @@ return [
         'subject' => 'Rimborso completato :code',
         'lines' => ['Il rimborso di :amount per la prenotazione :code è stato completato.'],
     ],
+    'dispute_opened' => [
+        'subject' => 'URGENTE: contestazione di un pagamento :code',
+        'lines' => ['L’ospite ha contestato con la banca il pagamento della prenotazione :code.', 'Rispondi alla contestazione dalla tua dashboard Stripe entro la scadenza indicata da Stripe. La prenotazione non cambia stato.'],
+    ],
+    'refund_failed' => [
+        'subject' => 'Rimborso non riuscito :code',
+        'lines' => ['Il rimborso di :amount per la prenotazione :code non è riuscito dopo tre tentativi automatici.', 'Dal pannello puoi riprovare oppure segnarlo come rimborsato fuori piattaforma (per esempio con un bonifico).'],
+    ],
+    'capture_failed_reminder' => [
+        'subject' => 'Promemoria: incasso non riuscito :code',
+        'lines' => ['L’incasso della prenotazione :code non è ancora risolto. Tra 12 ore le date verranno liberate.', 'Invia un link di pagamento all’ospite oppure rilascia le date.'],
+    ],
 ];

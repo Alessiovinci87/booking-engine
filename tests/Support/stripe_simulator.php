@@ -1,5 +1,9 @@
 <?php
 
+use App\Domain\Reservations\Models\Reservation;
+use Illuminate\Testing\TestResponse;
+use Tests\TestCase;
+
 /*
  * Stripe simulato con stato (4.11): sopra FakeStripeHttp registra le risposte dell'API per sessioni
  * di checkout, PaymentIntent e rimborsi di un account connesso, con le regole di Stripe che il nostro
@@ -82,6 +86,12 @@ final class StripeSimulator
         $this->refunds[$refundId]['status'] = $status;
 
         return $this->refunds[$refundId];
+    }
+
+    /** Sessione come la restituisce l'API (oggetto degli eventi checkout.session.*). */
+    public function lastSessionView(string $id): array
+    {
+        return $this->sessionView($id);
     }
 
     /** Ultima sessione creata. */
@@ -284,4 +294,29 @@ final class StripeSimulator
 function stripeSimulator(): StripeSimulator
 {
     return new StripeSimulator(fakeStripe());
+}
+
+/**
+ * Consegna un evento firmato al webhook come Stripe (corpo grezzo e header Stripe-Signature).
+ *
+ * @param  array{payload: string, signature: string}  $signed
+ */
+function postStripeWebhook(TestCase $test, array $signed, ?string $signature = null): TestResponse
+{
+    return $test->call('POST', '/webhooks/stripe', [], [], [], [
+        'HTTP_STRIPE_SIGNATURE' => $signature ?? $signed['signature'],
+        'CONTENT_TYPE' => 'application/json',
+    ], $signed['payload']);
+}
+
+/**
+ * L'ospite paga (o autorizza) su Stripe Checkout e arriva checkout.session.completed.
+ */
+function stripeGuestPays(TestCase $test, StripeSimulator $sim, array $fx, Reservation $reservation): Reservation
+{
+    $sessionId = (string) latestPayment($fx, $reservation->id)->checkout_session_id;
+    $sim->pay($sessionId);
+    postStripeWebhook($test, $sim->event('checkout.session.completed', $sim->lastSessionView($sessionId), $fx['account']))->assertOk();
+
+    return reloadReservation($fx, $reservation->id);
 }

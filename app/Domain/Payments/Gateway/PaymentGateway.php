@@ -86,4 +86,11 @@ interface PaymentGateway
      * @throws PaymentProviderUnavailable
      */
     public function retrievePaymentIntent(string $accountId, string $paymentIntentId): PaymentIntentState;
+
+    /**
+     * Rilettura di una contestazione (charge.dispute.*).
+     *
+     * @throws PaymentProviderUnavailable
+     */
+    public function retrieveDispute(string $accountId, string $disputeId): DisputeState;
 }

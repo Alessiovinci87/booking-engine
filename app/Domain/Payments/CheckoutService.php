@@ -78,7 +78,7 @@ final class CheckoutService
     /**
      * Passi 2 e 3 per un Payment PENDING: crea (o recupera) la sessione e allinea le scadenze.
      *
-     * @throws PaymentProviderUnavailable
+     * @throws BusinessRuleViolation 503 PAYMENT_PROVIDER_UNAVAILABLE se Stripe non risponde o rifiuta
      */
     public function openSession(string $tenantId, string $paymentId): CheckoutSession
     {
@@ -191,9 +191,7 @@ final class CheckoutService
 
             $this->gateway->expireSession($account, (string) $sessionId, 'expire:'.$payment->id);
         } catch (SessionAlreadyCompleted) {
-            $this->outcomes->process($tenantId, $payment->id);
-
-            return 'completed';
+            return $this->outcomes->process($tenantId, $payment->id) ? 'completed' : 'retry';
         } catch (PaymentProviderUnavailable) {
             Log::warning('payments.release_retry', ['payment_id' => $payment->id]);
 
@@ -210,6 +208,49 @@ final class CheckoutService
         });
 
         return 'released';
+    }
+
+    /**
+     * Webhook di una sessione che il passo 3 non ha salvato (05: recupero tramite metadata.payment_id).
+     * La sessione si rilegge da Stripe e si adotta solo se i suoi metadata indicano proprio quel
+     * pagamento; poi si allineano le scadenze come al passo 3.
+     *
+     * @throws PaymentProviderUnavailable
+     */
+    public function adoptSession(string $tenantId, string $paymentId, string $sessionId): bool
+    {
+        $payment = $this->tenants->run($tenantId, fn (): ?Payment => Payment::query()->find($paymentId));
+
+        if ($payment === null || $payment->stripe_account_id === null) {
+            return false;
+        }
+
+        if ($payment->checkout_session_id !== null) {
+            return $payment->checkout_session_id === $sessionId;
+        }
+
+        $state = $this->gateway->retrieveSession($payment->stripe_account_id, $sessionId);
+
+        if (($state->metadata['payment_id'] ?? null) !== $paymentId) {
+            return false;
+        }
+
+        $this->tenants->run($tenantId, function () use ($paymentId, $sessionId, $state): void {
+            $locked = Payment::query()->lockForUpdate()->findOrFail($paymentId);
+
+            if ($locked->checkout_session_id !== null) {
+                return;
+            }
+
+            $this->payments->attachSession($locked, $sessionId, $state->expiresAt);
+            $reservation = Reservation::query()->findOrFail($locked->reservation_id);
+
+            if ($reservation->status === ReservationStatus::AWAITING_PAYMENT) {
+                $this->inventory->setExpiry($reservation, $state->expiresAt->addMinutes((int) config('payments.occupancy_grace_minutes')));
+            }
+        });
+
+        return true;
     }
 
     private function releaseWithoutSession(string $tenantId, string $paymentId): void

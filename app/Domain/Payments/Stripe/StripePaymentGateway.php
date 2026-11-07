@@ -7,6 +7,7 @@ use App\Domain\Payments\Gateway\CheckoutSession;
 use App\Domain\Payments\Gateway\CheckoutSessionRequest;
 use App\Domain\Payments\Gateway\CheckoutSessionState;
 use App\Domain\Payments\Gateway\CheckoutSessionStatus;
+use App\Domain\Payments\Gateway\DisputeState;
 use App\Domain\Payments\Gateway\Exceptions\PaymentDeclined;
 use App\Domain\Payments\Gateway\Exceptions\PaymentProviderRejected;
 use App\Domain\Payments\Gateway\Exceptions\SessionAlreadyCompleted;
@@ -17,6 +18,7 @@ use App\Domain\Payments\Gateway\RefundResult;
 use App\Domain\Payments\Gateway\RefundResultStatus;
 use Carbon\CarbonImmutable;
 use Stripe\Checkout\Session;
+use Stripe\Dispute;
 use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\CardException;
 use Stripe\PaymentIntent;
@@ -194,6 +196,22 @@ final class StripePaymentGateway implements PaymentGateway
         ));
 
         return $this->intentState($intent->toArray());
+    }
+
+    public function retrieveDispute(string $accountId, string $disputeId): DisputeState
+    {
+        $dispute = $this->call('disputes.retrieve', fn (): Dispute => $this->stripe->client()->disputes->retrieve(
+            $disputeId, [], $this->options($accountId),
+        ));
+        $intent = $dispute->payment_intent;
+
+        return new DisputeState(
+            id: (string) $dispute->id,
+            paymentIntentId: is_string($intent) ? $intent : ($intent instanceof PaymentIntent ? (string) $intent->id : null),
+            amountCents: (int) $dispute->amount,
+            status: (string) $dispute->status,
+            reason: $dispute->reason,
+        );
     }
 
     private function sessionState(Session $session): CheckoutSessionState

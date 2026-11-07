@@ -8,6 +8,7 @@ use App\Domain\Payments\Gateway\CheckoutSession;
 use App\Domain\Payments\Gateway\CheckoutSessionRequest;
 use App\Domain\Payments\Gateway\CheckoutSessionState;
 use App\Domain\Payments\Gateway\CheckoutSessionStatus;
+use App\Domain\Payments\Gateway\DisputeState;
 use App\Domain\Payments\Gateway\Exceptions\FakeGatewayNotAllowed;
 use App\Domain\Payments\Gateway\Exceptions\PaymentDeclined;
 use App\Domain\Payments\Gateway\Exceptions\PaymentProviderUnavailable;
@@ -273,6 +274,12 @@ final class FakePaymentGateway implements PaymentGateway
             captureBefore: $session['capture_before'] === null ? null : CarbonImmutable::parse($session['capture_before']),
             failureCode: $session['failure_code'],
         );
+    }
+
+    /** Il checkout simulato non produce contestazioni: si provano con Stripe simulato e in modalità test. */
+    public function retrieveDispute(string $accountId, string $disputeId): DisputeState
+    {
+        throw new LogicException('Contestazioni non disponibili nel gateway finto.');
     }
 
     /** Solo test: esito asincrono di un rimborso rimasto in attesa (refund.updated). */

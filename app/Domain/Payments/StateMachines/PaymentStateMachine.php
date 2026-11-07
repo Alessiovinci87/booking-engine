@@ -151,6 +151,26 @@ final class PaymentStateMachine
         ]);
     }
 
+    /**
+     * Contestazione aperta o chiusa (05, 03): nessun cambio di stato, solo PaymentEvent e audit. Un
+     * evento per contestazione e tipo (I3).
+     *
+     * @return bool true se l'evento è nuovo
+     */
+    public function recordDispute(Payment $payment, string $type, int $amountCents, string $disputeId): bool
+    {
+        if (PaymentEvent::query()->where('payment_id', $payment->id)->where('type', $type)->where('stripe_object_id', $disputeId)->exists()) {
+            return false;
+        }
+
+        $this->event($payment, $type, $amountCents, $disputeId);
+        $this->audit->record('payment.'.$type, 'payment', $payment->id, [
+            'reservation_id' => $payment->reservation_id, 'amount_cents' => $amountCents, 'dispute_id' => $disputeId,
+        ]);
+
+        return true;
+    }
+
     private function event(Payment $payment, string $type, ?int $amount, ?string $objectId = null): void
     {
         $event = new PaymentEvent;

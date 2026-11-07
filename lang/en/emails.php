@@ -60,4 +60,16 @@ return [
         'subject' => 'Refund completed :code',
         'lines' => ['The refund of :amount for booking :code has been completed.'],
     ],
+    'dispute_opened' => [
+        'subject' => 'URGENT: payment disputed :code',
+        'lines' => ['The guest disputed the payment for booking :code with their bank.', 'Respond to the dispute from your Stripe dashboard before the deadline set by Stripe. The booking status does not change.'],
+    ],
+    'refund_failed' => [
+        'subject' => 'Refund failed :code',
+        'lines' => ['The refund of :amount for booking :code failed after three automatic attempts.', 'From the panel you can retry it or mark it as refunded outside the platform (for example by bank transfer).'],
+    ],
+    'capture_failed_reminder' => [
+        'subject' => 'Reminder: payment capture failed :code',
+        'lines' => ['The payment capture for booking :code is still unresolved. The dates will be released in 12 hours.', 'Send a payment link to the guest or release the dates.'],
+    ],
 ];
