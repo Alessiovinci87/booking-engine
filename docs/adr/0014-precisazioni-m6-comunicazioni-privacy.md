@@ -44,6 +44,12 @@ M6 parte senza gli account esterni (hosting, dominio, Resend, Sentry): si fanno 
 20. **Segnali coperti** (`AlertSignal`): coda in ritardo (messaggi dell'outbox pronti da più di 5 minuti, controllo ogni 5 minuti con `app_admin_ops`), webhook Stripe che falliscono (3 tentativi dello stesso evento), prenotazione in `CAPTURING` da oltre 1 ora, occupazione scaduta non rilasciata da oltre 30 minuti, incoerenza I15, rimborso riuscito annullato da Stripe, webhook con tenant non corrispondente, riepilogo giornaliero interno dei calendari `UNHEALTHY` (alle 7, ora italiana). Il rimborso fallito dopo 3 tentativi resta log ed email al gestore (08). Fuori da 6.5: errori applicativi, backup e ripristino, uptime (6.4); feed non letto dall'OTA (avviso nel pannello, già in M5).
 21. **Limiti**: al più una email per segnale e chiave ogni 60 minuti (`ALERT_THROTTLE_MINUTES`); il log registra ogni occorrenza. L'email parte dopo il commit della transazione in corso; un errore di invio resta nel log (`alerts.email_failed`) e non blocca il chiamante. Contesto: solo identificativi e conteggi.
 
+### Test E2E in locale (6.6, parziale)
+
+22. **Prima tranche in locale**: 11 chiede gli E2E dei criteri di accettazione su staging con Stripe in modalità test e un server iCal finto in https. Senza staging (6.4) e con i risultati della Fase 0 ancora attesi (6.9, da fare prima di 6.6), questa tranche li esegue in locale sul database demo (`tests/E2E/m6-acceptance.spec.ts`) con il gateway finto (ADR-0011); 6.6 resta aperta finché la stessa serie non gira su staging. Coperti nel browser: AC2 (UID stabili nel feed, gateway finto), AC3, AC4, AC5, AC6, AC9 (rimborso avviato, gateway finto), AC13, AC17, I22 dal pannello; AC1 e AC8 erano già coperti da `m2-panel` e `m5-quote`.
+23. **Da ripetere su staging**: tutti i passi di pagamento (checkout, autorizzazione, incasso, rimborso) con Stripe in modalità test e webhook firmati; l'import di un calendario da un URL https reale (in locale `SafeHttpFetcher` rifiuta, giustamente, gli indirizzi privati, e i calendari dimostrativi coprono solo la parte del pannello); AC7, AC14, AC15, AC19, AC10 e AC16, che richiedono il passare del tempo, l'iniezione di errori nel gateway o richieste a Stripe, restano coperti dai test Feature e `Stripe/*` finché non si scrivono gli scenari su staging; AC11 è coperto da `Feature/TenantIsolationApiTest` e dal catalogo RLS; AC12 è 6.4.
+24. **Supporto E2E**: le email si verificano nella casella `/dev/mail` dopo un giro del dispatcher dell'outbox (`schedule:test --name=outbox:dispatch`, `tests/E2E/support/artisan.ts`); il setup globale azzera il contatore del limite di frequenza della prenotazione pubblica per 127.0.0.1 nella cache con prefisso E2E, perché tutti gli spec arrivano dallo stesso indirizzo.
+
 ## Alternative considerate
 
 | Alternativa | Perché scartata |
@@ -61,7 +67,7 @@ M6 parte senza gli account esterni (hosting, dominio, Resend, Sentry): si fanno 
 
 ## Impatto sui test
 
-- Test aggiunti: `Feature/Communications/TransactionalMailTest`, `Feature/Metrics/MetricsTest`, `Feature/AnonymizationCoverageTest` (I22), `Feature/Public/PlatformPrivacyLinksTest`, casi DPA in `Feature/PropertyPublishTest`, `Feature/Communications/OperationalAlertsTest`.
+- Test aggiunti: `Feature/Communications/TransactionalMailTest`, `Feature/Metrics/MetricsTest`, `Feature/AnonymizationCoverageTest` (I22), `Feature/Public/PlatformPrivacyLinksTest`, casi DPA in `Feature/PropertyPublishTest`, `Feature/Communications/OperationalAlertsTest`, `E2E/m6-acceptance.spec` (in locale).
 - Test modificati: `Feature/Reservations/ReservationTransitionsTest` (T3 genera anche `reservation.confirmed_manager`).
 - Invarianti toccati: I22 (ora coperto da `Feature/AnonymizationCoverageTest`).
 
