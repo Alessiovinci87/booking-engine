@@ -76,7 +76,7 @@ export function UnitPhotosSection({ unitId }: { unitId: string }) {
             <ul className="mt-3 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
                 {list.map((photo, index) => (
                     <li key={photo.id} className="rounded-control border border-line-soft p-2">
-                        <img src={photo.urls.thumbnail} alt={t('photos.alt', { position: index + 1 })} className="aspect-[4/3] w-full rounded object-cover" />
+                        <img src={photo.urls.thumbnail} alt={t('photos.alt', { position: index + 1 })} className="aspect-[4/3] w-full rounded object-cover" width={320} height={240} loading="lazy" decoding="async" />
                         <div className="mt-2 flex items-center justify-between gap-1 text-xs">
                             <span className="text-muted">{photo.is_cover ? t('photos.cover') : `#${index + 1}`}</span>
                             <span className="flex gap-1">

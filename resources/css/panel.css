@@ -1,0 +1,7 @@
+/* Foglio del pannello (8.4): classi del pannello e dei componenti condivisi. */
+@import 'tailwindcss' source(none);
+@import './theme.css';
+
+@source '../views/panel.blade.php';
+@source '../js/panel/**/*.{ts,tsx}';
+@source '../js/shared/**/*.{ts,tsx}';

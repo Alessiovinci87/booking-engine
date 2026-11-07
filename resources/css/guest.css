@@ -1,0 +1,10 @@
+/*
+ * Foglio della pagina ospite (8.4): solo le classi usate dalla pagina ospite e dai componenti condivisi,
+ * senza quelle del pannello.
+ */
+@import 'tailwindcss' source(none);
+@import './theme.css';
+
+@source '../views/guest.blade.php';
+@source '../js/guest/**/*.{ts,tsx}';
+@source '../js/shared/**/*.{ts,tsx}';

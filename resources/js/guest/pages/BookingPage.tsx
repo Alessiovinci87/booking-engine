@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { cloneElement, isValidElement, useEffect, useId, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { DayPicker, type DateRange } from 'react-day-picker';
+import 'react-day-picker/style.css';
 import { enGB, it } from 'react-day-picker/locale';
 import { Trans, useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router';

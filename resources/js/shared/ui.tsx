@@ -1,6 +1,6 @@
 /**
  * Componenti interni condivisi da pannello e pagina ospite (8.1, ADR-0017): usano solo i token di
- * resources/css/app.css. Nessun testo fisso: etichette e messaggi arrivano già tradotti.
+ * resources/css/theme.css. Nessun testo fisso: etichette e messaggi arrivano già tradotti.
  */
 import { createContext, useCallback, useContext, useEffect, useId, useMemo, useRef, useState, type ButtonHTMLAttributes, type ReactNode } from 'react';
 

@@ -3,6 +3,7 @@ import { gzipSync } from 'node:zlib';
 
 import { chromium, devices, expect, type Page, test } from '@playwright/test';
 
+import { startGzipProxy } from './support/gzip-proxy';
 import { checkAccessibility, SCREENSHOT_DIR, snap } from './support/screenshots';
 import { secondsLeftInStep, totp } from './support/totp';
 
@@ -297,32 +298,40 @@ test.describe('M8 qualità del frontend', () => {
 
     test('Lighthouse mobile della pagina ospite', async () => {
         test.skip(process.env.LIGHTHOUSE !== '1', 'Solo con LIGHTHOUSE=1.');
-        test.setTimeout(300_000);
+        test.setTimeout(600_000);
 
         const { default: lighthouse } = await import('lighthouse');
         const port = 9333;
+        const proxyPort = 8002;
+        const target = new URL('http://127.0.0.1:8001');
+        // Due misure: dal server di sviluppo (php -S, senza compressione) e dal proxy che comprime come in
+        // produzione. Le soglie di 8.4 valgono sulla seconda.
+        const proxy = await startGzipProxy(target, proxyPort);
         const chrome = await chromium.launch({ args: [`--remote-debugging-port=${port}`] });
-        const base = process.env.E2E_BASE_URL_OVERRIDE ?? 'http://127.0.0.1:8001';
         const scores: Record<string, Record<string, number>> = {};
 
         try {
-            for (const [key, path] of [['struttura', GUEST_PAGE], ['embed', EMBED_PAGE]] as const) {
-                const result = await lighthouse(`${base}${path}`, { port, output: 'json', logLevel: 'error', onlyCategories: ['performance', 'accessibility'] });
-                const categories = result?.lhr.categories ?? {};
-                scores[key] = {
-                    performance: Math.round((categories.performance?.score ?? 0) * 100),
-                    accessibility: Math.round((categories.accessibility?.score ?? 0) * 100),
-                    lcp_ms: Math.round(Number(result?.lhr.audits['largest-contentful-paint']?.numericValue ?? 0)),
-                    tbt_ms: Math.round(Number(result?.lhr.audits['total-blocking-time']?.numericValue ?? 0)),
-                    cls: Number(result?.lhr.audits['cumulative-layout-shift']?.numericValue ?? 0),
-                };
-                writeFileSync(`${SCREENSHOT_DIR}/lighthouse-${key}.json`, typeof result?.report === 'string' ? result.report : '');
+            for (const [server, base] of [['senza_compressione', target.origin], ['compresso', `http://127.0.0.1:${proxyPort}`]] as const) {
+                for (const [key, path] of [['struttura', GUEST_PAGE], ['embed', EMBED_PAGE]] as const) {
+                    const result = await lighthouse(`${base}${path}`, { port, output: 'json', logLevel: 'error', onlyCategories: ['performance', 'accessibility'] });
+                    const categories = result?.lhr.categories ?? {};
+                    scores[`${server}_${key}`] = {
+                        performance: Math.round((categories.performance?.score ?? 0) * 100),
+                        accessibility: Math.round((categories.accessibility?.score ?? 0) * 100),
+                        lcp_ms: Math.round(Number(result?.lhr.audits['largest-contentful-paint']?.numericValue ?? 0)),
+                        tbt_ms: Math.round(Number(result?.lhr.audits['total-blocking-time']?.numericValue ?? 0)),
+                        cls: Number(result?.lhr.audits['cumulative-layout-shift']?.numericValue ?? 0),
+                    };
+                    writeFileSync(`${SCREENSHOT_DIR}/lighthouse-${server}-${key}.json`, typeof result?.report === 'string' ? result.report : '');
+                }
             }
         } finally {
             await chrome.close();
+            proxy.close();
         }
 
         record('lighthouse', scores);
-        check((scores.struttura?.performance ?? 0) >= 90 && (scores.struttura?.accessibility ?? 0) >= 95, `Lighthouse pagina ospite: ${JSON.stringify(scores.struttura)}`);
+        const guest = scores.compresso_struttura;
+        check((guest?.performance ?? 0) >= 90 && (guest?.accessibility ?? 0) >= 95, `Lighthouse pagina ospite (compressa): ${JSON.stringify(guest)}`);
     });
 });

@@ -92,7 +92,15 @@ function UnitCard({ unit }: { unit: PublicUnit }) {
     return (
         <li className="overflow-hidden rounded-card border border-line-soft bg-surface shadow-card" data-testid="unit-card">
             {cover !== undefined ? (
-                <img src={cover.urls.thumbnail} alt={t('property.photoAlt', { name: unit.name })} className="aspect-[4/3] w-full object-cover" />
+                <img
+                    src={cover.urls.thumbnail}
+                    alt={t('property.photoAlt', { name: unit.name })}
+                    className="aspect-[4/3] w-full object-cover"
+                    width={cover.width ?? 640}
+                    height={cover.height ?? 480}
+                    loading="lazy"
+                    decoding="async"
+                />
             ) : (
                 <div className="flex aspect-[4/3] items-center justify-center bg-surface-muted text-sm text-muted">{t('unit.noPhoto')}</div>
             )}
