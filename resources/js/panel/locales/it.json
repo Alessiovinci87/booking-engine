@@ -12,7 +12,8 @@
         "invalidAmount": "Importo non valido: usa il formato 120,00.",
         "conflictReloaded": "Qualcuno ha modificato questi dati nel frattempo: abbiamo ricaricato la versione più recente. Controlla e salva di nuovo.",
         "close": "Chiudi",
-        "loadError": "Impossibile caricare i dati. Riprova tra poco."
+        "loadError": "Impossibile caricare i dati. Riprova tra poco.",
+        "skipToContent": "Vai al contenuto"
     },
     "login": {
         "title": "Accedi al pannello",
@@ -55,7 +56,8 @@
         "conflicts": "Conflitti",
         "calendars": "Calendari OTA",
         "metrics": "Metriche",
-        "account": "Account"
+        "account": "Account",
+        "mainNav": "Menu principale"
     },
     "notFound": {
         "title": "Pagina non trovata",

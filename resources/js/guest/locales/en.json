@@ -10,7 +10,9 @@
         "retry": "Try again",
         "close": "Close",
         "notFound": "Page not found.",
-        "loadError": "We could not load the page. Please try again shortly."
+        "loadError": "We could not load the page. Please try again shortly.",
+        "skipToContent": "Skip to content",
+        "pageTitle": "Booking"
     },
     "property": {
         "noAvailability": "No availability at the moment",
@@ -160,5 +162,14 @@
     "footer": {
         "platformPrivacy": "Platform privacy notice",
         "subprocessors": "Data sub-processors"
+    },
+    "calendar": {
+        "today": "Today",
+        "unavailable": "unavailable",
+        "checkIn": "check-in",
+        "checkOut": "check-out",
+        "selected": "part of your stay",
+        "next": "Next month",
+        "previous": "Previous month"
     }
 }

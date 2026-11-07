@@ -235,3 +235,49 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 export function useToast() {
     return useContext(ToastContext);
 }
+
+/**
+ * Collegamento "Vai al contenuto" (8.2, WCAG 2.4.1): primo elemento raggiungibile con Tab, visibile solo
+ * quando ha il focus; porta il focus sull'elemento <main> della pagina.
+ */
+export function SkipLink({ label }: { label: string }) {
+    return (
+        <a
+            href="#contenuto"
+            className="sr-only z-50 rounded-control bg-surface px-4 py-3 font-medium text-brand-800 shadow-overlay focus:not-sr-only focus:fixed focus:top-2 focus:left-2"
+            onClick={(event) => {
+                const main = document.querySelector('main');
+
+                if (main !== null) {
+                    event.preventDefault();
+                    main.setAttribute('tabindex', '-1');
+                    main.focus();
+                }
+            }}
+        >
+            {label}
+        </a>
+    );
+}
+
+/**
+ * Titolo della scheda dal titolo della pagina (<h1>) più un suffisso (8.2, WCAG 2.4.2): segue le
+ * navigazioni della SPA senza toccare ogni pagina.
+ */
+export function useDocumentTitle(suffix: string) {
+    useEffect(() => {
+        const apply = () => {
+            const heading = document.querySelector('h1')?.textContent?.trim() ?? '';
+            const title = heading !== '' && heading !== suffix ? `${heading} · ${suffix}` : suffix;
+
+            if (document.title !== title) {
+                document.title = title;
+            }
+        };
+        apply();
+        const observer = new MutationObserver(apply);
+        observer.observe(document.body, { childList: true, subtree: true, characterData: true });
+
+        return () => observer.disconnect();
+    }, [suffix]);
+}

@@ -16,7 +16,7 @@ export function LanguageSelector({ languages }: { languages: readonly GuestLangu
                 id={id}
                 value={i18n.resolvedLanguage}
                 onChange={(event) => void i18n.changeLanguage(event.target.value)}
-                className="rounded border border-line bg-surface px-2 py-1"
+                className="min-h-tap rounded-control border border-line bg-surface px-3 py-2"
             >
                 {languages.map((language) => (
                     <option key={language} value={language}>

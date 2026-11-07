@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react';
+import { cloneElement, isValidElement, useEffect, useId, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { DayPicker, type DateRange } from 'react-day-picker';
 import { enGB, it } from 'react-day-picker/locale';
 import { Trans, useTranslation } from 'react-i18next';
@@ -212,6 +212,7 @@ function BookingForm({ property, unit, embed }: { property: PublicProperty; unit
 
                 setErrors(mapped);
                 setNotice({ tone: 'error', text: t('booking.fixErrors') });
+                focusFirstError();
 
                 return;
             }
@@ -254,6 +255,7 @@ function BookingForm({ property, unit, embed }: { property: PublicProperty; unit
 
         if (Object.keys(found).length > 0 || stay === null || quote.data === undefined) {
             setNotice({ tone: 'error', text: t('booking.fixErrors') });
+            focusFirstError();
 
             return;
         }
@@ -299,7 +301,7 @@ function BookingForm({ property, unit, embed }: { property: PublicProperty; unit
 
     return (
         <Shell title={property.name}>
-            <Link to="/" className="text-sm text-muted underline">
+            <Link to="/" className="inline-flex min-h-tap items-center text-sm text-muted underline">
                 {t('common.back')}
             </Link>
             <h1 className="mt-3 text-2xl font-semibold text-ink">{t('booking.title', { name: unit.name })}</h1>
@@ -328,10 +330,23 @@ function BookingForm({ property, unit, embed }: { property: PublicProperty; unit
                                 modifiersClassNames={{ unavailable: 'guest-unavailable' }}
                                 locale={i18n.language === 'en' ? enGB : it}
                                 weekStartsOn={1}
+                                labels={{
+                                    labelDayButton: (date, modifiers) =>
+                                        [
+                                            modifiers.today ? t('calendar.today') : null,
+                                            new Intl.DateTimeFormat(i18n.language, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(date),
+                                            modifiers.unavailable || modifiers.disabled ? t('calendar.unavailable') : null,
+                                            modifiers.range_start ? t('calendar.checkIn') : modifiers.range_end ? t('calendar.checkOut') : modifiers.selected ? t('calendar.selected') : null,
+                                        ]
+                                            .filter(Boolean)
+                                            .join(', '),
+                                    labelNext: () => t('calendar.next'),
+                                    labelPrevious: () => t('calendar.previous'),
+                                }}
                             />
                         </div>
                     )}
-                    <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-ink">
+                    <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-ink" aria-live="polite" data-testid="stay-summary">
                         <span>
                             {t('booking.checkIn')}: <strong>{checkIn !== undefined ? formatDate(toIsoDate(checkIn), i18n.language) : '—'}</strong>
                         </span>
@@ -340,7 +355,7 @@ function BookingForm({ property, unit, embed }: { property: PublicProperty; unit
                         </span>
                         {nights > 0 && <span>{t('booking.nights', { count: nights })}</span>}
                         {range !== undefined && (
-                            <button type="button" className="text-muted underline" onClick={() => setRange(undefined)}>
+                            <button type="button" className="min-h-tap text-muted underline" onClick={() => setRange(undefined)}>
                                 {t('booking.clearDates')}
                             </button>
                         )}
@@ -447,6 +462,11 @@ function BookingForm({ property, unit, embed }: { property: PublicProperty; unit
     );
 }
 
+/** Dopo un invio con errori il focus va sul primo campo non valido (8.2). */
+export function focusFirstError() {
+    window.requestAnimationFrame(() => document.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus());
+}
+
 export function PriceDetails({ quote, requestMode }: { quote: PriceQuote; requestMode: boolean }) {
     const { t, i18n } = useTranslation();
     const money = (value: PriceQuote['total']) => formatMoney(value, i18n.language);
@@ -504,24 +524,53 @@ export function Section({ title, children }: { title: string; children: ReactNod
     );
 }
 
+/**
+ * Campo con etichetta: con un errore il controllo riceve aria-invalid e aria-describedby verso il
+ * messaggio, che gli screen reader leggono insieme al campo (8.2, WCAG 3.3.1).
+ */
 export function Field({ label, error, children }: { label: string; error?: string; children: ReactNode }) {
+    const errorId = useId();
+    const hasError = error !== undefined && error !== '';
+    const control = isValidElement<{ 'aria-invalid'?: boolean; 'aria-describedby'?: string }>(children)
+        ? cloneElement(children, { 'aria-invalid': hasError || undefined, 'aria-describedby': hasError ? errorId : undefined })
+        : children;
+
     return (
         <label className="block text-sm font-medium text-ink">
             {label}
-            {children}
-            {error !== undefined && error !== '' && <span className="mt-1 block text-xs font-normal text-danger">{error}</span>}
+            {control}
+            {hasError && (
+                <span id={errorId} className="mt-1 block text-xs font-normal text-danger">
+                    {error}
+                </span>
+            )}
         </label>
     );
 }
 
 export function Checkbox({ checked, onChange, error, name, children }: { checked: boolean; onChange: (value: boolean) => void; error?: string; name: string; children: ReactNode }) {
+    const errorId = useId();
+    const hasError = error !== undefined && error !== '';
+
     return (
         <div>
-            <label className="flex items-start gap-3 text-sm text-ink">
-                <input type="checkbox" name={name} checked={checked} onChange={(e) => onChange(e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0" />
+            <label className="flex min-h-tap items-start gap-3 py-2 text-sm text-ink">
+                <input
+                    type="checkbox"
+                    name={name}
+                    checked={checked}
+                    onChange={(e) => onChange(e.target.checked)}
+                    aria-invalid={hasError || undefined}
+                    aria-describedby={hasError ? errorId : undefined}
+                    className="mt-0.5 h-5 w-5 shrink-0 accent-brand-700"
+                />
                 <span>{children}</span>
             </label>
-            {error !== undefined && error !== '' && <p className="mt-1 ml-8 text-xs text-danger">{error}</p>}
+            {hasError && (
+                <p id={errorId} className="mt-1 ml-8 text-xs text-danger">
+                    {error}
+                </p>
+            )}
         </div>
     );
 }
@@ -538,7 +587,7 @@ function Counter({ label, value, min, max, onChange }: { label: string; value: n
                     aria-label={t('booking.decrease', { what: label })}
                     onClick={() => onChange(Math.max(min, value - 1))}
                     disabled={value <= min}
-                    className="h-10 w-10 rounded-full border border-line text-lg disabled:opacity-40"
+                    className="h-11 w-11 rounded-full border border-line text-lg disabled:opacity-40"
                 >
                     −
                 </button>
@@ -550,7 +599,7 @@ function Counter({ label, value, min, max, onChange }: { label: string; value: n
                     aria-label={t('booking.increase', { what: label })}
                     onClick={() => onChange(Math.min(max, value + 1))}
                     disabled={value >= max}
-                    className="h-10 w-10 rounded-full border border-line text-lg disabled:opacity-40"
+                    className="h-11 w-11 rounded-full border border-line text-lg disabled:opacity-40"
                 >
                     +
                 </button>

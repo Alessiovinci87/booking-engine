@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { cloneElement, isValidElement, useId, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import type { LocaleCode, TranslationTexts, Translations } from '../api/admin';
@@ -24,16 +24,29 @@ export function Section({ title, children, actions }: { title: string; children:
 
 /** Campo con etichetta ed eventuali errori di validazione del server. */
 export function Field({ label, errors, children, hint }: { label: string; errors?: string[]; children: ReactNode; hint?: string }) {
+    const hintId = useId();
+    const errorId = useId();
+    const hasError = errors !== undefined && errors.length > 0;
+    const describedBy = [hint !== undefined ? hintId : null, hasError ? errorId : null].filter(Boolean).join(' ') || undefined;
+    // Errori e suggerimento collegati al controllo (8.2, WCAG 3.3.1 e 1.3.1).
+    const control = isValidElement<{ 'aria-invalid'?: boolean; 'aria-describedby'?: string }>(children)
+        ? cloneElement(children, { 'aria-invalid': hasError || undefined, 'aria-describedby': describedBy })
+        : children;
+
     return (
         <label className="block text-sm font-medium text-ink">
             {label}
-            {children}
-            {hint !== undefined && <span className="mt-1 block text-xs font-normal text-muted">{hint}</span>}
-            {errors?.map((message) => (
-                <span key={message} className="mt-1 block text-xs font-normal text-danger">
-                    {message}
+            {control}
+            {hint !== undefined && (
+                <span id={hintId} className="mt-1 block text-xs font-normal text-muted">
+                    {hint}
                 </span>
-            ))}
+            )}
+            {hasError && (
+                <span id={errorId} className="mt-1 block text-xs font-normal text-danger">
+                    {errors.join(' ')}
+                </span>
+            )}
         </label>
     );
 }
@@ -52,6 +65,8 @@ export function TextInput({
     inputMode?: 'numeric' | 'decimal' | 'text' | 'email' | 'tel' | 'url';
     min?: number;
     max?: number;
+    'aria-invalid'?: boolean;
+    'aria-describedby'?: string;
 }) {
     return <input className={inputClass} type={type} value={value} onChange={(e) => onChange(e.target.value)} {...rest} />;
 }

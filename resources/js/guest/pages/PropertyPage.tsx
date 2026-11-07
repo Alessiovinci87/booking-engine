@@ -33,7 +33,7 @@ export function PropertyPage() {
 
     return (
         <Shell title={p.name}>
-            <main className="space-y-6">
+            <div className="space-y-6">
                 <Gallery photos={photos} name={p.name} />
                 <section>
                     <h1 className="text-2xl font-semibold text-ink">{p.name}</h1>
@@ -80,7 +80,7 @@ export function PropertyPage() {
                         <p className="mt-2">{[p.contact_email, p.contact_phone].filter(Boolean).join(' · ')}</p>
                     </section>
                 )}
-            </main>
+            </div>
         </Shell>
     );
 }

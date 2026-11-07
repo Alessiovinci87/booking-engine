@@ -139,6 +139,40 @@ test.describe('M8 qualità del frontend', () => {
         await context.close();
     });
 
+    test('tastiera: "Vai al contenuto" e scelta delle date con le frecce, annunciata', async ({ browser }) => {
+        const context = await browser.newContext({ locale: 'it-IT', timezoneId: 'Europe/Rome' });
+        const page = await context.newPage();
+
+        await page.goto(GUEST_PAGE);
+        await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+        await page.keyboard.press('Tab');
+        await expect(page.getByRole('link', { name: 'Vai al contenuto' })).toBeFocused();
+        await page.keyboard.press('Enter');
+        await expect(page.locator('main')).toBeFocused();
+
+        await page.getByTestId('unit-card').first().getByRole('link').first().click();
+        await expect(page.getByTestId('calendar')).toBeVisible();
+        // Il giorno di arrivo ha un nome accessibile in italiano; poi solo tastiera.
+        const first = page.locator(`[data-day="${inDays(1)}"] button`);
+        await expect(first).toHaveAccessibleName(/novembre|dicembre|gennaio|febbraio|marzo|aprile|maggio|giugno|luglio|agosto|settembre|ottobre/);
+        await first.focus();
+        await page.keyboard.press('Enter');
+        await page.keyboard.press('ArrowRight');
+        await page.keyboard.press('ArrowRight');
+        await page.keyboard.press('Enter');
+        await expect(page.getByTestId('stay-summary')).toContainText('2 notti');
+        await expect(page.getByTestId('stay-summary')).toHaveAttribute('aria-live', 'polite');
+        await expect(page.locator(`[data-day="${inDays(1)}"] button`)).toHaveAccessibleName(/arrivo/);
+
+        // Invio con campi vuoti: focus sul primo campo non valido, collegato al messaggio.
+        await page.getByRole('button', { name: /Prosegui/ }).click();
+        const firstName = page.getByLabel('Nome', { exact: false }).first();
+        await expect(firstName).toBeFocused();
+        await expect(firstName).toHaveAttribute('aria-invalid', 'true');
+        await checkAccessibility(page, 'm8-tastiera-errori');
+        await context.close();
+    });
+
     test('pannello: accessibilità pagina per pagina', async ({ browser }) => {
         test.skip(process.env.E2E_DEMO_MFA_SECRET === undefined, 'Serve la MFA configurata dallo spec di M2 nello stesso processo.');
 

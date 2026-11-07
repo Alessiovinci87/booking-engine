@@ -10,7 +10,9 @@
         "retry": "Riprova",
         "close": "Chiudi",
         "notFound": "Pagina non trovata.",
-        "loadError": "Non riusciamo a caricare la pagina. Riprova tra poco."
+        "loadError": "Non riusciamo a caricare la pagina. Riprova tra poco.",
+        "skipToContent": "Vai al contenuto",
+        "pageTitle": "Prenotazione"
     },
     "property": {
         "noAvailability": "Nessuna disponibilità al momento",
@@ -160,5 +162,14 @@
     "footer": {
         "platformPrivacy": "Informativa privacy della piattaforma",
         "subprocessors": "Sub-responsabili del trattamento"
+    },
+    "calendar": {
+        "today": "Oggi",
+        "unavailable": "non disponibile",
+        "checkIn": "arrivo",
+        "checkOut": "partenza",
+        "selected": "compreso nel soggiorno",
+        "next": "Mese successivo",
+        "previous": "Mese precedente"
     }
 }

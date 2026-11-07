@@ -5,7 +5,7 @@ import { I18nextProvider } from 'react-i18next';
 import { BrowserRouter, Route, Routes } from 'react-router';
 
 import '../../css/app.css';
-import { ToastProvider } from '../shared/ui';
+import { ToastProvider, useDocumentTitle } from '../shared/ui';
 import { ApiError } from './api/client';
 import { AuthGate } from './auth/AuthGate';
 import { sessionQueryKey } from './auth/session';
@@ -65,6 +65,7 @@ createRoot(container).render(
         <I18nextProvider i18n={i18n}>
             <QueryClientProvider client={queryClient}>
                 <ToastProvider>
+                    <DocumentTitle />
                 <BrowserRouter basename="/app">
                     <Routes>
                         <Route
@@ -133,3 +134,10 @@ createRoot(container).render(
         </I18nextProvider>
     </StrictMode>,
 );
+
+/** Titolo della scheda: titolo della pagina più il nome del pannello (8.2). */
+function DocumentTitle() {
+    useDocumentTitle(i18n.t('app.name'));
+
+    return null;
+}

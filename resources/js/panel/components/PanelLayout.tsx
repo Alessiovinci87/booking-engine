@@ -1,9 +1,14 @@
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { Link, Outlet } from 'react-router';
+import { Link, NavLink, Outlet } from 'react-router';
 
+import { SkipLink } from '../../shared/ui';
 import { api } from '../api/client';
 import { LogoutButton } from './LogoutButton';
+
+/** Voce del menu: area toccabile di 44 px, pagina corrente evidenziata (aria-current da NavLink). */
+const navClass = ({ isActive }: { isActive: boolean }) =>
+    `inline-flex min-h-tap items-center border-b-2 font-medium ${isActive ? 'border-brand-700 text-ink' : 'border-transparent text-brand-800 hover:border-brand-200'}`;
 
 /** Layout base del pannello: nome del tenant, navigazione, utente e uscita. */
 export function PanelLayout() {
@@ -12,6 +17,7 @@ export function PanelLayout() {
 
     return (
         <div className="min-h-screen">
+            <SkipLink label={t('common.skipToContent')} />
             <header className="border-b border-line-soft bg-surface">
                 <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
                     <div>
@@ -21,31 +27,31 @@ export function PanelLayout() {
                         </p>
                     </div>
                     <div className="flex flex-wrap items-center gap-4 text-sm">
-                        <nav className="flex flex-wrap items-center gap-4">
-                            <Link to="/" className="font-medium text-brand-800 hover:underline">
+                        <nav aria-label={t('layout.mainNav')} className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                            <NavLink to="/" end={true} className={navClass}>
                                 {t('layout.properties')}
-                            </Link>
-                            <Link to="/calendario" className="font-medium text-brand-800 hover:underline">
+                            </NavLink>
+                            <NavLink to="/calendario" end={false} className={navClass}>
                                 {t('layout.calendar')}
-                            </Link>
-                            <Link to="/prenotazioni" className="font-medium text-brand-800 hover:underline">
+                            </NavLink>
+                            <NavLink to="/prenotazioni" end={false} className={navClass}>
                                 {t('layout.reservations')}
-                            </Link>
-                            <Link to="/conflitti" className="font-medium text-brand-800 hover:underline">
+                            </NavLink>
+                            <NavLink to="/conflitti" end={false} className={navClass}>
                                 {t('layout.conflicts')}
-                            </Link>
-                            <Link to="/calendari" className="font-medium text-brand-800 hover:underline">
+                            </NavLink>
+                            <NavLink to="/calendari" end={false} className={navClass}>
                                 {t('layout.calendars')}
-                            </Link>
-                            <Link to="/preventivi" className="font-medium text-brand-800 hover:underline">
+                            </NavLink>
+                            <NavLink to="/preventivi" end={false} className={navClass}>
                                 {t('layout.quotes')}
-                            </Link>
-                            <Link to="/pagamenti" className="font-medium text-brand-800 hover:underline">
+                            </NavLink>
+                            <NavLink to="/pagamenti" end={false} className={navClass}>
                                 {t('layout.payments')}
-                            </Link>
-                            <Link to="/metriche" className="font-medium text-brand-800 hover:underline">
+                            </NavLink>
+                            <NavLink to="/metriche" end={false} className={navClass}>
                                 {t('layout.metrics')}
-                            </Link>
+                            </NavLink>
                         </nav>
                         {me.data && (
                             <Link to="/account" className="hidden text-muted hover:underline sm:inline" title={t('layout.account')}>

@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { Alert, Skeleton } from '../shared/ui';
+import { Alert, Skeleton, SkipLink, useDocumentTitle } from '../shared/ui';
 import { publicApi, type Photo } from './api';
 import { guestLanguages } from './i18n';
 import { LanguageSelector } from './LanguageSelector';
@@ -24,14 +24,16 @@ function platformLinks(): { privacy: string; subprocessors: string } {
 export function Shell({ title, children }: { title?: string; children: ReactNode }) {
     const { t } = useTranslation();
     const links = platformLinks();
+    useDocumentTitle(title ?? t('common.pageTitle'));
 
     return (
         <div className="mx-auto min-h-screen max-w-3xl px-4 pb-16">
+            <SkipLink label={t('common.skipToContent')} />
             <header className="flex items-center justify-between gap-4 py-4">
                 <p className="truncate text-sm font-medium text-muted">{title}</p>
                 <LanguageSelector languages={guestLanguages} />
             </header>
-            {children}
+            <main id="contenuto">{children}</main>
             {(links.privacy !== '' || links.subprocessors !== '') && (
                 <footer className="mt-12 flex flex-wrap gap-4 border-t border-line-soft pt-4 text-xs text-muted" data-testid="platform-footer">
                     {links.privacy !== '' && (
