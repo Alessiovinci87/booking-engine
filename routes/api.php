@@ -60,8 +60,8 @@ Route::prefix('admin')->middleware(EnsureFrontendRequestsAreStateful::class)->gr
         Route::post('reservations/{reservation}/release-dates', [ReservationController::class, 'releaseDates'])->name('admin.reservations.release-dates');
         Route::post('reservations/{reservation}/offline-payments', [ReservationController::class, 'offlinePayment'])->name('admin.reservations.offline-payments');
         Route::post('units/{unit}/blocks', [BlockController::class, 'store'])->name('admin.units.blocks.store');
-        Route::post('refunds/{refund}/retry', [RefundController::class, 'retry'])->name('admin.refunds.retry');
-        Route::post('refunds/{refund}/mark-offline', [RefundController::class, 'markOffline'])->name('admin.refunds.mark-offline');
+        Route::post('refunds/{refund}/retry', [RefundController::class, 'retry'])->middleware('reauth')->name('admin.refunds.retry');
+        Route::post('refunds/{refund}/mark-offline', [RefundController::class, 'markOffline'])->middleware('reauth')->name('admin.refunds.mark-offline');
     });
 
     // Chiamate al servizio di pagamento fuori transazione (05): il servizio apre i propri passi.
@@ -72,7 +72,7 @@ Route::prefix('admin')->middleware(EnsureFrontendRequestsAreStateful::class)->gr
     // Collegamento Stripe (4.1): letture e link di onboarding con chiamate a Stripe fuori transazione.
     Route::middleware(['auth:sanctum', 'panel.fresh', 'mfa', 'throttle:admin', 'tenant:panel,steps'])->group(function (): void {
         Route::get('stripe/account', [StripeAccountController::class, 'show'])->name('admin.stripe.account');
-        Route::post('stripe/onboarding-link', [StripeAccountController::class, 'onboardingLink'])->name('admin.stripe.onboarding-link');
+        Route::post('stripe/onboarding-link', [StripeAccountController::class, 'onboardingLink'])->middleware('reauth')->name('admin.stripe.onboarding-link');
     });
 
     Route::middleware(['auth:sanctum', 'panel.fresh', 'mfa', 'throttle:admin', 'tenant'])->group(function (): void {

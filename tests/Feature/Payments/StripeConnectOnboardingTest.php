@@ -21,7 +21,7 @@ function accountOf(string $tenant): ?StripeAccount
 }
 
 it('crea l\'account connesso v2 con la configurazione di 05 e restituisce il link di onboarding', function () {
-    $owner = signedInOwner($this);
+    $owner = signedInOwner($this, passwordConfirmed: true);
     $this->stripe
         ->on('post', '/v2/core/accounts', stripeV2Account('acct_test_new', 'inactive', 'inactive', 'currently_due'))
         ->on('post', '/v2/core/account_links', ['object' => 'v2.core.account_link', 'account' => 'acct_test_new', 'url' => 'https://connect.stripe.com/setup/e/acct_test_new/abc', 'expires_at' => '2026-11-07T01:00:00.000Z']);
@@ -52,7 +52,7 @@ it('crea l\'account connesso v2 con la configurazione di 05 e restituisce il lin
 });
 
 it('un secondo link non crea un altro account', function () {
-    $owner = signedInOwner($this);
+    $owner = signedInOwner($this, passwordConfirmed: true);
     $this->stripe
         ->on('post', '/v2/core/accounts', stripeV2Account('acct_test_once', 'inactive', 'inactive', 'currently_due'))
         ->on('post', '/v2/core/account_links', ['object' => 'v2.core.account_link', 'url' => 'https://connect.stripe.com/setup/x']);
@@ -91,12 +91,19 @@ it('senza account il pannello mostra "non collegato"', function () {
 });
 
 it('Stripe non raggiungibile → 503, configurazione rifiutata → 502', function () {
-    signedInOwner($this);
+    signedInOwner($this, passwordConfirmed: true);
     $this->stripe->fail('post', '/v2/core/accounts', 500, 'api_error', times: 1);
     panelPost($this, '/api/v1/admin/stripe/onboarding-link')->assertStatus(503)->assertJsonPath('error.code', 'PAYMENT_PROVIDER_UNAVAILABLE');
 
     $this->stripe->fail('post', '/v2/core/accounts', 400, 'invalid_request_error', 'parameter_unknown');
     panelPost($this, '/api/v1/admin/stripe/onboarding-link')->assertStatus(502)->assertJsonPath('error.code', 'PAYMENT_PROVIDER_REJECTED');
+});
+
+it('collegare o cambiare l\'account Stripe richiede la password confermata da poco (08)', function () {
+    signedInOwner($this);
+
+    panelPost($this, '/api/v1/admin/stripe/onboarding-link')->assertForbidden()->assertJsonPath('error.code', 'REAUTH_REQUIRED');
+    expect($this->stripe->requests)->toBe([]);
 });
 
 it('stripe:demo-account sostituisce l\'account finto del seeder e stampa il link senza segreti', function () {

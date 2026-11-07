@@ -75,7 +75,7 @@ it('"Riprova" dal pannello: FAILED → PENDING e nuova chiamata', function () {
     $this->sim->http->fail('post', '/v1/refunds', 400, 'invalid_request_error', 'processing_error', times: 1);
     $refund = cancelWithRefund($this->fx, $this->reservation);
     $owner = panelUser($this->fx['tenant']);
-    actingAsPanelUser($this, $owner['user']);
+    actingAsPanelUser($this, $owner['user'], passwordConfirmed: true);
 
     panelGet($this, '/api/v1/admin/refunds?status[]=FAILED')->assertOk()
         ->assertJsonPath('data.0.id', $refund->id)
@@ -91,7 +91,7 @@ it('"Segna come rimborsato fuori piattaforma": nota obbligatoria, metodo OFFLINE
     $this->sim->http->fail('post', '/v1/refunds', 400, 'invalid_request_error', 'processing_error');
     $refund = cancelWithRefund($this->fx, $this->reservation);
     $owner = panelUser($this->fx['tenant']);
-    actingAsPanelUser($this, $owner['user']);
+    actingAsPanelUser($this, $owner['user'], passwordConfirmed: true);
 
     panelPost($this, "/api/v1/admin/refunds/{$refund->id}/mark-offline", ['note' => ' '])->assertStatus(400)->assertJsonPath('error.code', 'VALIDATION_FAILED');
     panelPost($this, "/api/v1/admin/refunds/{$refund->id}/mark-offline", ['note' => 'Bonifico del 2 giugno'])
@@ -102,10 +102,20 @@ it('"Segna come rimborsato fuori piattaforma": nota obbligatoria, metodo OFFLINE
         ->and($audit)->not->toContain('Bonifico');
 });
 
+it('"Riprova" e "Segna come rimborsato" richiedono la password confermata da poco (08)', function () {
+    $this->sim->http->fail('post', '/v1/refunds', 400, 'invalid_request_error', 'processing_error');
+    $refund = cancelWithRefund($this->fx, $this->reservation);
+    actingAsPanelUser($this, panelUser($this->fx['tenant'])['user']);
+
+    panelPost($this, "/api/v1/admin/refunds/{$refund->id}/retry")->assertForbidden()->assertJsonPath('error.code', 'REAUTH_REQUIRED');
+    panelPost($this, "/api/v1/admin/refunds/{$refund->id}/mark-offline", ['note' => 'Bonifico'])->assertForbidden();
+    expect(refundOf($this->fx, $refund->id)->status)->toBe(RefundStatus::FAILED);
+});
+
 it('i rimborsi di un altro tenant non si vedono né si toccano', function () {
     $this->sim->http->fail('post', '/v1/refunds', 400, 'invalid_request_error', 'processing_error');
     $refund = cancelWithRefund($this->fx, $this->reservation);
-    signedInOwner($this);
+    signedInOwner($this, passwordConfirmed: true);
 
     panelGet($this, '/api/v1/admin/refunds')->assertOk()->assertJsonPath('data', []);
     panelPost($this, "/api/v1/admin/refunds/{$refund->id}/retry")->assertNotFound();

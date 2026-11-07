@@ -7,6 +7,7 @@ import { type RefundRow, paymentsApi } from '../api/payments';
 import { reservationsApi, type ReservationSummary } from '../api/reservations';
 import { useErrorMessage } from '../auth/session';
 import { FormError, Section, dangerButton, inputClass, primaryButton, secondaryButton } from '../components/Form';
+import { ReauthPrompt, needsReauth } from '../components/Reauth';
 import { formatDateTime } from '../dates';
 import { formatMoney } from '../money';
 
@@ -59,7 +60,12 @@ function StripeAccountSection() {
                             {info.connected ? t('payments.stripe.continue') : t('payments.stripe.connect')}
                         </button>
                     )}
-                    {onboarding.isError && <FormError message={errorMessage(onboarding.error)} />}
+                    {onboarding.isError &&
+                        (needsReauth(onboarding.error) ? (
+                            <ReauthPrompt onConfirmed={() => onboarding.mutate()} onCancel={() => onboarding.reset()} />
+                        ) : (
+                            <FormError message={errorMessage(onboarding.error)} />
+                        ))}
                 </div>
             )}
         </Section>
@@ -237,8 +243,18 @@ function RefundItem({ refund }: { refund: RefundRow }) {
                     </button>
                 </form>
             )}
-            {retry.isError && <FormError message={errorMessage(retry.error)} />}
-            {markOffline.isError && <FormError message={errorMessage(markOffline.error)} />}
+            {retry.isError &&
+                (needsReauth(retry.error) ? (
+                    <ReauthPrompt onConfirmed={() => retry.mutate()} onCancel={() => retry.reset()} />
+                ) : (
+                    <FormError message={errorMessage(retry.error)} />
+                ))}
+            {markOffline.isError &&
+                (needsReauth(markOffline.error) ? (
+                    <ReauthPrompt onConfirmed={() => markOffline.mutate()} onCancel={() => markOffline.reset()} />
+                ) : (
+                    <FormError message={errorMessage(markOffline.error)} />
+                ))}
         </li>
     );
 }

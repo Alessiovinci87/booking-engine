@@ -540,5 +540,9 @@
             "title_other": "{{count}} contestazioni aperte",
             "hint": "Un ospite ha contestato un pagamento con la banca. Rispondi dalla dashboard Stripe entro la scadenza indicata da Stripe."
         }
+    },
+    "reauth": {
+        "hint": "Per questa operazione conferma la password (vale 15 minuti).",
+        "confirm": "Conferma e continua"
     }
 }
