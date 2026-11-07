@@ -52,7 +52,7 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         // Errori dell'API nel formato di 07, senza dettagli interni.
-        $isApi = fn (Request $request): bool => $request->is('api/*');
+        $isApi = fn (Request $request): bool => $request->is('api/*') || $request->is('ical/*');
 
         // Regole di dominio non rispettate: risposte previste, non errori da registrare.
         $exceptions->dontReport(BusinessRuleViolation::class);

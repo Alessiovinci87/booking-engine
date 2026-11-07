@@ -13,7 +13,7 @@ function insertFeed(array $t, string $status, string $destination = 'AIRBNB'): v
     inTenant($t['tenant'], fn () => DB::table('ics_feeds')->insert([
         'id' => uuid7(), 'tenant_id' => $t['tenant'], 'unit_id' => $t['unit'], 'destination' => $destination,
         'token_encrypted' => 'cifrato-'.uuid7(), 'token_hash' => hash('sha256', uuid7()), 'status' => $status,
-        'created_at' => now(), 'updated_at' => now(),
+        'frozen_at' => $status === 'FROZEN' ? now() : null, 'created_at' => now(), 'updated_at' => now(),
     ]));
 }
 

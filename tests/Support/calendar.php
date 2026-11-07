@@ -216,6 +216,7 @@ function createFeed(string $tenantId, string $unitId, string $destination, ?stri
             'id' => $id, 'tenant_id' => app(TenantContext::class)->currentTenantId(), 'unit_id' => $unitId, 'destination' => $destination,
             'paired_external_calendar_id' => $pairedCalendarId, 'token_encrypted' => Crypt::encryptString($token),
             'token_hash' => hash('sha256', $token), 'status' => $status, 'last_fetched_at' => $lastFetchedAt,
+            'frozen_at' => $status === 'FROZEN' ? now() : null,
             'created_at' => now(), 'updated_at' => now(),
         ]);
 

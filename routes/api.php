@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\V1\Admin\BlockController;
 use App\Http\Controllers\Api\V1\Admin\CalendarController;
 use App\Http\Controllers\Api\V1\Admin\ConflictController;
 use App\Http\Controllers\Api\V1\Admin\DisputeController;
+use App\Http\Controllers\Api\V1\Admin\IcsFeedController;
 use App\Http\Controllers\Api\V1\Admin\MeController;
 use App\Http\Controllers\Api\V1\Admin\PricePreviewController;
 use App\Http\Controllers\Api\V1\Admin\PropertyController;
@@ -109,6 +110,10 @@ Route::prefix('admin')->middleware(EnsureFrontendRequestsAreStateful::class)->gr
         Route::patch('reservations/{reservation}', [ReservationController::class, 'update'])->name('admin.reservations.update');
         Route::get('refunds', [RefundController::class, 'index'])->name('admin.refunds.index');
         Route::get('disputes', [DisputeController::class, 'index'])->name('admin.disputes.index');
+
+        Route::get('units/{unit}/ics-feeds', [IcsFeedController::class, 'index'])->name('admin.units.ics-feeds.index');
+        Route::post('units/{unit}/ics-feeds', [IcsFeedController::class, 'store'])->name('admin.units.ics-feeds.store');
+        Route::post('ics-feeds/{feed}/rotate', [IcsFeedController::class, 'rotate'])->name('admin.ics-feeds.rotate');
 
         Route::get('conflicts', [ConflictController::class, 'index'])->name('admin.conflicts.index');
         Route::post('conflicts/{conflict}/investigate', [ConflictController::class, 'investigate'])->name('admin.conflicts.investigate');

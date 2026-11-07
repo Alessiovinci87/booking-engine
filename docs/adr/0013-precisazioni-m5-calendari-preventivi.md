@@ -48,6 +48,15 @@ L'implementazione di M5 (import ed export iCal, conflitti, preventivi) ha incont
 22. **Documento.** `PRODID:-//BookingEngine//Calendar Export 1.0//IT`, `METHOD:PUBLISH`; per evento `UID`, `DTSTAMP` = ultima modifica della fonte (documento ed ETag stabili tra due letture senza cambi), `DTSTART;VALUE=DATE`, `DTEND;VALUE=DATE`, `SUMMARY:Non disponibile`, `SEQUENCE`, `TRANSP:OPAQUE`. Nessuna `DESCRIPTION`, nessun nome di unità o struttura. Orizzonte: dagli intervalli in corso fino a 760 giorni.
 23. **Feed `FROZEN`.** Contiene solo gli elementi nati entro `frozen_at`, con le modifiche e le cancellazioni successive (06). Se non ne resta nessuno, il feed **non** si serve vuoto (I19): `GET /ical/{token}.ics` risponde `503` con `Retry-After`, e le OTA mantengono l'ultimo calendario letto (nel dubbio, si blocca).
 
+### Ciclo di vita dei feed (5.5)
+
+24. **Token e ricerca.** Token di 32 byte casuali in base64url (43 caratteri), cifrato a riposo (`token_encrypted`, serve per mostrare l'URL) e cercato per hash SHA-256 (`token_hash`) con la funzione SECURITY DEFINER `app_tenant_by_ics_feed(text)` (migration `2027_01_18_000200`, stesso schema delle altre funzioni di ricerca; policy `definer_lookup` su `ics_feeds` solo per app_migrator). Il percorso accetta solo `[A-Za-z0-9_-]{43}`; il token non compare in log e audit.
+25. **Risposte di `GET /ical/{token}.ics`**: 200 `text/calendar; charset=utf-8` con `Cache-Control: no-store` ed `ETag`; 304 con `If-None-Match` uguale; 404 `NOT_FOUND` per token sconosciuto; 410 `FEED_RETIRED`; 503 `FEED_UNAVAILABLE` con `Retry-After: 3600` per un feed `FROZEN` senza elementi (punto 23); 429 `RATE_LIMITED` oltre 60 richieste all'ora per token (`ICAL_FEED_RATE_LIMIT_PER_HOUR`). Errori nel formato JSON di 07. Nessuna sessione né cookie.
+26. **Letture registrate** al massimo ogni 5 minuti (`last_fetched_at`, `last_fetch_user_agent` ripulito dai caratteri di controllo, 255 caratteri): una scrittura per lettura sarebbe inutile con 60 letture/ora.
+27. **Creazione e accoppiamento.** `POST /admin/units/{id}/ics-feeds` crea il feed `ACTIVE` della destinazione (409 `ICS_FEED_EXISTS` se c'è già) e lo accoppia al primo calendario importato non disattivato dello stesso canale; un calendario aggiunto dopo si accoppia ai feed della stessa OTA che ne sono privi.
+28. **Rotazione** (`POST /admin/ics-feeds/{id}/rotate`, solo da `ACTIVE`): il feed attuale diventa `FROZEN` con `frozen_at` e `rotated_at`, il nuovo nasce `ACTIVE` con lo stesso accoppiamento. Un dispatcher orario (app_admin_ops, solo ID) ritira i feed `FROZEN` da rotazione oltre i 7 giorni (`RetireRotatedFeedsJob` per tenant). `GET` riporta `retires_at` e `not_read_warning` (feed `ACTIVE` non letto da oltre 24 ore, o mai letto 24 ore dopo la creazione; 08).
+29. **Stati dei feed** solo in `IcsFeedStateMachine` (creazione `ACTIVE`, `freeze`, `retire`); `RETIRED` è definitivo. Il congelamento per offboarding e il ritiro su conferma del gestore usano gli stessi metodi; le API di offboarding restano a M7 (11).
+
 ## Alternative considerate
 
 | Alternativa | Perché scartata |
@@ -61,8 +70,8 @@ L'implementazione di M5 (import ed export iCal, conflitti, preventivi) ha incont
 
 ## Impatto sui test
 
-- Test aggiunti: `Unit/Calendar/SafeHttpFetcherTest`, `Unit/Calendar/IcsParserTest`, `Feature/Calendar/IcalImportTest`, `SyncErrorKeepsDatesTest`, `AntiWipeSafeguardTest`, `ConflictOnConfirmedTest`, `ConflictCloseKeepsDatesTest`, `EchoLoopTest`, `FeedMatrixTest`, `IcsUidStabilityTest`.
-- Test modificati: `Arch/ExternalHttpTest` (eccezione per `CurlTransport`).
+- Test aggiunti: `Unit/Calendar/SafeHttpFetcherTest`, `Unit/Calendar/IcsParserTest`, `Feature/Calendar/IcalImportTest`, `SyncErrorKeepsDatesTest`, `AntiWipeSafeguardTest`, `ConflictOnConfirmedTest`, `ConflictCloseKeepsDatesTest`, `EchoLoopTest`, `FeedMatrixTest`, `IcsUidStabilityTest`, `IcsFeedEndpointTest`, `FrozenFeedNeverEmptyTest`, `RetiredFeed410Test`.
+- Test modificati: `Arch/ExternalHttpTest` (eccezione per `CurlTransport`), `Database/IcsFeedUniquenessTest` (`frozen_at` obbligatorio per i feed FROZEN), `Architecture/RlsCatalogTest` (policy `definer_lookup` su `ics_feeds`).
 
 ## Aggiornamento della specifica
 

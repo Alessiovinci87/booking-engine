@@ -1,6 +1,7 @@
 <?php
 
 use App\Domain\Calendar\Jobs\DispatchCalendarSyncJob;
+use App\Domain\Calendar\Jobs\DispatchFeedRetirementJob;
 use App\Domain\Payments\Jobs\DispatchPaymentReconciliationJob;
 use App\Domain\Payments\Jobs\ReconcilePaymentsJob;
 use App\Domain\Reservations\Jobs\DispatchOccupancyReleaseJob;
@@ -27,3 +28,6 @@ Schedule::job(new DispatchPaymentReconciliationJob(ReconcilePaymentsJob::CAPTURI
 // Sincronizzazione dei calendari importati (06 "Polling"): dispatcher ogni minuto sui calendari con
 // next_poll_at scaduto, un job per calendario.
 Schedule::job(new DispatchCalendarSyncJob)->everyMinute()->withoutOverlapping()->name('calendars:sync');
+
+// Ritiro dei feed iCal ruotati da oltre 7 giorni (06): dispatcher orario, un job per tenant.
+Schedule::job(new DispatchFeedRetirementJob)->hourly()->withoutOverlapping()->name('ical:retire-rotated');

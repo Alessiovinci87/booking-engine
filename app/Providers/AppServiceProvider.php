@@ -94,6 +94,11 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('public-read', fn (Request $request): Limit => Limit::perMinute((int) config('security.public_read_rate_limit_per_minute'))
             ->by('public-read:'.$request->ip()));
 
+        // Feed iCal esportati: 60 richieste all'ora per token (06 "Formato"); il token entra nella chiave
+        // solo come impronta.
+        RateLimiter::for('ical', fn (Request $request): Limit => Limit::perHour((int) config('calendar.feed_rate_limit_per_hour'))
+            ->by('ical:'.hash('sha256', (string) $request->route('token'))));
+
         // Creazione di prenotazioni dalla pagina ospite: per IP e per email (07). L'email entra nella
         // chiave del limite solo come impronta (09: nessun dato personale nella cache).
         RateLimiter::for('public-booking', function (Request $request): array {
