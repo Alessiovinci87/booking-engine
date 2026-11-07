@@ -1,6 +1,6 @@
 # ADR-0013 — Precisazioni di calendari iCal e preventivi dopo M5
 
-- **Stato**: Accettata
+- **Stato**: Proposta (da accettare con la verifica di M5, regola 2 di `CLAUDE.md`)
 - **Data**: 2026-11-07
 - **Autori**: Alessio Vinci, Claude Code
 - **Documenti di specifica toccati**: 06-CALENDAR-SYNC, 07-API-CONTRACT, 08-SECURITY-OPERATIONS

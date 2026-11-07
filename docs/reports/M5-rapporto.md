@@ -28,7 +28,7 @@ Documentazione:
 - `10-TRACEABILITY.md`: percorsi dei test `Feature/Calendar/…` e `Feature/Quotes/…`, servizi nuovi, righe 5.1–5.8 nello stato dell'implementazione.
 
 ## Test
-- `composer test`: **753 test verdi** (4529 asserzioni) (Unit, Feature su PostgreSQL reale come `app_runtime`, Arch).
+- `composer test`: **767 test verdi** (4586 asserzioni, dopo il riallineamento a M4 aggiornato) (Unit, Feature su PostgreSQL reale come `app_runtime`, Arch).
 - `composer lint` e `composer analyse` (Larastan 6): verdi.
 - `npm run typecheck` e `npm run build`: verdi.
 - E2E `npx playwright test m2-panel m5-quote`: 2 verdi (creazione del preventivo nel pannello, copia del link, pagina ospite, accettazione).
@@ -58,6 +58,10 @@ Tutti nell'ADR-0013. I più visibili:
 3. **Checklist** (punto 35): il percorso reale è `/units/{id}/calendar-checklist[/confirm]` con `step` nel body, non `channel-checklist/{step}/confirm`. 07 è aggiornato.
 4. **Porta 443 obbligatoria** per i calendari importati (punto 1).
 5. **Feed congelato senza elementi** → `503` con `Retry-After` invece di un calendario vuoto (punto 23).
+
+## Dopo la verifica di M3
+- Branch riallineato a `m4-pagamenti-stripe` aggiornato (che contiene `main` con M3 verificata e la finestra di approvazione per struttura) con un merge, senza riscrivere la storia.
+- ADR-0013 in stato "Proposta" fino alla verifica di M5 (nuova regola 2 di `CLAUDE.md`).
 
 ## Punti aperti e rischi
 1. **Formati reali delle OTA non verificati** (Fase 0, ADR-0007). Da verificare in M6: etichette neutre di `SUMMARY`, eventi con orario, frequenza reale di lettura del nostro feed, comportamento di Booking e Airbnb con un `503`.
