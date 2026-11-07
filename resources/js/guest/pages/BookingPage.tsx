@@ -505,7 +505,13 @@ export function PriceSummaryBar({ total, nights, label }: { total: string; night
 
 /** Dopo un invio con errori il focus va sul primo campo non valido (8.2). */
 export function focusFirstError() {
-    window.requestAnimationFrame(() => document.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus());
+    window.requestAnimationFrame(() => {
+        const first = document.querySelector('[aria-invalid="true"]');
+
+        if (first instanceof HTMLElement) {
+            first.focus();
+        }
+    });
 }
 
 export function PriceDetails({ quote, requestMode }: { quote: PriceQuote; requestMode: boolean }) {
