@@ -11,6 +11,8 @@ import { sessionQueryKey } from './auth/session';
 import { PanelLayout } from './components/PanelLayout';
 import { i18n } from './i18n';
 import { CalendarPage } from './pages/CalendarPage';
+import { CalendarsPage } from './pages/CalendarsPage';
+import { ConflictsPage } from './pages/ConflictsPage';
 import { LoginPage } from './pages/LoginPage';
 import { MfaSetupPage } from './pages/MfaSetupPage';
 import { MfaVerifyPage } from './pages/MfaVerifyPage';
@@ -96,6 +98,8 @@ createRoot(container).render(
                             <Route path="prenotazioni/:reservationId" element={<ReservationDetailPage />} />
                             <Route path="pagamenti" element={<PaymentsPage />} />
                             <Route path="preventivi" element={<QuotesPage />} />
+                            <Route path="conflitti" element={<ConflictsPage />} />
+                            <Route path="calendari" element={<CalendarsPage />} />
                             <Route path="*" element={<NotFoundPage />} />
                         </Route>
                     </Routes>
