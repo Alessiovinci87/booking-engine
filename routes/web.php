@@ -33,6 +33,14 @@ Route::get('/e/{tenantSlug}/{propertySlug}/{any?}', [GuestPageController::class,
     ->middleware('security:embed')
     ->name('guest.embed');
 
+// Pagina ospite del preventivo (5.7): stessa SPA dell'ospite, senza sessione; il token resta nel
+// percorso e la pagina non è incorporabile.
+Route::get('/q/{token}', [GuestPageController::class, 'page'])
+    ->where('token', '[A-Za-z0-9_-]{43}')
+    ->withoutMiddleware($withoutSession)
+    ->middleware('security:page')
+    ->name('guest.quote');
+
 // Webhook di Stripe per gli eventi degli account connessi (05, 4.3): firma verificata, niente
 // sessione, cookie o CSRF.
 Route::post('/webhooks/stripe', StripeWebhookController::class)

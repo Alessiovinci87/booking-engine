@@ -84,4 +84,8 @@ return [
         'subject' => ':source calendar not synchronised: :unit',
         'lines' => ['For more than 3 hours we have not been able to read the :source calendar of :unit (:property).', 'Dates already imported stay blocked, but new OTA bookings may not be visible. Check the connection in the panel.'],
     ],
+    'quote_sent' => [
+        'subject' => 'Your quote for :property',
+        'lines' => ['Here is the quote for :unit from :check_in to :check_out: total :amount.', 'The quote is valid until :expires_at (UTC). You can book from the link below.'],
+    ],
 ];

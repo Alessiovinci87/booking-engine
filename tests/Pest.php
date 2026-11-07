@@ -25,3 +25,4 @@ require_once __DIR__.'/Support/stripe.php';
 require_once __DIR__.'/Support/stripe_simulator.php';
 require_once __DIR__.'/Support/stripe_live.php';
 require_once __DIR__.'/Support/calendar.php';
+require_once __DIR__.'/Support/quotes.php';

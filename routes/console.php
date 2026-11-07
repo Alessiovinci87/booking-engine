@@ -5,6 +5,7 @@ use App\Domain\Calendar\Jobs\DispatchFeedRetirementJob;
 use App\Domain\Calendar\Jobs\DispatchSyncHealthJob;
 use App\Domain\Payments\Jobs\DispatchPaymentReconciliationJob;
 use App\Domain\Payments\Jobs\ReconcilePaymentsJob;
+use App\Domain\Quotes\Jobs\DispatchQuoteExpiryJob;
 use App\Domain\Reservations\Jobs\DispatchOccupancyReleaseJob;
 use App\Domain\Tenancy\Jobs\DispatchOutboxJob;
 use Illuminate\Foundation\Inspiring;
@@ -35,3 +36,6 @@ Schedule::job(new DispatchFeedRetirementJob)->hourly()->withoutOverlapping()->na
 
 // Salute della sincronizzazione dei calendari importati (06): dispatcher ogni 5 minuti, un job per tenant.
 Schedule::job(new DispatchSyncHealthJob)->everyFiveMinutes()->withoutOverlapping()->name('calendars:health');
+
+// Scadenza dei preventivi (03, sezione 4): dispatcher ogni 5 minuti, un job per tenant.
+Schedule::job(new DispatchQuoteExpiryJob)->everyFiveMinutes()->withoutOverlapping()->name('quotes:expire');

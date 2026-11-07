@@ -137,5 +137,24 @@
         "NOT_FOUND": "Non trovato.",
         "FORBIDDEN": "Operazione non consentita da questa pagina.",
         "SERVER_ERROR": "Si è verificato un errore. Riprova più tardi."
+    },
+    "quote": {
+        "title": "Il tuo preventivo",
+        "summary_one": "{{unit}} dal {{checkIn}} al {{checkOut}} ({{count}} notte)",
+        "summary_other": "{{unit}} dal {{checkIn}} al {{checkOut}} ({{count}} notti)",
+        "guests_one": "{{count}} ospite",
+        "guests_other": "{{count}} ospiti",
+        "validUntil": "valido fino al {{date}}",
+        "accept": "Accetta e prosegui al pagamento",
+        "inCheckout": "Il pagamento di questo preventivo è già stato avviato: proseguendo riprendi lo stesso pagamento.",
+        "alreadyAccepted": "Questo preventivo è già stato accettato. Riceverai o hai ricevuto un'email con i dettagli della prenotazione.",
+        "notFound": "Preventivo non trovato. Controlla il link ricevuto.",
+        "QUOTE_EXPIRED": "Questo preventivo è scaduto. Contatta la struttura per riceverne uno nuovo.",
+        "QUOTE_REVOKED": "Questo preventivo è stato ritirato dalla struttura.",
+        "QUOTE_EXHAUSTED": "Sono stati fatti troppi tentativi di pagamento per questo preventivo. Contatta la struttura.",
+        "QUOTE_ALREADY_ACCEPTED": "Questo preventivo è già stato accettato.",
+        "QUOTE_CHECKOUT_IN_PROGRESS": "Il pagamento avviato in precedenza è in chiusura. Riprova tra qualche minuto.",
+        "DATES_UNAVAILABLE": "Le date di questo preventivo non sono più disponibili. Contatta la struttura.",
+        "OCCUPANCY_EXCEEDED": "Il numero di ospiti del preventivo supera la capienza attuale dell'alloggio. Contatta la struttura."
     }
 }

@@ -31,6 +31,9 @@ export function PanelLayout() {
                             <Link to="/prenotazioni" className="font-medium text-blue-700 hover:underline">
                                 {t('layout.reservations')}
                             </Link>
+                            <Link to="/preventivi" className="font-medium text-blue-700 hover:underline">
+                                {t('layout.quotes')}
+                            </Link>
                             <Link to="/pagamenti" className="font-medium text-blue-700 hover:underline">
                                 {t('layout.payments')}
                             </Link>

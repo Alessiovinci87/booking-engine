@@ -34,6 +34,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $computed_total_cents
  * @property int $discount_cents
  * @property int $final_total_cents
+ * @property string $currency
  * @property list<array<string, mixed>> $price_lines
  * @property BookingMode $booking_mode_snapshot
  * @property PaymentMode $payment_mode_snapshot

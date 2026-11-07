@@ -55,6 +55,8 @@ function deleteCommittedTenant(string $tenantId): void
 
     // Riferimento circolare struttura ↔ politica di cancellazione predefinita.
     $db->table('properties')->where('tenant_id', $tenantId)->update(['default_cancellation_policy_id' => null]);
+    // Riferimento circolare preventivo ↔ prenotazione del tentativo attivo.
+    $db->table('quotes')->where('tenant_id', $tenantId)->update(['active_reservation_id' => null]);
 
     // Più passate: una riga referenziata si cancella al giro successivo.
     for ($pass = 0; $pass < 10 && $tables !== []; $pass++) {

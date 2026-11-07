@@ -137,5 +137,24 @@
         "NOT_FOUND": "Not found.",
         "FORBIDDEN": "This action is not allowed from this page.",
         "SERVER_ERROR": "Something went wrong. Please try again later."
+    },
+    "quote": {
+        "title": "Your quote",
+        "summary_one": "{{unit}} from {{checkIn}} to {{checkOut}} ({{count}} night)",
+        "summary_other": "{{unit}} from {{checkIn}} to {{checkOut}} ({{count}} nights)",
+        "guests_one": "{{count}} guest",
+        "guests_other": "{{count}} guests",
+        "validUntil": "valid until {{date}}",
+        "accept": "Accept and continue to payment",
+        "inCheckout": "Payment for this quote has already started: continuing resumes the same payment.",
+        "alreadyAccepted": "This quote has already been accepted. You will receive, or have received, an email with the booking details.",
+        "notFound": "Quote not found. Please check the link you received.",
+        "QUOTE_EXPIRED": "This quote has expired. Contact the property to receive a new one.",
+        "QUOTE_REVOKED": "This quote has been withdrawn by the property.",
+        "QUOTE_EXHAUSTED": "Too many payment attempts have been made for this quote. Please contact the property.",
+        "QUOTE_ALREADY_ACCEPTED": "This quote has already been accepted.",
+        "QUOTE_CHECKOUT_IN_PROGRESS": "The payment started earlier is being closed. Please try again in a few minutes.",
+        "DATES_UNAVAILABLE": "The dates of this quote are no longer available. Please contact the property.",
+        "OCCUPANCY_EXCEEDED": "The number of guests in this quote exceeds the current capacity of the accommodation. Please contact the property."
     }
 }

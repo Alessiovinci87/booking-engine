@@ -129,6 +129,38 @@ export interface ReservationStatus {
     cancellation_policy: CancellationPolicy | null;
 }
 
+/** Preventivo per la pagina ospite /q/{token} (07 GET /public/quotes/{token}): prezzo congelato. */
+export interface PublicQuote extends PriceQuote {
+    status: 'SENT' | 'IN_CHECKOUT' | 'ACCEPTED';
+    expires_at: string;
+    accepted: boolean;
+    in_checkout: boolean;
+    guest: { name: string | null; email: string | null; locale: string };
+    property: {
+        tenant_slug: string;
+        slug: string;
+        name: string;
+        contact_email: string | null;
+        contact_phone: string | null;
+        privacy_policy_url: string | null;
+        terms_url: string | null;
+        privacy_version: string | null;
+        terms_version: string | null;
+    };
+    unit: { id: string; name: string };
+}
+
+export interface QuoteAccepted extends Omit<ReservationStarted, 'access_token'> {
+    access_token: string | null;
+}
+
+/** /q/{token}: token del preventivo nel percorso. */
+export function quoteToken(pathname: string = window.location.pathname): string | null {
+    const match = /^\/q\/([A-Za-z0-9_-]{43})\/?$/.exec(pathname);
+
+    return match?.[1] ?? null;
+}
+
 export class ApiError extends Error {
     constructor(
         public readonly status: number,
@@ -196,6 +228,9 @@ export const publicApi = {
         request<PriceQuote>('POST', `${base()}/quote-price`, input),
     reserve: (body: Record<string, unknown>, idempotencyKey: string) =>
         request<ReservationStarted>('POST', `${base()}/reservations`, body, idempotencyKey),
+    quoteView: (token: string) => request<PublicQuote>('GET', `/api/v1/public/quotes/${token}`),
+    acceptQuote: (token: string, body: Record<string, unknown>, idempotencyKey: string) =>
+        request<QuoteAccepted>('POST', `/api/v1/public/quotes/${token}/accept`, body, idempotencyKey),
     status: (code: string, token: string) =>
         request<ReservationStatus>('GET', `/api/v1/public/reservations/${encodeURIComponent(code)}?token=${encodeURIComponent(token)}`),
 };

@@ -84,4 +84,8 @@ return [
         'subject' => 'Calendario :source non sincronizzato: :unit',
         'lines' => ['Da oltre 3 ore non riusciamo a leggere il calendario :source di :unit (:property).', 'Le date già importate restano bloccate, ma eventuali nuove prenotazioni dell’OTA potrebbero non essere visibili. Controlla il collegamento nel pannello.'],
     ],
+    'quote_sent' => [
+        'subject' => 'Il tuo preventivo per :property',
+        'lines' => ['Ecco il preventivo per :unit dal :check_in al :check_out: totale :amount.', 'Il preventivo è valido fino al :expires_at (UTC). Puoi prenotare dal link qui sotto.'],
+    ],
 ];

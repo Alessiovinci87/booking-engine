@@ -10,6 +10,7 @@ import { guestLocation } from './api';
 import { i18n } from './i18n';
 import { BookingPage } from './pages/BookingPage';
 import { PropertyPage } from './pages/PropertyPage';
+import { QuotePage } from './pages/QuotePage';
 import { ReservationPage } from './pages/ReservationPage';
 
 const queryClient = new QueryClient({ defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } } });
@@ -32,6 +33,7 @@ createRoot(container).render(
                         <Route path="/" element={<PropertyPage />} />
                         <Route path="/alloggi/:unitId" element={<BookingPage embed={isEmbed} />} />
                         <Route path="/prenotazione/:code" element={<ReservationPage />} />
+                        <Route path="/q/:token" element={<QuotePage />} />
                         <Route path="*" element={<PropertyPage />} />
                     </Routes>
                 </BrowserRouter>

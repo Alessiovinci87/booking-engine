@@ -88,7 +88,7 @@ it('nessuna policy permissiva aggiuntiva apre le tabelle tenant-scoped ad app_ru
 
     $violations = array_values(array_filter(
         array_map(fn ($row) => "{$row->table_name}.{$row->polname} {$row->roles}", $extra),
-        fn (string $line) => ! preg_match('/^(tenants|tenant_members|reservations|stripe_accounts|ics_feeds)\.definer_lookup \{app_migrator\}$/', $line),
+        fn (string $line) => ! preg_match('/^(tenants|tenant_members|reservations|stripe_accounts|ics_feeds|quotes)\.definer_lookup \{app_migrator\}$/', $line),
     ));
 
     expect($violations)->toBe([]);

@@ -66,6 +66,17 @@ L'implementazione di M5 (import ed export iCal, conflitti, preventivi) ha incont
 34. **Sincronizza ora**: 429 `RATE_LIMITED` se ripetuto entro 2 minuti per lo stesso calendario; stesso lock del job. Dell'URL l'API restituisce solo l'host (`url_host`).
 35. **Checklist di collegamento** (06): passi `{canale}.feed_created` e `{canale}.calendar_imported` (non per "altro") calcolati, `{canale}.feed_linked` e, con almeno due OTA, `direct_links_removed` confermati dal gestore (`POST .../calendar-checklist/confirm`, 422 `CHECKLIST_STEP_INVALID` per un passo non manuale o assente). Le conferme stanno in `units.calendar_checklist` (jsonb: passo → istante e utente), con audit `unit.calendar_checklist_confirmed`. Un indizio per `feed_linked` è l'ultima lettura del feed da parte dell'OTA.
 
+### Preventivi (5.7)
+
+36. **Link del preventivo**: il token è un HMAC-SHA256 dell'ID del preventivo con una chiave derivata da `APP_KEY`, in base64url (43 caratteri). Nel database resta solo `public_token_hash` (02), ma il pannello può mostrare di nuovo lo stesso link ("Copia link", WhatsApp, email) senza conservarlo in chiaro. Il link non si invalida cambiando token ma con lo stato (`REVOKED`, `EXPIRED`, `EXHAUSTED`). Pagina ospite `/q/{token}`, API `/public/quotes/{token}`; il tenant si ricava dall'hash con la funzione SECURITY DEFINER `app_tenant_by_quote` (stesso schema dei feed).
+37. **Invio**: `POST /quotes/{id}/send` con `channel` = `email` (outbox `quote.sent`, payload solo ID; 422 `QUOTE_EMAIL_MISSING` senza email) o `link` (copia del link e WhatsApp). Entrambi portano DRAFT → SENT e restituiscono `link`, `whatsapp_text` (nella lingua dell'ospite, senza dati personali) e `whatsapp_url` (`https://wa.me/?text=…`, senza numero di telefono). Un DRAFT non è leggibile dall'ospite (404).
+38. **Valuta congelata**: `quotes.currency` (nuova colonna, copiata dal piano alla creazione), così l'accettazione non rilegge le tariffe.
+39. **Accettazione**: in una transazione con la riga del preventivo bloccata si verificano scadenza (se superata il preventivo passa subito a EXPIRED e la risposta è 410), tentativi, capienza attuale (409 `OCCUPANCY_EXCEEDED`), unità prenotabile e disponibilità, poi T1 con prezzo, righe, caparra e modalità del preventivo (`NewReservation` porta le modalità congelate; con un calendario esterno attivo prevale REQUEST, I12). La sessione di pagamento si apre fuori dalla transazione (05). Il prezzo congelato non viene mai ricalcolato.
+40. **Secondo accept (I21)**: con il preventivo IN_CHECKOUT e il tentativo ancora valido (prenotazione AWAITING_PAYMENT, pagamento PENDING non scaduto) la risposta è `200` con lo stesso `reservation_code` e lo stesso `checkout_url` (la sessione si recupera con la stessa idempotency key); `access_token` è `null` perché il token di accesso si mostra una sola volta. Con il tentativo scaduto ma non ancora rilasciato dal job: 409 `QUOTE_CHECKOUT_IN_PROGRESS`. Un accept su un preventivo ACCEPTED: 409 `QUOTE_ALREADY_ACCEPTED`.
+41. **Esito del tentativo**: la `ReservationStateMachine`, in ogni transizione di una prenotazione con `quote_id`, chiama `QuoteStateMachine::reservationChanged` nella stessa transazione: AWAITING_APPROVAL, CAPTURING o CONFIRMED → ACCEPTED; EXPIRED o PAYMENT_FAILED → SENT, EXPIRED se il preventivo è scaduto, EXHAUSTED se i tentativi sono finiti. Un preventivo ritirato durante il checkout resta REVOKED qualunque sia l'esito del tentativo.
+42. **Scadenza**: oltre al controllo all'accettazione, un job ogni 5 minuti (dispatcher con app_admin_ops, un job per tenant) porta a EXPIRED i DRAFT e i SENT scaduti; il pannello non invia un preventivo scaduto (410). Scadenza personalizzabile alla creazione, al massimo 90 giorni.
+43. **Disponibilità alla creazione**: il pannello non crea preventivi su date già non vendibili (409 `DATES_UNAVAILABLE`); la disponibilità si verifica comunque di nuovo all'accettazione.
+
 ## Alternative considerate
 
 | Alternativa | Perché scartata |
@@ -79,8 +90,8 @@ L'implementazione di M5 (import ed export iCal, conflitti, preventivi) ha incont
 
 ## Impatto sui test
 
-- Test aggiunti: `Unit/Calendar/SafeHttpFetcherTest`, `Unit/Calendar/IcsParserTest`, `Feature/Calendar/IcalImportTest`, `SyncErrorKeepsDatesTest`, `AntiWipeSafeguardTest`, `ConflictOnConfirmedTest`, `ConflictCloseKeepsDatesTest`, `EchoLoopTest`, `FeedMatrixTest`, `IcsUidStabilityTest`, `IcsFeedEndpointTest`, `FrozenFeedNeverEmptyTest`, `RetiredFeed410Test`, `SyncUnhealthyTest`, `ExternalCalendarApiTest`, `CalendarChecklistTest`.
-- Test modificati: `Arch/ExternalHttpTest` (eccezione per `CurlTransport`), `Database/IcsFeedUniquenessTest` (`frozen_at` obbligatorio per i feed FROZEN), `Architecture/RlsCatalogTest` (policy `definer_lookup` su `ics_feeds`).
+- Test aggiunti: `Unit/Calendar/SafeHttpFetcherTest`, `Unit/Calendar/IcsParserTest`, `Feature/Calendar/IcalImportTest`, `SyncErrorKeepsDatesTest`, `AntiWipeSafeguardTest`, `ConflictOnConfirmedTest`, `ConflictCloseKeepsDatesTest`, `EchoLoopTest`, `FeedMatrixTest`, `IcsUidStabilityTest`, `IcsFeedEndpointTest`, `FrozenFeedNeverEmptyTest`, `RetiredFeed410Test`, `SyncUnhealthyTest`, `ExternalCalendarApiTest`, `CalendarChecklistTest`, `Feature/Quotes/QuoteAcceptTest`, `QuoteExpiredTest`, `QuoteConcurrencyTest` (processi paralleli), `QuoteFrozenPriceTest`.
+- Test modificati: `Arch/ExternalHttpTest` (eccezione per `CurlTransport`), `Database/IcsFeedUniquenessTest` (`frozen_at` obbligatorio per i feed FROZEN), `Architecture/RlsCatalogTest` (policy `definer_lookup` su `ics_feeds` e `quotes`).
 
 ## Aggiornamento della specifica
 

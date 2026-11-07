@@ -19,6 +19,7 @@ import { NotFoundPage } from './pages/NotFoundPage';
 import { PaymentsPage } from './pages/PaymentsPage';
 import { PropertiesPage } from './pages/PropertiesPage';
 import { PropertyPage } from './pages/PropertyPage';
+import { QuotesPage } from './pages/QuotesPage';
 import { ReservationDetailPage } from './pages/ReservationDetailPage';
 import { ReservationsPage } from './pages/ReservationsPage';
 import { UnitPage } from './pages/UnitPage';
@@ -94,6 +95,7 @@ createRoot(container).render(
                             <Route path="prenotazioni/nuova" element={<NewReservationPage />} />
                             <Route path="prenotazioni/:reservationId" element={<ReservationDetailPage />} />
                             <Route path="pagamenti" element={<PaymentsPage />} />
+                            <Route path="preventivi" element={<QuotesPage />} />
                             <Route path="*" element={<NotFoundPage />} />
                         </Route>
                     </Routes>

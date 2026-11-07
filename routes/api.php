@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\V1\Admin\IcsFeedController;
 use App\Http\Controllers\Api\V1\Admin\MeController;
 use App\Http\Controllers\Api\V1\Admin\PricePreviewController;
 use App\Http\Controllers\Api\V1\Admin\PropertyController;
+use App\Http\Controllers\Api\V1\Admin\QuoteController;
 use App\Http\Controllers\Api\V1\Admin\RatePlanController;
 use App\Http\Controllers\Api\V1\Admin\RefundController;
 use App\Http\Controllers\Api\V1\Admin\ReservationController;
@@ -20,12 +21,13 @@ use App\Http\Controllers\Api\V1\Admin\StripeAccountController;
 use App\Http\Controllers\Api\V1\Admin\UnitController;
 use App\Http\Controllers\Api\V1\Admin\UnitPhotoController;
 use App\Http\Controllers\Api\V1\Public\PropertyController as PublicPropertyController;
+use App\Http\Controllers\Api\V1\Public\QuoteController as PublicQuoteController;
 use App\Http\Controllers\Api\V1\Public\ReservationController as PublicReservationController;
 use Illuminate\Support\Facades\Route;
 use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful;
 
 // Identificativi UUID nei percorsi: un valore diverso non trova la rotta (404) e non arriva mai al database.
-foreach (['property', 'unit', 'photo', 'season', 'reservation', 'block', 'refund'] as $parameter) {
+foreach (['property', 'unit', 'photo', 'season', 'reservation', 'block', 'refund', 'quote'] as $parameter) {
     Route::pattern($parameter, '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}');
 }
 
@@ -65,6 +67,9 @@ Route::prefix('admin')->middleware(EnsureFrontendRequestsAreStateful::class)->gr
         Route::post('units/{unit}/blocks', [BlockController::class, 'store'])->name('admin.units.blocks.store');
         Route::post('refunds/{refund}/retry', [RefundController::class, 'retry'])->middleware('reauth')->name('admin.refunds.retry');
         Route::post('refunds/{refund}/mark-offline', [RefundController::class, 'markOffline'])->middleware('reauth')->name('admin.refunds.mark-offline');
+        Route::post('quotes', [QuoteController::class, 'store'])->name('admin.quotes.store');
+        Route::post('quotes/{quote}/send', [QuoteController::class, 'send'])->name('admin.quotes.send');
+        Route::post('quotes/{quote}/revoke', [QuoteController::class, 'revoke'])->name('admin.quotes.revoke');
     });
 
     // Chiamate al servizio di pagamento fuori transazione (05): il servizio apre i propri passi.
@@ -135,7 +140,22 @@ Route::prefix('admin')->middleware(EnsureFrontendRequestsAreStateful::class)->gr
         Route::post('conflicts/{conflict}/resolve', [ConflictController::class, 'resolve'])->name('admin.conflicts.resolve');
         Route::post('conflicts/{conflict}/ignore', [ConflictController::class, 'ignore'])->name('admin.conflicts.ignore');
         Route::post('external-events/{event}/not-echo', [ConflictController::class, 'notAnEcho'])->name('admin.external-events.not-echo');
+
+        Route::get('quotes', [QuoteController::class, 'index'])->name('admin.quotes.index');
+        Route::get('quotes/{quote}', [QuoteController::class, 'show'])->name('admin.quotes.show');
     });
+});
+
+// Preventivo dalla pagina ospite /q/{token} (07, 5.7): tenant dal token; accettazione con
+// Idempotency-Key, limite per IP ed email e passi fuori transazione (sessione di pagamento, 05). Registrate prima di public/{t}/{p}:
+// un token di sole minuscole e cifre corrisponderebbe anche a quelle rotte.
+Route::prefix('public/quotes/{token}')->where(['token' => '[A-Za-z0-9_-]{43}'])->middleware(['guest.locale'])->group(function (): void {
+    Route::get('/', [PublicQuoteController::class, 'show'])
+        ->middleware(['throttle:public-read', 'tenant:quote'])
+        ->name('public.quotes.show');
+    Route::post('accept', [PublicQuoteController::class, 'accept'])
+        ->middleware(['throttle:public-booking', 'idempotent', 'tenant:quote,steps'])
+        ->name('public.quotes.accept');
 });
 
 /*

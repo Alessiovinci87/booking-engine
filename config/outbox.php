@@ -1,6 +1,7 @@
 <?php
 
 use App\Domain\Calendar\Outbox\SendCalendarEmail;
+use App\Domain\Quotes\Outbox\SendQuoteEmail;
 use App\Domain\Reservations\Outbox\SendReservationEmail;
 
 /*
@@ -31,6 +32,7 @@ return [
         'calendar.conflict_opened' => SendCalendarEmail::class,
         'calendar.conflict_auto_resolved' => SendCalendarEmail::class,
         'calendar.sync_unhealthy' => SendCalendarEmail::class,
+        'quote.sent' => SendQuoteEmail::class,
     ],
 
     // Tentativi massimi prima dello stato FAILED.

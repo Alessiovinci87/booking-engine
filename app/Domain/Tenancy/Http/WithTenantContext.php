@@ -3,6 +3,7 @@
 namespace App\Domain\Tenancy\Http;
 
 use App\Domain\Tenancy\PublicSlugTenantResolver;
+use App\Domain\Tenancy\QuoteTokenTenantResolver;
 use App\Domain\Tenancy\ReservationAccessTenantResolver;
 use App\Domain\Tenancy\TenantContext;
 use App\Domain\Tenancy\TenantResolver;
@@ -16,7 +17,7 @@ use Symfony\Component\HttpFoundation\Response;
  *
  * `tenant` usa il risolutore del pannello (membership); `tenant:public` ricava il tenant dallo slug
  * nel percorso (API pubblica, 07); `tenant:reservation` lo ricava da codice e token della prenotazione
- * (GET /public/reservations/{code}?token=).
+ * (GET /public/reservations/{code}?token=); `tenant:quote` dal token del preventivo (/public/quotes/{token}).
  *
  * Con il secondo parametro `steps` (`tenant:panel,steps`, `tenant:public,steps`) la richiesta non viene
  * avvolta in una transazione: il tenant risolto finisce nell'attributo `tenant_id` e il servizio apre i
@@ -34,6 +35,7 @@ final class WithTenantContext
         private readonly TenantResolver $resolver,
         private readonly PublicSlugTenantResolver $publicResolver,
         private readonly ReservationAccessTenantResolver $reservationResolver,
+        private readonly QuoteTokenTenantResolver $quoteResolver,
     ) {}
 
     /**
@@ -46,6 +48,7 @@ final class WithTenantContext
         $resolver = match ($surface) {
             'public' => $this->publicResolver,
             'reservation' => $this->reservationResolver,
+            'quote' => $this->quoteResolver,
             default => $this->resolver,
         };
         $tenantId = $resolver->resolve($request);
