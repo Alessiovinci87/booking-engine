@@ -25,3 +25,6 @@ Thumbs.db
 /storage/e2e-screenshots
 /playwright-report
 /test-results
+
+# Permessi locali di Claude Code (non condivisi)
+.claude/settings.local.json
