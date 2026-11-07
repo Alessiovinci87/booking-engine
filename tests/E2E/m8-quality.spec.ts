@@ -22,6 +22,7 @@ const TENANT = 'demo-alghero';
 const PROPERTY = 'casa-demo-alghero';
 const OWNER_EMAIL = 'proprietario.demo@example.test';
 const GUEST_PAGE = `/p/${TENANT}/${PROPERTY}`;
+const LIGHTHOUSE_RUNS = Number(process.env.LIGHTHOUSE_RUNS ?? 5);
 const EMBED_PAGE = `/e/${TENANT}/${PROPERTY}`;
 
 /** Con M8_STRICT=0 i controlli di 8.3 e 8.4 si registrano soltanto (misura "prima"). */
@@ -224,6 +225,9 @@ test.describe('M8 qualità del frontend', () => {
         const page = await context.newPage();
         await page.goto(`/p/${TENANT}/casa-golden-e2e`);
         await page.getByTestId('unit-card').first().getByRole('link').first().click();
+        // La pagina di prenotazione si carica su richiesta (8.4): anche la pagina della struttura ha una
+        // galleria, quindi si aspetta il titolo prima di ingrandire.
+        await expect(page.getByRole('heading', { level: 1, name: /^Prenota / })).toBeVisible();
         await page.getByTestId('gallery-zoom').click();
         await expect(page.getByTestId('gallery-dialog')).toBeVisible();
         await expect(page.getByRole('button', { name: 'Chiudi' })).toBeFocused();
@@ -359,16 +363,29 @@ test.describe('M8 qualità del frontend', () => {
         try {
             for (const [server, base] of [['senza_compressione', target.origin], ['compresso', `http://127.0.0.1:${proxyPort}`]] as const) {
                 for (const [key, path] of [['struttura', GUEST_PAGE], ['embed', EMBED_PAGE]] as const) {
-                    const result = await lighthouse(`${base}${path}`, { port, output: 'json', logLevel: 'error', onlyCategories: ['performance', 'accessibility'] });
-                    const categories = result?.lhr.categories ?? {};
-                    scores[`${server}_${key}`] = {
-                        performance: Math.round((categories.performance?.score ?? 0) * 100),
-                        accessibility: Math.round((categories.accessibility?.score ?? 0) * 100),
-                        lcp_ms: Math.round(Number(result?.lhr.audits['largest-contentful-paint']?.numericValue ?? 0)),
-                        tbt_ms: Math.round(Number(result?.lhr.audits['total-blocking-time']?.numericValue ?? 0)),
-                        cls: Number(result?.lhr.audits['cumulative-layout-shift']?.numericValue ?? 0),
-                    };
-                    writeFileSync(`${SCREENSHOT_DIR}/lighthouse-${server}-${key}.json`, typeof result?.report === 'string' ? result.report : '');
+                    // Mediana di più esecuzioni (come raccomanda Lighthouse): il tempo di blocco sotto il
+                    // rallentamento della CPU varia molto da una misura all'altra su una macchina di sviluppo.
+                    const runs: Array<{ scores: Record<string, number>; report: string }> = [];
+
+                    for (let run = 0; run < LIGHTHOUSE_RUNS; run++) {
+                        const result = await lighthouse(`${base}${path}`, { port, output: 'json', logLevel: 'error', onlyCategories: ['performance', 'accessibility'] });
+                        const categories = result?.lhr.categories ?? {};
+                        runs.push({
+                            scores: {
+                                performance: Math.round((categories.performance?.score ?? 0) * 100),
+                                accessibility: Math.round((categories.accessibility?.score ?? 0) * 100),
+                                lcp_ms: Math.round(Number(result?.lhr.audits['largest-contentful-paint']?.numericValue ?? 0)),
+                                tbt_ms: Math.round(Number(result?.lhr.audits['total-blocking-time']?.numericValue ?? 0)),
+                                cls: Number(result?.lhr.audits['cumulative-layout-shift']?.numericValue ?? 0),
+                            },
+                            report: typeof result?.report === 'string' ? result.report : '',
+                        });
+                    }
+
+                    runs.sort((a, b) => (a.scores.performance ?? 0) - (b.scores.performance ?? 0));
+                    const median = runs[Math.floor(runs.length / 2)];
+                    scores[`${server}_${key}`] = { ...median?.scores, runs: runs.length, performance_min: runs[0]?.scores.performance ?? 0, performance_max: runs[runs.length - 1]?.scores.performance ?? 0 };
+                    writeFileSync(`${SCREENSHOT_DIR}/lighthouse-${server}-${key}.json`, median?.report ?? '');
                 }
             }
         } finally {
