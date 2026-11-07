@@ -545,6 +545,8 @@ final class ReservationStateMachine
         $reservation->confirmed_at = CarbonImmutable::now();
         $this->inventory->promoteToFirm($reservation);
         $this->notify($reservation, 'reservation.confirmed');
+        // Nuova prenotazione confermata online: avviso al gestore (6.1, ADR-0014).
+        $this->notify($reservation, 'reservation.confirmed_manager');
     }
 
     /** Pagamento online della prenotazione nello stato atteso (l'ultimo creato). */

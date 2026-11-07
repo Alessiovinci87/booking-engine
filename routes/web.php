@@ -1,6 +1,7 @@
 <?php
 
 use App\Domain\Payments\Gateway\Fake\FakePaymentGateway;
+use App\Http\Controllers\DevMailController;
 use App\Http\Controllers\GuestPageController;
 use App\Http\Controllers\IcalFeedController;
 use App\Http\Controllers\SimulatedCheckoutController;
@@ -67,4 +68,16 @@ if (config('payments.gateway') === 'fake' && FakePaymentGateway::allowedIn((stri
         ->middleware('security:page')
         ->where(['session' => 'cs_fake_[a-f0-9]{24}', 'action' => 'pay|decline|abandon'])
         ->name('simulated-checkout.act');
+}
+
+// Casella di anteprima delle email (6.1): solo APP_ENV=local (in testing la rotta esiste ma il
+// controller risponde 404 finché l'ambiente non è local). Mai in staging e produzione.
+if (app()->environment('local', 'testing')) {
+    Route::get('/dev/mail/{id?}', [DevMailController::class, 'index'])
+        ->middleware('security:page')
+        ->where('id', '[0-9A-HJKMNP-TV-Z]{26}')
+        ->name('dev.mail');
+    Route::post('/dev/mail/clear', [DevMailController::class, 'clear'])
+        ->middleware('security:page')
+        ->name('dev.mail.clear');
 }

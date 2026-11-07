@@ -8,6 +8,10 @@ return [
         'subject' => 'Booking confirmed :code',
         'lines' => ['Booking :code for :unit from :check_in to :check_out is confirmed.', 'Total for the stay: :amount.'],
     ],
+    'confirmed_manager' => [
+        'subject' => 'New confirmed booking :code',
+        'lines' => ['Booking :code by :guest for :unit from :check_in to :check_out is confirmed and paid online.', 'Total for the stay: :amount. The dates are blocked on every channel at the next calendar update.'],
+    ],
     'awaiting_approval' => [
         'subject' => 'Request received :code',
         'lines' => ['We received request :code for :unit from :check_in to :check_out.', 'The amount is only authorised: it will be charged if the property confirms.'],

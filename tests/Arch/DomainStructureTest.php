@@ -15,6 +15,7 @@ it('ha le aree di dominio e le cartelle dei controller previste da ADR-0006', fu
     'app/Domain/Calendar',
     'app/Domain/Quotes',
     'app/Domain/Privacy',
+    'app/Domain/Communications',
     'app/Domain/Tenancy',
     'app/Http/Controllers/Api/V1/Admin',
     'app/Http/Controllers/Api/V1/Public',

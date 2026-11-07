@@ -3,12 +3,12 @@
 namespace App\Domain\Calendar\Outbox;
 
 use App\Domain\Calendar\Models\ExternalCalendar;
+use App\Domain\Communications\TransactionalEmail;
+use App\Domain\Communications\TransactionalMailer;
 use App\Domain\Inventory\Models\InventoryConflict;
 use App\Domain\Inventory\Models\Unit;
-use App\Domain\Reservations\Outbox\ReservationEmail;
 use App\Domain\Tenancy\Models\OutboxMessage;
 use App\Domain\Tenancy\Outbox\OutboxHandler;
-use Illuminate\Support\Facades\Mail;
 
 /**
  * Email al gestore sui calendari (06): conflitto aperto, conflitto risolto automaticamente, calendario
@@ -17,6 +17,8 @@ use Illuminate\Support\Facades\Mail;
  */
 final class SendCalendarEmail implements OutboxHandler
 {
+    public function __construct(private readonly TransactionalMailer $mailer) {}
+
     public function handle(OutboxMessage $message): void
     {
         $payload = $message->payload;
@@ -57,12 +59,16 @@ final class SendCalendarEmail implements OutboxHandler
         /** @var list<string> $lines */
         $lines = array_values((array) __($key.'.lines', $replace, 'it'));
 
-        Mail::to($recipient)->locale('it')->send(new ReservationEmail(
-            subjectLine: (string) __($key.'.subject', $replace, 'it'),
+        $this->mailer->send(new TransactionalEmail(
+            to: $recipient,
+            locale: 'it',
+            subject: (string) __($key.'.subject', $replace, 'it'),
             greeting: (string) __('emails.greeting', [], 'it'),
             lines: $lines,
             link: rtrim((string) config('app.url'), '/').$path,
             signature: (string) __('emails.signature', ['property' => $unit->property->name], 'it'),
+            category: $message->type,
+            idempotencyKey: 'outbox:'.$message->id,
         ));
     }
 }

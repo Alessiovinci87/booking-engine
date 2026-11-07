@@ -2,13 +2,13 @@
 
 namespace App\Domain\Quotes\Outbox;
 
+use App\Domain\Communications\TransactionalEmail;
+use App\Domain\Communications\TransactionalMailer;
 use App\Domain\Quotes\Enums\QuoteStatus;
 use App\Domain\Quotes\Models\Quote;
 use App\Domain\Quotes\QuoteLinks;
-use App\Domain\Reservations\Outbox\ReservationEmail;
 use App\Domain\Tenancy\Models\OutboxMessage;
 use App\Domain\Tenancy\Outbox\OutboxHandler;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Number;
 
 /**
@@ -18,6 +18,8 @@ use Illuminate\Support\Number;
  */
 final class SendQuoteEmail implements OutboxHandler
 {
+    public function __construct(private readonly TransactionalMailer $mailer) {}
+
     public function handle(OutboxMessage $message): void
     {
         $quote = Quote::query()->with('unit.property')->find($message->payload['quote_id'] ?? null);
@@ -40,12 +42,17 @@ final class SendQuoteEmail implements OutboxHandler
         /** @var list<string> $lines */
         $lines = array_values((array) __('emails.quote_sent.lines', $replace, $locale));
 
-        Mail::to($quote->guest_email)->locale($locale)->send(new ReservationEmail(
-            subjectLine: (string) __('emails.quote_sent.subject', $replace, $locale),
+        $this->mailer->send(new TransactionalEmail(
+            to: $quote->guest_email,
+            locale: $locale,
+            subject: (string) __('emails.quote_sent.subject', $replace, $locale),
             greeting: (string) __('emails.greeting', [], $locale),
             lines: $lines,
             link: QuoteLinks::url($quote),
             signature: (string) __('emails.signature', ['property' => $property->name], $locale),
+            category: $message->type,
+            idempotencyKey: 'outbox:'.$message->id,
+            replyTo: $property->contact_email,
         ));
     }
 }

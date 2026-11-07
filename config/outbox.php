@@ -13,6 +13,7 @@ return [
     // I tipi arrivano con le milestone che li generano (email di conferma, notifiche, ...).
     'handlers' => [
         'reservation.confirmed' => SendReservationEmail::class,
+        'reservation.confirmed_manager' => SendReservationEmail::class,
         'reservation.awaiting_approval' => SendReservationEmail::class,
         'reservation.approval_requested' => SendReservationEmail::class,
         'reservation.expired' => SendReservationEmail::class,

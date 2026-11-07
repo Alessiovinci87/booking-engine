@@ -93,7 +93,7 @@ it('T3: pagamento riuscito di una prenotazione INSTANT → CONFIRMED, occupazion
         ->and($r->confirmation_kind)->toBe(ConfirmationKind::ONLINE_PAYMENT)
         ->and(occupancyOf($this->instant, $r)->phase)->toBe(OccupancyPhase::FIRM)
         ->and(latestPayment($this->instant, $r->id)->status)->toBe(PaymentStatus::SUCCEEDED)
-        ->and(outboxTypes($this->instant, $r))->toBe(['reservation.confirmed']);
+        ->and(outboxTypes($this->instant, $r))->toBe(['reservation.confirmed', 'reservation.confirmed_manager']);
 });
 
 it('T4: autorizzazione di una richiesta → AWAITING_APPROVAL con approval_deadline', function () {

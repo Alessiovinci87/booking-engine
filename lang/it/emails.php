@@ -8,6 +8,10 @@ return [
         'subject' => 'Prenotazione confermata :code',
         'lines' => ['La prenotazione :code per :unit dal :check_in al :check_out è confermata.', 'Totale del soggiorno: :amount.'],
     ],
+    'confirmed_manager' => [
+        'subject' => 'Nuova prenotazione confermata :code',
+        'lines' => ['La prenotazione :code di :guest per :unit dal :check_in al :check_out è confermata e pagata online.', 'Totale del soggiorno: :amount. Le date sono bloccate su tutti i canali al prossimo aggiornamento dei calendari.'],
+    ],
     'awaiting_approval' => [
         'subject' => 'Richiesta ricevuta :code',
         'lines' => ['Abbiamo ricevuto la richiesta :code per :unit dal :check_in al :check_out.', 'L’importo è solo autorizzato: verrà addebitato se la struttura conferma.'],
