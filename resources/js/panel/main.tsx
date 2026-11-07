@@ -10,12 +10,16 @@ import { AuthGate } from './auth/AuthGate';
 import { sessionQueryKey } from './auth/session';
 import { PanelLayout } from './components/PanelLayout';
 import { i18n } from './i18n';
+import { AccountPage } from './pages/AccountPage';
 import { CalendarPage } from './pages/CalendarPage';
 import { CalendarsPage } from './pages/CalendarsPage';
 import { ConflictsPage } from './pages/ConflictsPage';
+import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 import { LoginPage } from './pages/LoginPage';
 import { MfaSetupPage } from './pages/MfaSetupPage';
 import { MfaVerifyPage } from './pages/MfaVerifyPage';
+import { GuestDataPage } from './pages/GuestDataPage';
+import { MetricsPage } from './pages/MetricsPage';
 import { NewReservationPage } from './pages/NewReservationPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { PaymentsPage } from './pages/PaymentsPage';
@@ -24,6 +28,7 @@ import { PropertyPage } from './pages/PropertyPage';
 import { QuotesPage } from './pages/QuotesPage';
 import { ReservationDetailPage } from './pages/ReservationDetailPage';
 import { ReservationsPage } from './pages/ReservationsPage';
+import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import { UnitPage } from './pages/UnitPage';
 
 const queryClient: QueryClient = new QueryClient({
@@ -67,6 +72,16 @@ createRoot(container).render(
                             }
                         />
                         <Route
+                            path="password-dimenticata"
+                            element={
+                                <AuthGate stage="anonymous">
+                                    <ForgotPasswordPage />
+                                </AuthGate>
+                            }
+                        />
+                        {/* Senza AuthGate: il link della email vale anche con una sessione aperta su questo browser. */}
+                        <Route path="reimposta-password" element={<ResetPasswordPage />} />
+                        <Route
                             path="mfa/setup"
                             element={
                                 <AuthGate stage="mfa-setup">
@@ -100,6 +115,9 @@ createRoot(container).render(
                             <Route path="preventivi" element={<QuotesPage />} />
                             <Route path="conflitti" element={<ConflictsPage />} />
                             <Route path="calendari" element={<CalendarsPage />} />
+                            <Route path="metriche" element={<MetricsPage />} />
+                            <Route path="ospiti/:guestId/dati" element={<GuestDataPage />} />
+                            <Route path="account" element={<AccountPage />} />
                             <Route path="*" element={<NotFoundPage />} />
                         </Route>
                     </Routes>

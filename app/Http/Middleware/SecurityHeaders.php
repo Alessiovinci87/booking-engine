@@ -16,7 +16,9 @@ use Symfony\Component\HttpFoundation\Response;
  *   nonce per richiesta (anche quelli che `@vite` genera);
  * - `frame-ancestors 'none'` per pannello, pagina ospite e API; la vista embed (`embed`) imposta le
  *   origini registrate dal gestore con `frame-ancestors` (attributo `embed_frame_ancestors`);
- * - `X-Content-Type-Options: nosniff` e `Referrer-Policy` ovunque.
+ * - `X-Content-Type-Options: nosniff` e `Referrer-Policy` ovunque;
+ * - `Strict-Transport-Security` sulle risposte https (08 "Dati e cifratura", 6.7), con
+ *   `security.hsts_max_age`; dietro un proxy serve `TRUSTED_PROXIES` perché la richiesta risulti https.
  *
  * Eccezione locale: con il server di sviluppo di Vite attivo (file public/hot) la sua origine entra in
  * script, stili e connessioni (anche websocket per l'aggiornamento a caldo) e gli stili inline sono
@@ -41,6 +43,12 @@ final class SecurityHeaders
 
         $response->headers->set('X-Content-Type-Options', 'nosniff');
         $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
+
+        $hstsMaxAge = (int) config('security.hsts_max_age', 0);
+
+        if ($hstsMaxAge > 0 && $request->isSecure()) {
+            $response->headers->set('Strict-Transport-Security', "max-age={$hstsMaxAge}; includeSubDomains");
+        }
         $response->headers->set('Content-Security-Policy', $surface === 'api'
             ? "default-src 'none'; frame-ancestors 'none'"
             : self::policy($nonce, $surface === 'embed' ? self::embedAncestors($request) : "'none'"));

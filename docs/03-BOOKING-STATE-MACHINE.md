@@ -47,7 +47,7 @@ Regole generali:
 |---|---|---|---|---|---|
 | T1 | — | `startCheckout` (ospite o preventivo) | date vendibili, prezzo dal server | `AWAITING_PAYMENT` | `acquire` occupazione `CHECKOUT` con scadenza provvisoria now + 45 min; `Payment PENDING`; poi creazione sessione Stripe e allineamento scadenze (05) |
 | T2 | — | `createManual` (gestore) | date vendibili | `CONFIRMED` | `acquire` `FIRM`; `confirmation_kind = ADMINISTRATIVE`; `Payment OFFLINE` facoltativo; economico `UNPAID` ammesso |
-| T3 | `AWAITING_PAYMENT` | pagamento riuscito, e (`INSTANT` oppure `purpose = RECOVERY`) | occupazione `ACTIVE` | `CONFIRMED` | `promoteToFirm`; `confirmation_kind = ONLINE_PAYMENT`; email conferma |
+| T3 | `AWAITING_PAYMENT` | pagamento riuscito, e (`INSTANT` oppure `purpose = RECOVERY`) | occupazione `ACTIVE` | `CONFIRMED` | `promoteToFirm`; `confirmation_kind = ONLINE_PAYMENT`; email conferma all'ospite e avviso al gestore (ADR-0014) |
 | T4 | `AWAITING_PAYMENT` | autorizzazione riuscita (`requires_capture`), `REQUEST` | occupazione `ACTIVE` | `AWAITING_APPROVAL` | `setTemporaryReason(AWAITING_APPROVAL, approval_deadline)`; email a gestore e ospite |
 | T5 | `AWAITING_PAYMENT` | job di rilascio: occupazione scaduta | sessione Stripe chiusa con `expire` o già scaduta | `EXPIRED` | `release`; email ospite se aveva lasciato email |
 | T6 | `AWAITING_PAYMENT` | job di rilascio: la sessione risulta **già completata** | — | come T3 o T4 | il job tratta l'esito come un webhook (I16) |
@@ -56,7 +56,7 @@ Regole generali:
 | T9 | `AWAITING_APPROVAL` | `approve` | `now < approval_deadline`, nessun conflitto aperto sulle date | `CAPTURING` | `setTemporaryReason(CAPTURING, null)`; job capture con idempotency key |
 | T10 | `AWAITING_APPROVAL` | `reject` | — | `REJECTED` | `release`; annullo autorizzazione (retry idempotente); email ospite |
 | T11 | `AWAITING_APPROVAL` | job: `approval_deadline` superata | stato invariato | `EXPIRED` | `release`; annullo autorizzazione; email ospite e gestore |
-| T12 | `CAPTURING` | capture riuscita | — | `CONFIRMED` | `promoteToFirm`; `confirmation_kind = ONLINE_PAYMENT`; email conferma |
+| T12 | `CAPTURING` | capture riuscita | — | `CONFIRMED` | `promoteToFirm`; `confirmation_kind = ONLINE_PAYMENT`; email conferma all'ospite e avviso al gestore (ADR-0014) |
 | T13 | `CAPTURING` | capture fallita definitiva | — | `CAPTURE_FAILED` | `setTemporaryReason(CAPTURE_FAILED, now + 24 h)`; notifica urgente al gestore |
 | T14 | `CAPTURING` | esito sconosciuto | — | `CAPTURING` | nessun rilascio; riconciliazione ogni 5 min; alert dopo 1 h |
 | T15 | `CAPTURE_FAILED` | `sendRecoveryLink` (gestore) | `now < decision_deadline` | `AWAITING_PAYMENT` | nuovo `Payment` `purpose = RECOVERY`, capture automatica; `setTemporaryReason(PAYMENT_RECOVERY, recovery_deadline + 5 min)`; email all'ospite con il link |

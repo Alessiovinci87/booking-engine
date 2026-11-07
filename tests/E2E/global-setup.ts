@@ -1,4 +1,5 @@
 import { execSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, rmSync } from 'node:fs';
 
 import { E2E_ENV } from './support/environment';
@@ -43,6 +44,22 @@ export default function globalSetup(): void {
 
     if (stripeAccount !== undefined && /^acct_[A-Za-z0-9]+$/.test(stripeAccount)) {
         artisan(['stripe:demo-account', `--account=${stripeAccount}`]);
+    }
+
+    // Limite di frequenza della prenotazione pubblica (10 ogni 10 minuti per IP): tutti gli spec arrivano da
+    // 127.0.0.1, quindi due esecuzioni ravvicinate lo esaurirebbero. Si azzera solo quel contatore, nella
+    // cache con il prefisso E2E (chiave della middleware throttle: md5(nome + chiave del limite)).
+    const limiterKey = createHash('md5').update('public-bookingpublic-booking:ip:127.0.0.1').digest('hex');
+    artisan(['cache:forget', limiterKey]);
+    artisan(['cache:forget', `${limiterKey}:timer`]);
+
+    // Stesso motivo per "password dimenticata" (6.11: 3 richieste all'ora per email, 10 per IP), usata da
+    // m6-password: chiavi del RateLimiter con l'hash dell'email del proprietario demo e dell'IP.
+    const sha256 = (value: string) => createHash('sha256').update(value).digest('hex');
+
+    for (const key of [`password-reset:email:${sha256('proprietario.demo@example.test')}`, `password-reset:ip:${sha256('127.0.0.1')}`]) {
+        artisan(['cache:forget', key]);
+        artisan(['cache:forget', `${key}:timer`]);
     }
 
     rmSync(SCREENSHOT_DIR, { recursive: true, force: true });

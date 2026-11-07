@@ -18,6 +18,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
  * @property string $password_hash
  * @property string|null $mfa_secret_encrypted
  * @property CarbonImmutable|null $mfa_enabled_at
+ * @property CarbonImmutable|null $sessions_revoked_at
  * @property Locale $locale
  */
 #[PersonalData('email')]
@@ -26,6 +27,13 @@ class User extends Authenticatable
     use HasUuids;
 
     protected $authPasswordName = 'password_hash';
+
+    /**
+     * Timestamp salvati al microsecondo (timestamptz): `sessions_revoked_at` si confronta con l'inizio
+     * della sessione con la stessa precisione (6.11, ADR-0016), così una sessione aperta subito dopo una
+     * revoca non viene chiusa.
+     */
+    protected $dateFormat = 'Y-m-d H:i:s.uO';
 
     /** @var list<string> */
     protected $fillable = ['email', 'password_hash', 'locale'];
@@ -39,6 +47,7 @@ class User extends Authenticatable
             'password_hash' => 'hashed',
             'mfa_secret_encrypted' => 'encrypted',
             'mfa_enabled_at' => 'immutable_datetime',
+            'sessions_revoked_at' => 'immutable_datetime',
             'locale' => Locale::class,
         ];
     }

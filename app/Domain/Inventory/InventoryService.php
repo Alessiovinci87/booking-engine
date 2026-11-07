@@ -204,6 +204,17 @@ final class InventoryService
         return $occupancy;
     }
 
+    /**
+     * Identificativi delle occupazioni delle prenotazioni indicate (anonimizzazione, 09).
+     *
+     * @param  list<string>  $reservationIds
+     * @return list<string>
+     */
+    public function occupancyIdsFor(array $reservationIds): array
+    {
+        return array_values(InventoryOccupancy::query()->whereIn('reservation_id', $reservationIds)->pluck('id')->all());
+    }
+
     public function findFor(Reservation $reservation): ?InventoryOccupancy
     {
         return InventoryOccupancy::query()->where('reservation_id', $reservation->id)->first();

@@ -43,12 +43,27 @@ export function PanelLayout() {
                             <Link to="/pagamenti" className="font-medium text-blue-700 hover:underline">
                                 {t('layout.payments')}
                             </Link>
+                            <Link to="/metriche" className="font-medium text-blue-700 hover:underline">
+                                {t('layout.metrics')}
+                            </Link>
                         </nav>
-                        {me.data && <span className="hidden text-slate-600 sm:inline">{me.data.user.email}</span>}
+                        {me.data && (
+                            <Link to="/account" className="hidden text-slate-600 hover:underline sm:inline" title={t('layout.account')}>
+                                {me.data.user.email}
+                            </Link>
+                        )}
+                        <Link to="/account" className="font-medium text-blue-700 hover:underline sm:hidden">
+                            {t('layout.account')}
+                        </Link>
                         <LogoutButton className="rounded-md border border-slate-300 px-3 py-1.5 text-slate-700 hover:bg-slate-50" />
                     </div>
                 </div>
             </header>
+            {me.data !== undefined && me.data.tenant.dpa_signed_at === null && (
+                <p className="border-b border-amber-200 bg-amber-50 px-4 py-2 text-center text-sm text-amber-900" data-testid="dpa-missing">
+                    {t('privacy.dpaMissing')}
+                </p>
+            )}
             <Outlet />
         </div>
     );

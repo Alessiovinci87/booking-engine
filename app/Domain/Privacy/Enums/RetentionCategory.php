@@ -12,4 +12,6 @@ enum RetentionCategory: string
     case E_IMPORTED_EVENTS = 'E_IMPORTED_EVENTS';
     case F_SECURITY_AUDIT = 'F_SECURITY_AUDIT';
     case G_COMMUNICATIONS = 'G_COMMUNICATIONS';
+    // Link di reimpostazione della password usati o scaduti (6.11, ADR-0016).
+    case H_PASSWORD_RESET_LINKS = 'H_PASSWORD_RESET_LINKS';
 }

@@ -185,3 +185,30 @@ it('richiede il link all\'informativa privacy e non lo lascia togliere dopo la p
         ->assertStatus(400)
         ->assertJsonStructure(['error' => ['details' => ['fields' => ['privacy_policy_url']]]]);
 });
+
+it('senza DPA firmato la struttura non si pubblica (09 requisito 1, ADR-0014)', function () {
+    publishReady($this->tenant, $this->property);
+    inTenant($this->tenant, fn () => DB::table('tenants')->update(['dpa_signed_at' => null, 'dpa_version' => null]));
+
+    panelPost($this, $this->publishUrl)
+        ->assertStatus(422)
+        ->assertJsonPath('error.code', 'DPA_NOT_SIGNED')
+        ->assertJsonPath('error.details.missing', ['DPA_NOT_SIGNED']);
+
+    $this->artisan('tenant:dpa', ['slug' => inTenant($this->tenant, fn () => DB::table('tenants')->value('slug')), 'dpa-version' => '2027-01', '--signed-at' => '2026-01-15'])
+        ->assertSuccessful();
+
+    panelGet($this, '/api/v1/admin/me')->assertOk()
+        ->assertJsonPath('tenant.dpa_version', '2027-01')
+        ->assertJsonPath('tenant.dpa_signed_at', '2026-01-15T00:00:00Z');
+    panelPost($this, $this->publishUrl)->assertOk()->assertJsonPath('status', 'PUBLISHED');
+    expect(inTenant($this->tenant, fn () => AuditLog::query()->where('action', 'tenant.dpa_recorded')->count()))->toBe(1);
+});
+
+it('tenant:dpa rifiuta tenant sconosciuti e date non valide', function () {
+    $slug = inTenant($this->tenant, fn () => DB::table('tenants')->value('slug'));
+
+    $this->artisan('tenant:dpa', ['slug' => 'inesistente', 'dpa-version' => '1'])->assertFailed();
+    $this->artisan('tenant:dpa', ['slug' => $slug, 'dpa-version' => '1', '--signed-at' => '15/01/2027'])->assertFailed();
+    $this->artisan('tenant:dpa', ['slug' => $slug, 'dpa-version' => '1', '--signed-at' => now()->addYear()->toDateString()])->assertFailed();
+});

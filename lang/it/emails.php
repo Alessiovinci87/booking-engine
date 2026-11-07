@@ -8,6 +8,15 @@ return [
         'subject' => 'Prenotazione confermata :code',
         'lines' => ['La prenotazione :code per :unit dal :check_in al :check_out è confermata.', 'Totale del soggiorno: :amount.'],
     ],
+    'ops_alert' => [
+        'subject' => '[Allerta] :signal',
+        'intro' => 'Allerta operativa: :signal (livello :level). Dettagli tecnici, solo identificativi:',
+        'signature' => 'Monitoraggio della piattaforma',
+    ],
+    'confirmed_manager' => [
+        'subject' => 'Nuova prenotazione confermata :code',
+        'lines' => ['La prenotazione :code di :guest per :unit dal :check_in al :check_out è confermata e pagata online.', 'Totale del soggiorno: :amount. Le date sono bloccate su tutti i canali al prossimo aggiornamento dei calendari.'],
+    ],
     'awaiting_approval' => [
         'subject' => 'Richiesta ricevuta :code',
         'lines' => ['Abbiamo ricevuto la richiesta :code per :unit dal :check_in al :check_out.', 'L’importo è solo autorizzato: verrà addebitato se la struttura conferma.'],
@@ -91,5 +100,18 @@ return [
     'quote_sent' => [
         'subject' => 'Il tuo preventivo per :property',
         'lines' => ['Ecco il preventivo per :unit dal :check_in al :check_out: totale :amount.', 'Il preventivo è valido fino al :expires_at (UTC). Puoi prenotare dal link qui sotto.'],
+    ],
+    // Account del gestore (6.11): testi del pannello, solo in italiano.
+    'account' => [
+        'greeting' => 'Buongiorno,',
+        'signature' => 'Il team di :app',
+    ],
+    'account_password_reset' => [
+        'subject' => 'Reimposta la password del pannello',
+        'lines' => ['Abbiamo ricevuto una richiesta di reimpostazione della password del tuo account.', 'Il link qui sotto vale 60 minuti e si può usare una sola volta. Dopo la nuova password ti verrà chiesto comunque il codice della verifica in due passaggi.', 'Se non hai chiesto tu la reimpostazione, ignora questa email: la password attuale resta valida.'],
+    ],
+    'account_password_changed' => [
+        'subject' => 'La tua password è stata cambiata',
+        'lines' => ['La password del tuo account del pannello è stata cambiata il :changed_at (UTC). Tutte le altre sessioni aperte sono state chiuse.', 'Se non hai cambiato tu la password, reimpostala subito dal link qui sotto e contatta l’assistenza.'],
     ],
 ];

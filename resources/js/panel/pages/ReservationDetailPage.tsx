@@ -16,6 +16,7 @@ import {
 } from '../api/reservations';
 import { useErrorMessage } from '../auth/session';
 import { dangerButton, Field, FormError, inputClass, primaryButton, secondaryButton, Section, TextInput } from '../components/Form';
+import { GuestPrivacy } from '../components/GuestPrivacy';
 import { ReauthPrompt, needsReauth } from '../components/Reauth';
 import { StatusBadge } from '../components/Reservations';
 import { formatDate, formatDateTime } from '../dates';
@@ -100,6 +101,8 @@ export function ReservationDetailPage() {
                     {r.guest.notes !== null && <p className="mt-3 whitespace-pre-line rounded-md bg-slate-50 p-3 text-sm text-slate-700">{r.guest.notes}</p>}
                 </Section>
             </div>
+
+            <GuestPrivacy guestId={r.guest.id} reservationId={r.id} anonymized={r.guest.anonymized} />
 
             <Section title={t('reservation.amounts')}>
                 <div className="grid gap-6 md:grid-cols-2">

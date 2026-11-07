@@ -178,6 +178,17 @@ it('stato per la pagina di ritorno: solo con il token, senza dati personali', fu
         ->assertJsonPath('paid.amount_cents', 16200);
 });
 
+it('il link dell\'ospite scade 90 giorni dopo il check-out (08 "Token pubblici", 6.7)', function () {
+    $created = book($this, $this->url, bookingBody($this->fx))->assertCreated(); // check-out 2027-07-14
+    $status = "/api/v1/public/reservations/{$created->json('reservation_code')}?token={$created->json('access_token')}";
+
+    Carbon::setTestNow('2027-10-12 23:00:00'); // 90° giorno dopo il check-out: ancora valido
+    $this->getJson($status)->assertOk();
+
+    Carbon::setTestNow('2027-10-13 08:00:00');
+    $this->getJson($status)->assertNotFound()->assertJsonPath('error.code', 'NOT_FOUND');
+});
+
 it('ignora un tenant_id nel corpo', function () {
     $other = bookableTenant('INSTANT');
     book($this, $this->url, bookingBody($this->fx, ['tenant_id' => $other['tenant']]))->assertCreated();

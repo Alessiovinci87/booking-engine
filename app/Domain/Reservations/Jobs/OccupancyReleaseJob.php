@@ -2,6 +2,8 @@
 
 namespace App\Domain\Reservations\Jobs;
 
+use App\Domain\Communications\Alerts\AlertSignal;
+use App\Domain\Communications\Alerts\OperationalAlerts;
 use App\Domain\Inventory\Enums\OccupancyTempReason;
 use App\Domain\Inventory\InventoryService;
 use App\Domain\Payments\CheckoutService;
@@ -71,7 +73,7 @@ final class OccupancyReleaseJob implements ShouldBeUnique, ShouldQueue
             }
 
             if ($outcome === 'retry' && $item['expires_at']->lessThan($now->subMinutes(self::OVERDUE_ALERT_MINUTES))) {
-                Log::error('occupancy_release.overdue', ['tenant_id' => $this->tenantId, 'reservation_id' => $item['reservation_id'], 'expired_at' => $item['expires_at']->toIso8601ZuluString()]);
+                app(OperationalAlerts::class)->raise(AlertSignal::OCCUPANCY_RELEASE_OVERDUE, ['tenant_id' => $this->tenantId, 'reservation_id' => $item['reservation_id'], 'expired_at' => $item['expires_at']->toIso8601ZuluString()], key: $item['reservation_id']);
             }
         }
 

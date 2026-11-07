@@ -53,7 +53,9 @@
         "payments": "Pagamenti",
         "quotes": "Preventivi",
         "conflicts": "Conflitti",
-        "calendars": "Calendari OTA"
+        "calendars": "Calendari OTA",
+        "metrics": "Metriche",
+        "account": "Account"
     },
     "notFound": {
         "title": "Pagina non trovata",
@@ -67,6 +69,7 @@
         "MFA_ALREADY_ENABLED": "La verifica in due passaggi è già attiva.",
         "INVALID_CREDENTIALS": "Email o password non corrette.",
         "INVALID_MFA_CODE": "Codice non valido.",
+        "PASSWORD_RESET_INVALID": "Il link non è valido, è scaduto o è già stato usato. Chiedine uno nuovo.",
         "REAUTH_REQUIRED": "Conferma la password per continuare.",
         "FORBIDDEN": "Operazione non consentita.",
         "NOT_FOUND": "Risorsa non trovata.",
@@ -100,7 +103,9 @@
         "INVALID_ICAL_URL": "L'indirizzo del calendario non è valido o non risponde.",
         "UNIT_IS_INSTANT": "L'unità è a prenotazione immediata: conferma il passaggio a richiesta per collegare un calendario esterno.",
         "CHECKLIST_STEP_INVALID": "Questo passo non si conferma manualmente.",
-        "QUOTE_CHECKOUT_IN_PROGRESS": "Il pagamento avviato in precedenza è in chiusura. Riprova tra qualche minuto."
+        "QUOTE_CHECKOUT_IN_PROGRESS": "Il pagamento avviato in precedenza è in chiusura. Riprova tra qualche minuto.",
+        "DPA_NOT_SIGNED": "Manca l'accordo sul trattamento dei dati (DPA) firmato con la piattaforma: contatta l'assistenza.",
+        "GUEST_HAS_ACTIVE_RESERVATION": "L'ospite ha una prenotazione attiva non ancora conclusa: non si può anonimizzare."
     },
     "properties": {
         "title": "Strutture",
@@ -135,6 +140,8 @@
         "terms_url": "Indirizzo delle condizioni (https)",
         "defaultPolicy": "Politica di cancellazione predefinita",
         "defaultPolicyHint": "Obbligatoria per pubblicare; ogni unità può sceglierne un'altra.",
+        "otaCommission": "Commissione OTA abituale (%)",
+        "otaCommissionHint": "Usata solo per stimare nelle metriche le commissioni evitate con le prenotazioni dirette.",
         "noPolicy": "Nessuna",
         "legalUrlHint": "Se aggiorni il documento, cambia anche il link (per esempio aggiungendo ?v=2): così agli ospiti verrà chiesto di accettare la nuova versione.",
         "approvalWindow": "Ore per approvare le richieste",
@@ -740,5 +747,72 @@
         "checklistComplete": "Collegamento completo.",
         "confirmStep": "Fatto",
         "demo": "Calendario dimostrativo: eventi di esempio, non viene scaricato dall’OTA."
+    },
+    "metrics": {
+        "title": "Metriche",
+        "period": "Periodo (data di arrivo)",
+        "from": "Dal",
+        "to": "Al",
+        "invalidPeriod": "Scegli un periodo valido: la data finale non può precedere quella iniziale.",
+        "csv": "Scarica CSV prenotazioni",
+        "csvHint": "Il CSV contiene le prenotazioni del periodo con l'anagrafica degli ospiti, per uso gestionale: non è un file per Alloggiati Web. Conservalo con cura: contiene dati personali.",
+        "directRevenue": "Fatturato diretto",
+        "reservationsCount_one": "{{count}} prenotazione confermata, {{nights}} notti",
+        "reservationsCount_other": "{{count}} prenotazioni confermate, {{nights}} notti",
+        "otaAvoided": "Commissioni OTA teoricamente evitate",
+        "otaAvoidedHint": "Fatturato diretto × percentuale OTA della struttura",
+        "benefit": "Beneficio diretto stimato",
+        "benefitHint": "Commissioni evitate − commissioni di pagamento − sconti diretti",
+        "breakdown": "Come si calcola il beneficio",
+        "paymentFees": "Commissioni di pagamento",
+        "estimated": "stimate",
+        "discounts": "Sconti diretti (preventivi)",
+        "reliability": "Attendibilità: è una stima. Assume che ogni prenotazione diretta sarebbe altrimenti arrivata da un'OTA con la percentuale indicata per la struttura. Non è un risparmio netto.",
+        "feesEstimatedNote": "Per alcuni pagamenti la commissione di Stripe non è ancora registrata: usiamo la tariffa standard per carte europee (1,5% + 0,25 €).",
+        "byProperty": "Per struttura",
+        "property": "Struttura",
+        "otaPercent": "Percentuale OTA usata",
+        "reservations": "Prenotazioni",
+        "otaPercentHint": "La percentuale OTA si cambia nelle impostazioni della struttura."
+    },
+    "privacy": {
+        "title": "Privacy dell'ospite",
+        "hint": "L'ospite esercita i suoi diritti presso di te (titolare del trattamento). Da qui puoi esportare i suoi dati o anonimizzarlo.",
+        "export": "Scarica i dati (JSON)",
+        "print": "Versione stampabile (PDF)",
+        "erase": "Anonimizza l'ospite",
+        "eraseConfirm": "Nome, cognome, email, telefono, note e testi liberi verranno sostituiti in modo irreversibile. Importi e date restano per gli obblighi contabili. Continuare?",
+        "eraseDone": "Ospite anonimizzato.",
+        "anonymized": "Ospite anonimizzato: i dati personali non sono più disponibili.",
+        "printTitle": "Dati dell'ospite",
+        "printGenerated": "Generato il {{date}}",
+        "printCard": "I dati della carta sono solo presso Stripe, nel conto della struttura.",
+        "dpaMissing": "Accordo sul trattamento dei dati (DPA) non ancora registrato: non puoi pubblicare strutture finché la piattaforma non lo registra.",
+        "dpaSigned": "DPA versione {{version}} firmato il {{date}}."
+    },
+    "password": {
+        "forgotLink": "Password dimenticata?",
+        "forgotTitle": "Password dimenticata",
+        "forgotIntro": "Scrivi l'email del tuo account: ti invieremo un link per scegliere una nuova password, valido 60 minuti.",
+        "forgotSubmit": "Invia il link",
+        "forgotSent": "Se l'email corrisponde a un account, riceverai a breve un link per reimpostare la password. Il link vale 60 minuti e si usa una sola volta. Controlla anche la posta indesiderata.",
+        "backToLogin": "Torna all'accesso",
+        "resetTitle": "Scegli una nuova password",
+        "rules": "Almeno 12 caratteri. Non sono ammesse password comparse in violazioni di dati note.",
+        "new": "Nuova password",
+        "confirm": "Ripeti la nuova password",
+        "resetSubmit": "Salva la nuova password",
+        "resetDone": "Password aggiornata. Tutte le sessioni aperte sono state chiuse. Accedi con la nuova password: ti verrà chiesto comunque il codice della verifica in due passaggi (o un codice di recupero).",
+        "goToLogin": "Vai all'accesso",
+        "requestNewLink": "Chiedi un nuovo link"
+    },
+    "account": {
+        "title": "Account",
+        "changePassword": "Cambia password",
+        "changeIntro": "Le altre sessioni aperte verranno chiuse; riceverai un'email di avviso.",
+        "current": "Password attuale",
+        "currentInvalid": "La password attuale non è corretta.",
+        "submit": "Cambia password",
+        "changed": "Password cambiata. Le altre sessioni sono state chiuse."
     }
 }

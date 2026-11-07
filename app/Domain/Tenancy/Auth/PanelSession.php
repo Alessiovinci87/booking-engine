@@ -13,19 +13,26 @@ final class PanelSession
 {
     private const AUTHENTICATED_AT = 'panel.authenticated_at';
 
+    /** Inizio della sessione in microsecondi, per il confronto con `users.sessions_revoked_at`. */
+    private const AUTHENTICATED_AT_US = 'panel.authenticated_at_us';
+
     private const LAST_ACTIVITY_AT = 'panel.last_activity_at';
 
     private const MFA_VERIFIED_AT = 'panel.mfa_verified_at';
 
     private const PASSWORD_CONFIRMED_AT = 'panel.password_confirmed_at';
 
+    private const REVOCATION_ACK = 'panel.revocation_ack';
+
     public function __construct(private readonly Session $session) {}
 
     public function start(): void
     {
-        $now = CarbonImmutable::now()->getTimestamp();
+        $instant = CarbonImmutable::now();
+        $now = $instant->getTimestamp();
 
         $this->session->put(self::AUTHENTICATED_AT, $now);
+        $this->session->put(self::AUTHENTICATED_AT_US, self::microseconds($instant));
         $this->session->put(self::LAST_ACTIVITY_AT, $now);
         $this->session->forget([self::MFA_VERIFIED_AT, self::PASSWORD_CONFIRMED_AT]);
     }
@@ -66,6 +73,48 @@ final class PanelSession
         }
 
         return $now - $lastActivityAt >= $idleSeconds || $now - $authenticatedAt >= $absoluteSeconds;
+    }
+
+    /**
+     * La sessione è iniziata non dopo la revoca delle sessioni dell'utente (6.10 user:reset-mfa, 6.11
+     * password). Confronto al microsecondo (ADR-0016): una sessione aperta subito dopo la revoca resta
+     * aperta. Una sessione senza l'istante in microsecondi (aperta prima di questa versione) usa l'inizio
+     * del suo secondo: nel dubbio si chiude.
+     */
+    public function startedNotAfter(CarbonImmutable $revokedAt): bool
+    {
+        $startedUs = $this->session->get(self::AUTHENTICATED_AT_US);
+        $authenticatedAt = $this->session->get(self::AUTHENTICATED_AT);
+
+        if (! is_int($startedUs)) {
+            if (! is_int($authenticatedAt)) {
+                return true;
+            }
+
+            $startedUs = $authenticatedAt * 1_000_000;
+        }
+
+        return $startedUs <= self::microseconds($revokedAt);
+    }
+
+    /**
+     * La sessione corrente prende atto di una revoca che ha causato lei stessa (6.11, cambio password):
+     * resta aperta, con la MFA già verificata, mentre tutte le altre sessioni si chiudono.
+     */
+    public function acknowledgeRevocation(CarbonImmutable $revokedAt): void
+    {
+        $this->session->put(self::REVOCATION_ACK, self::microseconds($revokedAt));
+    }
+
+    /** La revoca indicata è quella di cui questa sessione ha preso atto (vedi acknowledgeRevocation). */
+    public function hasAcknowledged(CarbonImmutable $revokedAt): bool
+    {
+        return $this->session->get(self::REVOCATION_ACK) === self::microseconds($revokedAt);
+    }
+
+    private static function microseconds(CarbonImmutable $instant): int
+    {
+        return (int) $instant->format('Uu');
     }
 
     public function touch(): void

@@ -8,11 +8,13 @@ use App\Domain\Inventory\Models\Property;
 use App\Domain\Inventory\Models\PropertyTranslation;
 use App\Domain\Inventory\Models\Unit;
 use App\Domain\Payments\Models\StripeAccount;
+use App\Domain\Privacy\DpaService;
 use App\Domain\Reservations\Enums\CancellationPolicyCode;
 use App\Domain\Reservations\Models\CancellationPolicy;
 use App\Domain\Tenancy\Audit\AuditLogger;
 use App\Domain\Tenancy\Enums\Locale;
 use App\Domain\Tenancy\Exceptions\BusinessRuleViolation;
+use App\Domain\Tenancy\Models\Tenant;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -33,6 +35,9 @@ final class PropertySetupService
     public const GUARD_PRIVACY_POLICY = 'PRIVACY_POLICY_MISSING';
 
     public const GUARD_PAYMENTS = 'PAYMENTS_NOT_ENABLED';
+
+    /** DPA art. 28 firmato prima dell'attivazione (09 requisito 1, ADR-0014). */
+    public const GUARD_DPA = 'DPA_NOT_SIGNED';
 
     public function __construct(private readonly AuditLogger $audit) {}
 
@@ -137,6 +142,11 @@ final class PropertySetupService
         // La pagina ospite chiede di accettare l'informativa con il link della struttura (3.7, 09).
         if ($property->privacy_policy_url === null || trim($property->privacy_policy_url) === '') {
             $missing[] = self::GUARD_PRIVACY_POLICY;
+        }
+
+        // DPA art. 28 firmato prima dell'attivazione (09 requisito 1; 6.3, ADR-0014).
+        if (! DpaService::isSigned(Tenant::query()->find($property->tenant_id))) {
+            $missing[] = self::GUARD_DPA;
         }
 
         // 07 ammette in alternativa "solo unità con prenotazione manuale", ma il modello dati (02) non

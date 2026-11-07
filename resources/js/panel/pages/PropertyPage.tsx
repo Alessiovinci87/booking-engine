@@ -24,6 +24,13 @@ import { parseEuroToCents } from '../money';
 import { NotFoundPage } from './NotFoundPage';
 
 /** Struttura: dati, testi IT/EN, politica di cancellazione predefinita, pubblicazione e unità (07). */
+
+/** "15" o "12,5" → basis point (1500, 1250). Se non è un numero: NaN, che in JSON diventa null e il server segnala il campo. */
+function otaBps(value: string): number {
+    const parsed = Number.parseFloat(value.trim().replace(',', '.'));
+
+    return Number.isFinite(parsed) ? Math.round(parsed * 100) : Number.NaN;
+}
 export function PropertyPage() {
     const { propertyId = '' } = useParams();
     const { t } = useTranslation();
@@ -155,6 +162,8 @@ function PropertyForm({ property, notice, onNotice }: { property: Property; noti
     );
     const [policyId, setPolicyId] = useState(property.default_cancellation_policy_id ?? '');
     const [approvalHours, setApprovalHours] = useState(String(property.approval_window_hours));
+    // Percentuale OTA usata dalle metriche (6.2), in basis point nell'API: 1500 → "15".
+    const [otaPercent, setOtaPercent] = useState((property.ota_commission_bps / 100).toLocaleString('it-IT', { maximumFractionDigits: 2 }));
     const [translations, setTranslations] = useState(() => translationDraft(property.translations));
 
     const save = useMutation({
@@ -169,6 +178,7 @@ function PropertyForm({ property, notice, onNotice }: { property: Property; noti
                 ...values,
                 default_cancellation_policy_id: policyId === '' ? null : policyId,
                 approval_window_hours: Number.parseInt(approvalHours, 10),
+                ota_commission_bps: otaBps(otaPercent),
                 translations: translationPayload(translations),
             });
         },
@@ -211,6 +221,9 @@ function PropertyForm({ property, notice, onNotice }: { property: Property; noti
                     ))}
                     <Field label={t('property.approvalWindow')} errors={errors.approval_window_hours} hint={t('property.approvalWindowHint')}>
                         <TextInput type="number" value={approvalHours} onChange={setApprovalHours} min={1} max={48} />
+                    </Field>
+                    <Field label={t('property.otaCommission')} errors={errors.ota_commission_bps} hint={t('property.otaCommissionHint')}>
+                        <TextInput value={otaPercent} onChange={setOtaPercent} inputMode="decimal" />
                     </Field>
                     <Field label={t('property.defaultPolicy')} errors={errors.default_cancellation_policy_id} hint={t('property.defaultPolicyHint')}>
                         <select className={inputClass} value={policyId} onChange={(e) => setPolicyId(e.target.value)}>

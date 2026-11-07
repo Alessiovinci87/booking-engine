@@ -13,7 +13,17 @@ export function useProperty() {
     return useQuery({ queryKey: ['property', i18n.language], queryFn: () => publicApi.property() });
 }
 
+/** Link della piattaforma (09 requisiti 2 e 5), dalla configurazione del server via data-attribute. */
+function platformLinks(): { privacy: string; subprocessors: string } {
+    const app = document.getElementById('app');
+
+    return { privacy: app?.dataset.platformPrivacy ?? '', subprocessors: app?.dataset.subprocessors ?? '' };
+}
+
 export function Shell({ title, children }: { title?: string; children: ReactNode }) {
+    const { t } = useTranslation();
+    const links = platformLinks();
+
     return (
         <div className="mx-auto min-h-screen max-w-3xl px-4 pb-16">
             <header className="flex items-center justify-between gap-4 py-4">
@@ -21,6 +31,20 @@ export function Shell({ title, children }: { title?: string; children: ReactNode
                 <LanguageSelector languages={guestLanguages} />
             </header>
             {children}
+            {(links.privacy !== '' || links.subprocessors !== '') && (
+                <footer className="mt-12 flex flex-wrap gap-4 border-t border-slate-200 pt-4 text-xs text-slate-500" data-testid="platform-footer">
+                    {links.privacy !== '' && (
+                        <a href={links.privacy} target="_blank" rel="noopener noreferrer" className="underline" data-testid="platform-privacy">
+                            {t('footer.platformPrivacy')}
+                        </a>
+                    )}
+                    {links.subprocessors !== '' && (
+                        <a href={links.subprocessors} target="_blank" rel="noopener noreferrer" className="underline">
+                            {t('footer.subprocessors')}
+                        </a>
+                    )}
+                </footer>
+            )}
         </div>
     );
 }

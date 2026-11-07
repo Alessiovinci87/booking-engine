@@ -3,14 +3,17 @@
 use App\Http\Controllers\Api\V1\Admin\Auth\LoginController;
 use App\Http\Controllers\Api\V1\Admin\Auth\MfaSetupController;
 use App\Http\Controllers\Api\V1\Admin\Auth\MfaVerifyController;
+use App\Http\Controllers\Api\V1\Admin\Auth\PasswordController;
 use App\Http\Controllers\Api\V1\Admin\Auth\SessionController;
 use App\Http\Controllers\Api\V1\Admin\BlockController;
 use App\Http\Controllers\Api\V1\Admin\CalendarController;
 use App\Http\Controllers\Api\V1\Admin\ConflictController;
 use App\Http\Controllers\Api\V1\Admin\DisputeController;
 use App\Http\Controllers\Api\V1\Admin\ExternalCalendarController;
+use App\Http\Controllers\Api\V1\Admin\GuestPrivacyController;
 use App\Http\Controllers\Api\V1\Admin\IcsFeedController;
 use App\Http\Controllers\Api\V1\Admin\MeController;
+use App\Http\Controllers\Api\V1\Admin\MetricsController;
 use App\Http\Controllers\Api\V1\Admin\PricePreviewController;
 use App\Http\Controllers\Api\V1\Admin\PropertyController;
 use App\Http\Controllers\Api\V1\Admin\QuoteController;
@@ -27,7 +30,7 @@ use Illuminate\Support\Facades\Route;
 use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful;
 
 // Identificativi UUID nei percorsi: un valore diverso non trova la rotta (404) e non arriva mai al database.
-foreach (['property', 'unit', 'photo', 'season', 'reservation', 'block', 'refund', 'quote'] as $parameter) {
+foreach (['property', 'unit', 'photo', 'season', 'reservation', 'block', 'refund', 'quote', 'guest'] as $parameter) {
     Route::pattern($parameter, '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}');
 }
 
@@ -40,6 +43,9 @@ foreach (['property', 'unit', 'photo', 'season', 'reservation', 'block', 'refund
 Route::prefix('admin')->middleware(EnsureFrontendRequestsAreStateful::class)->group(function (): void {
     Route::prefix('auth')->group(function (): void {
         Route::post('login', LoginController::class)->name('admin.auth.login');
+        // Password dimenticata (6.11, ADR-0016): senza sessione; la reimpostazione non apre la sessione.
+        Route::post('password/forgot', [PasswordController::class, 'forgot'])->name('admin.auth.password.forgot');
+        Route::post('password/reset', [PasswordController::class, 'reset'])->name('admin.auth.password.reset');
 
         Route::middleware(['auth:sanctum', 'panel.fresh'])->group(function (): void {
             Route::get('session', [SessionController::class, 'show'])->name('admin.auth.session');
@@ -51,6 +57,9 @@ Route::prefix('admin')->middleware(EnsureFrontendRequestsAreStateful::class)->gr
             Route::post('confirm-password', [SessionController::class, 'confirmPassword'])
                 ->middleware('mfa')
                 ->name('admin.auth.confirm-password');
+            Route::post('password', [PasswordController::class, 'change'])
+                ->middleware('mfa')
+                ->name('admin.auth.password.change');
         });
     });
 
@@ -67,6 +76,8 @@ Route::prefix('admin')->middleware(EnsureFrontendRequestsAreStateful::class)->gr
         Route::post('units/{unit}/blocks', [BlockController::class, 'store'])->name('admin.units.blocks.store');
         Route::post('refunds/{refund}/retry', [RefundController::class, 'retry'])->middleware('reauth')->name('admin.refunds.retry');
         Route::post('refunds/{refund}/mark-offline', [RefundController::class, 'markOffline'])->middleware('reauth')->name('admin.refunds.mark-offline');
+        // Anonimizzazione dell'ospite (09, 6.3): irreversibile, con ri-autenticazione (ADR-0014).
+        Route::post('guests/{guest}/erase', [GuestPrivacyController::class, 'erase'])->middleware('reauth')->name('admin.guests.erase');
         Route::post('quotes', [QuoteController::class, 'store'])->name('admin.quotes.store');
         Route::post('quotes/{quote}/send', [QuoteController::class, 'send'])->name('admin.quotes.send');
         Route::post('quotes/{quote}/revoke', [QuoteController::class, 'revoke'])->name('admin.quotes.revoke');
@@ -143,6 +154,12 @@ Route::prefix('admin')->middleware(EnsureFrontendRequestsAreStateful::class)->gr
         Route::post('external-events/{event}/not-echo', [ConflictController::class, 'notAnEcho'])->name('admin.external-events.not-echo');
 
         Route::get('quotes', [QuoteController::class, 'index'])->name('admin.quotes.index');
+
+        // Metriche ed export CSV (6.2).
+        Route::get('metrics', [MetricsController::class, 'metrics'])->name('admin.metrics');
+        // Export con dati personali (08 "export completo", 6.7): password confermata negli ultimi 15 minuti.
+        Route::get('guests/{guest}/export', [GuestPrivacyController::class, 'export'])->middleware('reauth')->name('admin.guests.export');
+        Route::get('exports/reservations.csv', [MetricsController::class, 'reservationsCsv'])->middleware('reauth')->name('admin.exports.reservations');
         Route::get('quotes/{quote}', [QuoteController::class, 'show'])->name('admin.quotes.show');
     });
 });

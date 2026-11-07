@@ -52,7 +52,7 @@ function currentOtp(string $secret): string
 function actingAsPanelUser(TestCase $test, User $user, bool $mfaVerified = true, bool $passwordConfirmed = false): TestCase
 {
     $now = now()->getTimestamp();
-    $session = ['panel.authenticated_at' => $now, 'panel.last_activity_at' => $now];
+    $session = ['panel.authenticated_at' => $now, 'panel.authenticated_at_us' => (int) now()->format('Uu'), 'panel.last_activity_at' => $now];
 
     // Ri-autenticazione per le azioni sensibili (08): password confermata adesso.
     if ($passwordConfirmed) {

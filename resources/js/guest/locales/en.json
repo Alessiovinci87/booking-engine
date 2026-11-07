@@ -156,5 +156,9 @@
         "QUOTE_CHECKOUT_IN_PROGRESS": "The payment started earlier is being closed. Please try again in a few minutes.",
         "DATES_UNAVAILABLE": "The dates of this quote are no longer available. Please contact the property.",
         "OCCUPANCY_EXCEEDED": "The number of guests in this quote exceeds the current capacity of the accommodation. Please contact the property."
+    },
+    "footer": {
+        "platformPrivacy": "Platform privacy notice",
+        "subprocessors": "Data sub-processors"
     }
 }

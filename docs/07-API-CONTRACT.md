@@ -44,11 +44,11 @@ L'API pubblica non usa cookie di sessione e quindi non usa il token CSRF (ADR-00
 | 401 | `UNAUTHENTICATED`, `MFA_REQUIRED`, `MFA_SETUP_REQUIRED`, `INVALID_CREDENTIALS`, `INVALID_MFA_CODE` |
 | 403 | `FORBIDDEN` (anche per l'API pubblica chiamata da un'origine non ammessa, ADR-0011), `REAUTH_REQUIRED` |
 | 404 | `NOT_FOUND` (anche per risorse di altri tenant: mai `403`) |
-| 409 | `IDEMPOTENCY_KEY_IN_USE` (ADR-0011), `DATES_UNAVAILABLE`, `CHECKOUT_EXPIRED`, `CONFLICT_OPEN`, `ILLEGAL_TRANSITION`, `PRICE_CHANGED`, `MFA_ALREADY_ENABLED`, `EXTERNAL_CALENDARS_ACTIVE`, `UNIT_NOT_BOOKABLE`, `ICS_FEED_EXISTS`, `UNIT_IS_INSTANT`, `QUOTE_ALREADY_ACCEPTED`, `QUOTE_CHECKOUT_IN_PROGRESS` (ADR-0013) |
+| 409 | `IDEMPOTENCY_KEY_IN_USE` (ADR-0011), `DATES_UNAVAILABLE`, `CHECKOUT_EXPIRED`, `CONFLICT_OPEN`, `ILLEGAL_TRANSITION`, `PRICE_CHANGED`, `MFA_ALREADY_ENABLED`, `EXTERNAL_CALENDARS_ACTIVE`, `UNIT_NOT_BOOKABLE`, `ICS_FEED_EXISTS`, `UNIT_IS_INSTANT`, `QUOTE_ALREADY_ACCEPTED`, `QUOTE_CHECKOUT_IN_PROGRESS` (ADR-0013), `GUEST_HAS_ACTIVE_RESERVATION` (ADR-0014) |
 | 419 | `CSRF_TOKEN_EXPIRED` (la SPA richiede un nuovo cookie CSRF e ripete una volta) |
 | 410 | `QUOTE_EXPIRED`, `QUOTE_REVOKED`, `QUOTE_EXHAUSTED`, `FEED_RETIRED` |
 | 412 | `VERSION_MISMATCH` |
-| 422 | `MIN_NIGHTS_NOT_MET`, `OCCUPANCY_EXCEEDED`, `AMOUNT_BELOW_MINIMUM`, `PAYMENTS_NOT_ENABLED`, `IDEMPOTENCY_KEY_REUSED`, `INVALID_ICAL_URL`, `CANCELLATION_POLICY_MISSING`, `PRIVACY_POLICY_MISSING`, `NO_ACTIVE_UNITS`, `TRANSLATION_IT_MISSING`, `QUOTE_EMAIL_MISSING`, `CHECKLIST_STEP_INVALID` (ADR-0013) |
+| 422 | `MIN_NIGHTS_NOT_MET`, `OCCUPANCY_EXCEEDED`, `AMOUNT_BELOW_MINIMUM`, `PAYMENTS_NOT_ENABLED`, `IDEMPOTENCY_KEY_REUSED`, `INVALID_ICAL_URL`, `CANCELLATION_POLICY_MISSING`, `PRIVACY_POLICY_MISSING`, `DPA_NOT_SIGNED` (ADR-0014), `NO_ACTIVE_UNITS`, `TRANSLATION_IT_MISSING`, `QUOTE_EMAIL_MISSING`, `CHECKLIST_STEP_INVALID` (ADR-0013), `PASSWORD_RESET_INVALID` (ADR-0016) |
 | 429 | `RATE_LIMITED` |
 | 502 | `PAYMENT_PROVIDER_REJECTED` (richiesta rifiutata da Stripe; codice di Stripe in `details.provider_code`, ADR-0012) |
 | 503 | `PAYMENT_PROVIDER_UNAVAILABLE` (Stripe non risponde) |
@@ -126,6 +126,9 @@ Sotto `/admin/auth/`, con sessione Sanctum e CSRF:
 | GET/POST | `/auth/mfa/setup` | solo con la MFA non ancora attiva: QR (SVG generato in locale) e chiave; la conferma restituisce 10 codici di recupero, una sola volta |
 | POST | `/auth/mfa/verify` | `code` TOTP oppure `recovery_code`; stesso limite di tentativi del login |
 | POST | `/auth/confirm-password` | ri-autenticazione valida 15 minuti per le azioni sensibili (`403 REAUTH_REQUIRED` senza) |
+| POST | `/auth/password/forgot` | *(ADR-0016)* senza sessione; `{ email }` → sempre `202 { status: "accepted" }`, che l'email esista o no; limite 3/ora per email e 10/ora per IP (`429 RATE_LIMITED`); link monouso di 60 minuti via email (outbox) |
+| POST | `/auth/password/reset` | *(ADR-0016)* senza sessione; `{ token, password, password_confirmation }` → `204`; `422 PASSWORD_RESET_INVALID` per link inesistente, scaduto, usato o sostituito; chiude tutte le sessioni e **non** apre la sessione: dopo serve il login con la MFA |
+| POST | `/auth/password` | *(ADR-0016)* sessione con MFA verificata; `{ current_password, password, password_confirmation }` → `204`; `401 INVALID_CREDENTIALS` con la password attuale errata (limite del login); chiude le altre sessioni (confronto al microsecondo con `sessions_revoked_at`), la corrente resta aperta |
 
 Ogni altra rotta `/admin/*` richiede, nell'ordine: sessione valida (2 h di inattività, 12 h assolute), MFA verificata nella sessione, limite di 300 richieste/min per utente, tenant dalla membership.
 
@@ -137,7 +140,7 @@ Tutte richiedono utente autenticato con MFA verificata nella sessione e membersh
 |---|---|---|
 | GET/POST | `/properties` | elenco e creazione (ADR-0010) |
 | GET/PATCH | `/properties/{id}` | incluse traduzioni; `approval_window_hours` 1–48 (ADR-0012 punto 22) |
-| POST | `/properties/{id}/publish` | richiede, nell'ordine: ≥ 1 unità attiva (`422 NO_ACTIVE_UNITS`), traduzione `it` (`422 TRANSLATION_IT_MISSING`), politica di cancellazione predefinita della struttura (`422 CANCELLATION_POLICY_MISSING`, ADR-0009), link all'informativa privacy (`422 PRIVACY_POLICY_MISSING`, ADR-0011), account Stripe del tenant con `charges_enabled` (`422 PAYMENTS_NOT_ENABLED`). Risponde con il codice della prima guardia non soddisfatta e l'elenco di tutte in `details.missing`; già pubblicata → `200` senza modifiche; archiviata → `409 ILLEGAL_TRANSITION`. Senza `Idempotency-Key` finché non c'è il meccanismo generico di I9: l'operazione è idempotente per natura (ADR-0010) |
+| POST | `/properties/{id}/publish` | richiede, nell'ordine: ≥ 1 unità attiva (`422 NO_ACTIVE_UNITS`), traduzione `it` (`422 TRANSLATION_IT_MISSING`), politica di cancellazione predefinita della struttura (`422 CANCELLATION_POLICY_MISSING`, ADR-0009), link all'informativa privacy (`422 PRIVACY_POLICY_MISSING`, ADR-0011), DPA firmato (`422 DPA_NOT_SIGNED`, ADR-0014), account Stripe del tenant con `charges_enabled` (`422 PAYMENTS_NOT_ENABLED`). Risponde con il codice della prima guardia non soddisfatta e l'elenco di tutte in `details.missing`; già pubblicata → `200` senza modifiche; archiviata → `409 ILLEGAL_TRANSITION`. Senza `Idempotency-Key` finché non c'è il meccanismo generico di I9: l'operazione è idempotente per natura (ADR-0010) |
 | GET/POST | `/properties/{id}/units` | |
 | GET/PATCH | `/units/{id}` | cambio a `INSTANT` rifiutato se ci sono calendari esterni attivi (`409 EXTERNAL_CALENDARS_ACTIVE`, `details.active_calendars`); disattivare l'ultima unità attiva di una struttura pubblicata è consentito (il pannello mostra un avviso, ADR-0010); `cancellation_policy_id` facoltativa, solo tra le politiche della stessa struttura |
 | GET/POST | `/units/{id}/photos` | elenco e caricamento; lettura con URL firmato |
@@ -208,14 +211,14 @@ Tutte richiedono utente autenticato con MFA verificata nella sessione e membersh
 |---|---|
 | GET | `/stripe/account` (stato onboarding: `NOT_CONNECTED`, `ONBOARDING_INCOMPLETE`, `IN_REVIEW`, `ENABLED`; `?refresh=1` rilegge da Stripe al rientro dall'onboarding, ADR-0012) |
 | POST | `/stripe/onboarding-link` (ri-autenticazione, 08: collegamento o cambio dell'account Stripe) |
-| GET | `/metrics?from=&to=` (fatturato diretto, commissioni evitate, beneficio stimato, con percentuale usata) |
-| GET | `/exports/reservations.csv?from=&to=` |
+| GET | `/metrics?from=&to=` (fatturato diretto, commissioni evitate, beneficio stimato, con percentuale usata; check-in nel periodo, predefinito il mese corrente, massimo 366 giorni; ADR-0014 punti 7–10) |
+| GET | `/exports/reservations.csv?from=&to=` (separatore `;`, BOM UTF-8, protezione dalle formule; registrato in audit; ADR-0014 punto 11; ri-autenticazione, `403 REAUTH_REQUIRED`, ADR-0014 punto 25) |
 
 ### Privacy (vedi 09)
 | Metodo | Percorso |
 |---|---|
-| GET | `/guests/{id}/export` |
-| POST | `/guests/{id}/erase` (anonimizzazione, se non soggetta a conservazione obbligatoria) |
+| GET | `/guests/{id}/export` (JSON scaricabile; versione stampabile nel pannello; ADR-0014 punto 13; ri-autenticazione, ADR-0014 punto 25) |
+| POST | `/guests/{id}/erase` (anonimizzazione, se non soggetta a conservazione obbligatoria; ri-autenticazione; `409 GUEST_HAS_ACTIVE_RESERVATION`; ADR-0014 punti 14–16) |
 | POST | `/tenant/export` (export completo per uscita cliente, asincrono) |
 | POST | `/tenant/offboarding/start` (feed `FROZEN`, vendite chiuse; ri-autenticazione) |
 | GET | `/tenant/offboarding` (stato dei feed, ultima lettura per OTA, conferme) |

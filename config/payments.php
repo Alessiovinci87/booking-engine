@@ -9,6 +9,13 @@ return [
     // "fake" funziona solo con APP_ENV local o testing (checkout simulato per test e demo).
     'gateway' => env('PAYMENT_GATEWAY', 'stripe'),
 
+    // Stima delle commissioni di pagamento per le metriche (01, 6.2, ADR-0014) quando fee_cents non è
+    // registrato: tariffa Stripe standard per carte dello Spazio economico europeo (1,5% + 0,25 €).
+    'estimated_fee' => [
+        'bps' => (int) env('PAYMENTS_ESTIMATED_FEE_BPS', 150),
+        'fixed_cents' => (int) env('PAYMENTS_ESTIMATED_FEE_FIXED_CENTS', 25),
+    ],
+
     // Durata della sessione di checkout (05, passo 2: 30 minuti, minimo Stripe).
     'checkout_session_minutes' => 30,
 

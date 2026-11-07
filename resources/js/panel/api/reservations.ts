@@ -61,6 +61,7 @@ export interface ReservationSummary {
 
 export interface ReservationDetail extends Omit<ReservationSummary, 'guest'> {
     guest: {
+        id: string;
         first_name: string;
         last_name: string;
         email: string | null;

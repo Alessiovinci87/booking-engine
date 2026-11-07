@@ -2,6 +2,8 @@
 
 namespace App\Domain\Payments\Stripe;
 
+use App\Domain\Communications\Alerts\AlertSignal;
+use App\Domain\Communications\Alerts\OperationalAlerts;
 use App\Domain\Payments\Enums\WebhookEventStatus;
 use App\Domain\Payments\Jobs\ProcessStripeWebhookJob;
 use App\Domain\Payments\Models\WebhookEvent;
@@ -67,7 +69,7 @@ final class StripeWebhookReceiver
         $metadataTenant = $metadata instanceof StripeObject && is_string($metadata['tenant_id'] ?? null) ? $metadata['tenant_id'] : null;
 
         if ($metadataTenant !== null && $metadataTenant !== $tenantId) {
-            Log::critical('security.webhook_tenant_mismatch', ['event_id' => $record->event_id, 'type' => $type, 'tenant_id' => $tenantId]);
+            app(OperationalAlerts::class)->raise(AlertSignal::WEBHOOK_TENANT_MISMATCH, ['event_id' => $record->event_id, 'type' => $type, 'tenant_id' => $tenantId], key: $record->event_id);
 
             return $this->finish($record, WebhookEventStatus::FAILED, 'tenant_mismatch');
         }

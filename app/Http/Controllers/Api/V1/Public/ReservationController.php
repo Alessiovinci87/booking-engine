@@ -25,6 +25,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Middleware\SetGuestLocale;
 use App\Http\Requests\PublicReservationRequest;
 use App\Http\Resources\PriceQuoteResource;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\JsonResponse;
@@ -95,9 +96,17 @@ final class ReservationController extends Controller
         ], 201);
     }
 
+    /** Validità del link dell'ospite (08 "Token pubblici"): 90 giorni dopo il check-out. */
+    public const GUEST_LINK_DAYS_AFTER_CHECK_OUT = 90;
+
     public function show(Request $request, string $code): JsonResponse
     {
         $reservation = Reservation::query()->with(['unit.translations', 'unit.property.translations'])->where('code', $code)->firstOrFail();
+
+        // Link scaduto: stessa risposta di un codice o token sbagliato (nessuna informazione sull'esistenza).
+        if (CarbonImmutable::now()->startOfDay()->gt($reservation->stay->checkOut->addDays(self::GUEST_LINK_DAYS_AFTER_CHECK_OUT))) {
+            throw BusinessRuleViolation::make(404, 'NOT_FOUND');
+        }
         $locale = SetGuestLocale::of($request);
         $economics = ReservationEconomics::of($reservation);
         $money = fn (int $cents): array => Money::json($cents, $reservation->currency);

@@ -61,8 +61,12 @@ return [
             // ],
         ],
 
+        // Resend tramite API HTTP (6.1, ADR-0014): App\Domain\Communications\Transport\ResendTransport.
         'resend' => [
-            'transport' => 'resend',
+            'transport' => 'resend-api',
+            'key' => env('RESEND_API_KEY'),
+            'endpoint' => env('RESEND_ENDPOINT', 'https://api.resend.com'),
+            'timeout' => 10,
         ],
 
         'sendmail' => [
@@ -70,8 +74,10 @@ return [
             'path' => env('MAIL_SENDMAIL_PATH', '/usr/sbin/sendmail -bs -i'),
         ],
 
+        // Locale e sviluppo (6.1): una riga di log senza dati personali e, con APP_ENV=local, la casella
+        // di anteprima su /dev/mail (App\Domain\Communications\Transport\PreviewLogTransport).
         'log' => [
-            'transport' => 'log',
+            'transport' => 'preview-log',
             'channel' => env('MAIL_LOG_CHANNEL'),
         ],
 
@@ -113,6 +119,13 @@ return [
     'from' => [
         'address' => env('MAIL_FROM_ADDRESS', 'hello@example.com'),
         'name' => env('MAIL_FROM_NAME', env('APP_NAME', 'Laravel')),
+    ],
+
+    // Casella di anteprima (6.1): funziona solo con APP_ENV=local anche se abilitata qui.
+    'preview' => [
+        'enabled' => (bool) env('MAIL_PREVIEW', true),
+        'path' => storage_path('app/mail-preview'),
+        'limit' => 200,
     ],
 
 ];

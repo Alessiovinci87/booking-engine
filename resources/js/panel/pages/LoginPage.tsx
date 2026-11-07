@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { type FormEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router';
 
 import { api } from '../api/client';
 import { sessionQueryKey, useErrorMessage } from '../auth/session';
@@ -56,6 +57,11 @@ export function LoginPage() {
                     {login.isPending ? t('common.wait') : t('login.submit')}
                 </button>
             </form>
+            <p className="mt-6 text-center text-sm">
+                <Link to="/password-dimenticata" className="font-medium text-blue-700 hover:underline">
+                    {t('password.forgotLink')}
+                </Link>
+            </p>
         </AuthCard>
     );
 }

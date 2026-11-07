@@ -29,7 +29,25 @@ return [
         'min_length' => 12,
     ],
 
+    // Password dimenticata (6.11, ADR-0016): link monouso di 60 minuti; richieste limitate per email (in
+    // hash) e per IP, nella stessa finestra di un'ora.
+    'password_reset' => [
+        'ttl_minutes' => 60,
+        'per_email' => 3,
+        'per_ip' => 10,
+        'decay_seconds' => 3600,
+    ],
+
     'admin_rate_limit_per_minute' => 300,
+
+    // Proxy davanti all'applicazione (load balancer, reverse proxy del provider; 6.7): indirizzi o reti
+    // separati da virgole, oppure "*" se l'applicazione è raggiungibile solo dal proxy. Senza questa
+    // impostazione, dietro un proxy, l'IP del client sarebbe quello del proxy (limiti per IP condivisi da
+    // tutti) e le richieste https risulterebbero http (niente HSTS). Vuoto in locale.
+    'trusted_proxies' => env('TRUSTED_PROXIES'),
+
+    // HSTS sulle risposte https (08 "Dati e cifratura"): un anno, sottodomini compresi; 0 = disattivato.
+    'hsts_max_age' => (int) env('SECURITY_HSTS_MAX_AGE', 31536000),
 
     // API pubblica in lettura (struttura, calcolo prezzo): 120 richieste al minuto per IP (07).
     'public_read_rate_limit_per_minute' => 120,

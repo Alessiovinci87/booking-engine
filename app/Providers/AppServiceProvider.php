@@ -6,6 +6,9 @@ use App\Domain\Calendar\Http\CurlTransport;
 use App\Domain\Calendar\Http\HostResolver;
 use App\Domain\Calendar\Http\HttpTransport;
 use App\Domain\Calendar\Http\SystemHostResolver;
+use App\Domain\Communications\MailPreviewBox;
+use App\Domain\Communications\Transport\PreviewLogTransport;
+use App\Domain\Communications\Transport\ResendTransport;
 use App\Domain\Payments\Gateway\ConnectedAccounts;
 use App\Domain\Payments\Gateway\Fake\FakeConnectedAccounts;
 use App\Domain\Payments\Gateway\Fake\FakePaymentGateway;
@@ -21,8 +24,12 @@ use App\Domain\Tenancy\TenantContext;
 use App\Domain\Tenancy\TenantResolver;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Contracts\Validation\UncompromisedVerifier;
+use Illuminate\Filesystem\Filesystem;
 use Illuminate\Foundation\Console\ServeCommand;
+use Illuminate\Http\Middleware\TrustProxies;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use LogicException;
@@ -44,6 +51,10 @@ class AppServiceProvider extends ServiceProvider
         // SafeHttpFetcher (5.1): DNS e trasporto sostituibili nei test.
         $this->app->bind(HostResolver::class, SystemHostResolver::class);
         $this->app->bind(HttpTransport::class, CurlTransport::class);
+        // Casella di anteprima delle email (6.1): attiva solo con APP_ENV=local.
+        $this->app->singleton(MailPreviewBox::class, fn ($app): MailPreviewBox => new MailPreviewBox(
+            $app, $app->make(Filesystem::class), (string) config('mail.preview.path'), (int) config('mail.preview.limit', 200),
+        ));
 
         // Fornitore di pagamento (05), scelto con PAYMENT_GATEWAY: "stripe" (Stripe Connect) oppure
         // "fake" (checkout simulato, che rifiuta di partire fuori da local e testing).
@@ -75,6 +86,19 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        self::trustProxies(config('security.trusted_proxies'));
+
+        // Trasporti delle email transazionali (6.1, ADR-0014).
+        Mail::extend('preview-log', fn (array $config): PreviewLogTransport => new PreviewLogTransport(
+            Log::channel($config['channel'] ?? null),
+            $this->app->make(MailPreviewBox::class),
+        ));
+        Mail::extend('resend-api', fn (array $config): ResendTransport => new ResendTransport(
+            isset($config['key']) && is_string($config['key']) ? $config['key'] : null,
+            (string) ($config['endpoint'] ?? 'https://api.resend.com'),
+            (int) ($config['timeout'] ?? 10),
+        ));
+
         // Password compromesse: fail-open con avviso nel log (08, decisione dopo la verifica di M1).
         // extend e non bind: il provider di validazione è differito e sostituirebbe il binding.
         $this->app->extend(
@@ -113,5 +137,21 @@ class AppServiceProvider extends ServiceProvider
 
             return $limits;
         });
+    }
+
+    /**
+     * Proxy fidati (6.7, `security.trusted_proxies`): IP del client e schema https dagli header
+     * X-Forwarded-* solo se la richiesta arriva da uno di questi indirizzi. Vuoto = nessun proxy.
+     */
+    public static function trustProxies(mixed $configured): void
+    {
+        TrustProxies::flushState();
+        $proxies = is_string($configured) ? trim($configured) : '';
+
+        if ($proxies === '') {
+            return;
+        }
+
+        TrustProxies::at($proxies === '*' ? '*' : array_values(array_filter(array_map('trim', explode(',', $proxies)), fn (string $p): bool => $p !== '')));
     }
 }

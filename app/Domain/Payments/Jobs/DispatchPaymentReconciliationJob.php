@@ -2,6 +2,8 @@
 
 namespace App\Domain\Payments\Jobs;
 
+use App\Domain\Communications\Alerts\AlertSignal;
+use App\Domain\Communications\Alerts\OperationalAlerts;
 use App\Domain\Inventory\InventoryService;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -51,7 +53,8 @@ final class DispatchPaymentReconciliationJob implements ShouldQueue
             $tenants = array_values(array_unique([...$tenants, ...array_map(fn (object $row): string => (string) $row->tenant_id, $refundTenants)]));
 
             foreach (InventoryService::i15Violations($connection) as $violation) {
-                Log::critical('invariant.i15_violation', $violation);
+                // Incoerenza stato/occupazione (08: incidente P1): log critical ed email alla piattaforma.
+                app(OperationalAlerts::class)->raise(AlertSignal::I15_VIOLATION, $violation);
             }
         }
 
