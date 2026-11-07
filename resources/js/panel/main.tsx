@@ -10,12 +10,16 @@ import { AuthGate } from './auth/AuthGate';
 import { sessionQueryKey } from './auth/session';
 import { PanelLayout } from './components/PanelLayout';
 import { i18n } from './i18n';
+import { CalendarPage } from './pages/CalendarPage';
 import { LoginPage } from './pages/LoginPage';
 import { MfaSetupPage } from './pages/MfaSetupPage';
 import { MfaVerifyPage } from './pages/MfaVerifyPage';
+import { NewReservationPage } from './pages/NewReservationPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { PropertiesPage } from './pages/PropertiesPage';
 import { PropertyPage } from './pages/PropertyPage';
+import { ReservationDetailPage } from './pages/ReservationDetailPage';
+import { ReservationsPage } from './pages/ReservationsPage';
 import { UnitPage } from './pages/UnitPage';
 
 const queryClient: QueryClient = new QueryClient({
@@ -84,6 +88,10 @@ createRoot(container).render(
                             <Route index element={<PropertiesPage />} />
                             <Route path="strutture/:propertyId" element={<PropertyPage />} />
                             <Route path="unita/:unitId" element={<UnitPage />} />
+                            <Route path="calendario" element={<CalendarPage />} />
+                            <Route path="prenotazioni" element={<ReservationsPage />} />
+                            <Route path="prenotazioni/nuova" element={<NewReservationPage />} />
+                            <Route path="prenotazioni/:reservationId" element={<ReservationDetailPage />} />
                             <Route path="*" element={<NotFoundPage />} />
                         </Route>
                     </Routes>

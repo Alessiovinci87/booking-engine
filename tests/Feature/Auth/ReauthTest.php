@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful;
 
 /*
  * Ri-autenticazione per le azioni sensibili (08): password confermata negli ultimi 15 minuti.
@@ -8,7 +9,7 @@ use Illuminate\Support\Facades\Route;
  */
 
 beforeEach(function () {
-    Route::middleware(['api', 'auth:sanctum', 'panel.fresh', 'mfa', 'reauth'])
+    Route::middleware(['api', EnsureFrontendRequestsAreStateful::class, 'auth:sanctum', 'panel.fresh', 'mfa', 'reauth'])
         ->post('/api/v1/admin/_test/sensitive', fn () => response()->json(['ok' => true]));
 });
 

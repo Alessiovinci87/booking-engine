@@ -8,6 +8,6 @@
     @vite('resources/js/guest/main.tsx')
 </head>
 <body class="min-h-screen bg-white antialiased">
-    <div id="app"></div>
+    <div id="app" data-embed="{{ $embed ? '1' : '0' }}"></div>
 </body>
 </html>

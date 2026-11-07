@@ -1,0 +1,13 @@
+/* Pagina "Pagamento simulato" (solo sviluppo e test, 3.3). */
+body { margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #f1f5f9; font-family: system-ui, sans-serif; color: #0f172a; }
+.card { width: 100%; max-width: 420px; margin: 16px; padding: 24px; background: #fff; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+.badge { display: inline-block; margin: 0 0 8px; padding: 2px 8px; border-radius: 999px; background: #fef3c7; color: #92400e; font-size: 12px; font-weight: 600; }
+h1 { margin: 0 0 4px; font-size: 22px; }
+.muted { color: #475569; font-size: 14px; }
+.amount { font-size: 28px; font-weight: 700; margin: 16px 0; }
+.notice { padding: 12px; background: #f1f5f9; border-radius: 8px; }
+form { margin: 8px 0; }
+.button { display: block; width: 100%; box-sizing: border-box; padding: 12px; border: 0; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; text-align: center; text-decoration: none; }
+.primary { background: #16a34a; color: #fff; }
+.danger { background: #dc2626; color: #fff; }
+.secondary { background: #e2e8f0; color: #0f172a; }

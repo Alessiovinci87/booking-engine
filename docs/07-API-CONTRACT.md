@@ -42,13 +42,13 @@ L'API pubblica non usa cookie di sessione e quindi non usa il token CSRF (ADR-00
 |---|---|
 | 400 | `VALIDATION_FAILED` (`details.fields`: errori per campo) |
 | 401 | `UNAUTHENTICATED`, `MFA_REQUIRED`, `MFA_SETUP_REQUIRED`, `INVALID_CREDENTIALS`, `INVALID_MFA_CODE` |
-| 403 | `FORBIDDEN`, `REAUTH_REQUIRED` |
+| 403 | `FORBIDDEN` (anche per l'API pubblica chiamata da un'origine non ammessa, ADR-0011), `REAUTH_REQUIRED` |
 | 404 | `NOT_FOUND` (anche per risorse di altri tenant: mai `403`) |
-| 409 | `DATES_UNAVAILABLE`, `CHECKOUT_EXPIRED`, `CONFLICT_OPEN`, `ILLEGAL_TRANSITION`, `PRICE_CHANGED`, `MFA_ALREADY_ENABLED`, `EXTERNAL_CALENDARS_ACTIVE`, `UNIT_NOT_BOOKABLE` |
+| 409 | `IDEMPOTENCY_KEY_IN_USE` (ADR-0011), `DATES_UNAVAILABLE`, `CHECKOUT_EXPIRED`, `CONFLICT_OPEN`, `ILLEGAL_TRANSITION`, `PRICE_CHANGED`, `MFA_ALREADY_ENABLED`, `EXTERNAL_CALENDARS_ACTIVE`, `UNIT_NOT_BOOKABLE` |
 | 419 | `CSRF_TOKEN_EXPIRED` (la SPA richiede un nuovo cookie CSRF e ripete una volta) |
 | 410 | `QUOTE_EXPIRED`, `QUOTE_REVOKED`, `QUOTE_EXHAUSTED`, `FEED_RETIRED` |
 | 412 | `VERSION_MISMATCH` |
-| 422 | `MIN_NIGHTS_NOT_MET`, `OCCUPANCY_EXCEEDED`, `AMOUNT_BELOW_MINIMUM`, `PAYMENTS_NOT_ENABLED`, `IDEMPOTENCY_KEY_REUSED`, `INVALID_ICAL_URL`, `CANCELLATION_POLICY_MISSING`, `NO_ACTIVE_UNITS`, `TRANSLATION_IT_MISSING` |
+| 422 | `MIN_NIGHTS_NOT_MET`, `OCCUPANCY_EXCEEDED`, `AMOUNT_BELOW_MINIMUM`, `PAYMENTS_NOT_ENABLED`, `IDEMPOTENCY_KEY_REUSED`, `INVALID_ICAL_URL`, `CANCELLATION_POLICY_MISSING`, `PRIVACY_POLICY_MISSING`, `NO_ACTIVE_UNITS`, `TRANSLATION_IT_MISSING` |
 | 429 | `RATE_LIMITED` |
 | 502/503 | `PAYMENT_PROVIDER_UNAVAILABLE` |
 
@@ -58,8 +58,10 @@ I messaggi `message` sono localizzati; il client si basa sempre su `code`.
 
 ## API pubblica (ospite)
 
+Senza cookie né CSRF. Ogni richiesta con intestazione `Origin` deve provenire dall'origine dell'app o da una delle `embed_allowed_origins` del tenant, altrimenti `403 FORBIDDEN` (ADR-0011).
+
 ### `GET /public/{t}/{p}`
-Struttura pubblicata: nomi e descrizioni nella lingua richiesta (con `translation_fallback: true` se manca), foto, orari, politiche, unità attive con capienza e foto. Una struttura pubblicata senza unità attive risponde con `units: []`: la pagina ospite mostra "Nessuna disponibilità al momento" (ADR-0010).
+Struttura pubblicata: nomi e descrizioni nella lingua richiesta (con `translation_fallback: true` se manca), foto, orari, politiche, unità attive con capienza e foto, `privacy_policy_url`, `terms_url` e le rispettive versioni `privacy_version`, `terms_version` (primi 12 caratteri esadecimali dello SHA-256 dell'URL, ADR-0011). Una struttura pubblicata senza unità attive risponde con `units: []`: la pagina ospite mostra "Nessuna disponibilità al momento" (ADR-0010).
 
 ### `GET /public/{t}/{p}/availability?unit_id=&from=&to=`
 Notti non vendibili per unità nell'intervallo (max 18 mesi). Non rivela il motivo (prenotazione, blocco, conflitto). Unità con vendite sospese o non attiva: `409 UNIT_NOT_BOOKABLE` (ADR-0010).
@@ -85,16 +87,20 @@ Avvia una prenotazione. Body:
 }
 ```
 
-Il server ricalcola il prezzo; se diverso da `expected_total_cents` → `409 PRICE_CHANGED` con il nuovo prezzo. Risposta `201`:
+`guest.notes` è facoltativo. `accepted_privacy_version` è obbligatorio e deve coincidere con `privacy_version` della struttura; `accepted_terms_version` deve coincidere con `terms_version`, oppure essere `null` se la struttura non ha condizioni (altrimenti `400 VALIDATION_FAILED`, ADR-0011).
+
+Il server ricalcola il prezzo; se diverso da `expected_total_cents` → `409 PRICE_CHANGED` con il nuovo prezzo in `details.price` (formato di `quote-price`). Risposta `201`:
 
 ```json
-{ "reservation_code": "K7Q2MZ4A", "status": "AWAITING_PAYMENT", "checkout_url": "https://checkout.stripe.com/…", "checkout_expires_at": "…" }
+{ "reservation_code": "K7Q2MZ4A", "status": "AWAITING_PAYMENT", "checkout_url": "https://checkout.stripe.com/…", "checkout_expires_at": "…", "access_token": "…" }
 ```
+
+`access_token` compare solo qui (nel database resta l'hash) e serve a `GET /public/reservations/{code}` (ADR-0011). Limite: 10 richieste ogni 10 minuti per IP e per email.
 
 Il client apre `checkout_url` **in top-level** (`window.top.location` o nuova scheda se l'iframe non lo consente).
 
 ### `GET /public/reservations/{code}?token=`
-Stato della prenotazione per l'ospite (riepilogo, stato leggibile, importi pagati e dovuti, politica). Usato dalla pagina di ritorno da Stripe con polling ogni 2 s fino a 60 s. Il token arriva nell'email e nel redirect; viene confrontato con l'hash.
+Stato della prenotazione per l'ospite (riepilogo, stato leggibile, importi pagati e dovuti, politica). Usato dalla pagina di ritorno da Stripe con polling ogni 2 s fino a 60 s. Il token arriva nella risposta di `POST /reservations` e nell'email; viene confrontato con l'hash. Codice o token errati → `404 NOT_FOUND`, senza distinguere i due casi. La risposta non contiene dati personali dell'ospite né `checkout_url`; include `status`, `booking_mode`, struttura e unità, date, ospiti, `contract_total`, `deposit_due`, `balance_due`, `paid`, `outstanding`, `economic_status`, `refund_status`, `approval_deadline`, `confirmed_at`, `cancelled_at` e la politica di cancellazione congelata (ADR-0011).
 
 ### `GET /public/quotes/{token}`
 Preventivo: unità, date, ospiti, righe, sconto, totale, scadenza, `booking_mode`. Scaduto → `410 QUOTE_EXPIRED`.
@@ -130,7 +136,7 @@ Tutte richiedono utente autenticato con MFA verificata nella sessione e membersh
 |---|---|---|
 | GET/POST | `/properties` | elenco e creazione (ADR-0010) |
 | GET/PATCH | `/properties/{id}` | incluse traduzioni |
-| POST | `/properties/{id}/publish` | richiede, nell'ordine: ≥ 1 unità attiva (`422 NO_ACTIVE_UNITS`), traduzione `it` (`422 TRANSLATION_IT_MISSING`), politica di cancellazione predefinita della struttura (`422 CANCELLATION_POLICY_MISSING`, ADR-0009), account Stripe del tenant con `charges_enabled` (`422 PAYMENTS_NOT_ENABLED`). Risponde con il codice della prima guardia non soddisfatta e l'elenco di tutte in `details.missing`; già pubblicata → `200` senza modifiche; archiviata → `409 ILLEGAL_TRANSITION`. Senza `Idempotency-Key` finché non c'è il meccanismo generico di I9: l'operazione è idempotente per natura (ADR-0010) |
+| POST | `/properties/{id}/publish` | richiede, nell'ordine: ≥ 1 unità attiva (`422 NO_ACTIVE_UNITS`), traduzione `it` (`422 TRANSLATION_IT_MISSING`), politica di cancellazione predefinita della struttura (`422 CANCELLATION_POLICY_MISSING`, ADR-0009), link all'informativa privacy (`422 PRIVACY_POLICY_MISSING`, ADR-0011), account Stripe del tenant con `charges_enabled` (`422 PAYMENTS_NOT_ENABLED`). Risponde con il codice della prima guardia non soddisfatta e l'elenco di tutte in `details.missing`; già pubblicata → `200` senza modifiche; archiviata → `409 ILLEGAL_TRANSITION`. Senza `Idempotency-Key` finché non c'è il meccanismo generico di I9: l'operazione è idempotente per natura (ADR-0010) |
 | GET/POST | `/properties/{id}/units` | |
 | GET/PATCH | `/units/{id}` | cambio a `INSTANT` rifiutato se ci sono calendari esterni attivi (`409 EXTERNAL_CALENDARS_ACTIVE`, `details.active_calendars`); disattivare l'ultima unità attiva di una struttura pubblicata è consentito (il pannello mostra un avviso, ADR-0010); `cancellation_policy_id` facoltativa, solo tra le politiche della stessa struttura |
 | GET/POST | `/units/{id}/photos` | elenco e caricamento; lettura con URL firmato |
@@ -163,12 +169,13 @@ Tutte richiedono utente autenticato con MFA verificata nella sessione e membersh
 | Metodo | Percorso | Note |
 |---|---|---|
 | GET | `/reservations?status=&from=&to=&unit_id=` | |
-| GET | `/reservations/{id}` | dettaglio, righe, pagamenti, rimborsi, storico, audit |
+| GET | `/reservations/{id}` | dettaglio, righe, pagamenti, rimborsi, storico, audit; `actions` (azioni ammesse nello stato attuale, dalla tabella delle transizioni) e, se `CONFIRMED`, `cancellation_refund` con rimborso proposto e massimo (ADR-0011) |
 | POST | `/reservations` | manuale, confermata anche senza pagamento (stato economico `UNPAID`) · Idempotency-Key |
 | POST | `/reservations/{id}/approve` | Idempotency-Key; `409 CONFLICT_OPEN` se ci sono conflitti sulle date |
 | POST | `/reservations/{id}/reject` | Idempotency-Key, `reason` opzionale |
 | POST | `/reservations/{id}/cancel` | Idempotency-Key; body `refund_cents` (default = proposto dalla policy, max = incassato online). Risposta: prenotazione `CANCELLED` e `refund_status` (`PENDING`/`NONE`), mai "rimborsato" |
-| PATCH | `/reservations/{id}` | modifica date/ospiti/note · If-Match |
+| POST | `/reservations/{id}/modify-preview` | anteprima della modifica: stesso body del `PATCH`, risponde `current`, `proposed` (righe e totale), `difference`, `version`; non salva nulla (ADR-0011 punto 28) |
+| PATCH | `/reservations/{id}` | modifica date/ospiti/note · If-Match; `expected_total_cents` facoltativo dall'anteprima → `409 PRICE_CHANGED` se il prezzo è cambiato (ADR-0011 punto 28) |
 | POST | `/reservations/{id}/offline-payments` | registra pagamento fuori piattaforma |
 | POST | `/reservations/{id}/balance-link` | link di pagamento del saldo (nessuna occupazione nuova) · Idempotency-Key |
 | POST | `/reservations/{id}/recovery-link` | solo da `CAPTURE_FAILED` (T15); body `deadline_hours` 1–24 · Idempotency-Key |

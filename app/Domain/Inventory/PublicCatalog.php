@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 /**
  * Ciò che la superficie pubblica può vedere (07, 02 "Disponibilità effettiva"): struttura PUBLISHED
- * di un tenant ACTIVE e sue unità ACTIVE. Tutto il resto risulta inesistente (404), senza rivelare
+ * di un tenant ACTIVE e sue unità ACTIVE (elenco). Tutto il resto risulta inesistente (404), senza rivelare
  * se la struttura esiste in bozza o se il tenant è sospeso. Va chiamato dentro il contesto tenant.
  */
 final class PublicCatalog
@@ -40,9 +40,13 @@ final class PublicCatalog
             ->each(fn (Unit $unit) => $unit->setRelation('property', $property));
     }
 
+    /**
+     * Unità della struttura pubblicata, in qualsiasi stato: availability e quote-price rispondono
+     * 409 UNIT_NOT_BOOKABLE per un'unità non attiva o con vendite sospese (ADR-0010, punto 7).
+     */
     public function unit(Property $property, string $unitId): Unit
     {
-        return $this->activeUnits($property)->findOrFail($unitId)->setRelation('property', $property);
+        return Unit::query()->where('property_id', $property->id)->findOrFail($unitId)->setRelation('property', $property);
     }
 
     /** @return Builder<Unit> */

@@ -77,6 +77,35 @@ it('usa solo dati inventati', function () {
     }
 });
 
+// 3.8: struttura pubblicata e prenotazioni di esempio in vari stati, create con i flussi veri.
+it('pubblica la struttura e crea prenotazioni di esempio coerenti con l\'inventario', function () {
+    $this->seed(DemoSeeder::class);
+    $tenant = demoTenantId();
+
+    inTenant($tenant, function () {
+        expect(DB::table('properties')->value('status'))->toBe('PUBLISHED')
+            ->and(DB::table('units')->orderBy('name')->pluck('booking_mode')->all())->toBe(['INSTANT', 'REQUEST']);
+
+        $byStatus = DB::table('reservations')->selectRaw('status, count(*) as n')->groupBy('status')->pluck('n', 'status')->map(fn ($n) => (int) $n)->all();
+        ksort($byStatus);
+
+        expect($byStatus)->toBe([
+            'AWAITING_APPROVAL' => 1,
+            'AWAITING_PAYMENT' => 1,
+            'CANCELLED' => 1,
+            'CONFIRMED' => 4,
+            'PAYMENT_FAILED' => 1,
+            'REJECTED' => 1,
+        ])
+            ->and(DB::table('guests')->pluck('email')->every(fn ($email) => str_ends_with($email, '@example.test')))->toBeTrue()
+            ->and(DB::table('payments')->where('purpose', 'OFFLINE')->count())->toBe(2)
+            ->and(DB::table('inventory_occupancies')->where('kind', 'MANUAL_BLOCK')->where('status', 'ACTIVE')->count())->toBe(1);
+    });
+
+    // I15: ogni prenotazione occupante ha la sua occupazione, nessuna occupazione orfana.
+    expect(occupancyViolations($tenant))->toBe([]);
+});
+
 it('non duplica i dati se rieseguito', function () {
     $this->seed(DemoSeeder::class);
     $this->seed(DemoSeeder::class);

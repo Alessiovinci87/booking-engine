@@ -32,6 +32,7 @@ function publishReady(string $tenant, array $property, bool $chargesEnabled = tr
         ]);
         DB::table('properties')->where('id', $property['id'])->update([
             'default_cancellation_policy_id' => $property['cancellation_policies'][0]['id'],
+            'privacy_policy_url' => 'https://example.test/privacy',
         ]);
         DB::table('stripe_accounts')->insert([
             'id' => uuid7(), 'tenant_id' => $tenant, 'stripe_account_id' => 'acct_test_'.substr($unit, -12),
@@ -45,7 +46,7 @@ it('rifiuta la pubblicazione elencando tutte le guardie mancanti', function () {
         ->assertStatus(422)
         ->assertJsonPath('error.code', 'NO_ACTIVE_UNITS')
         ->assertJsonPath('error.details.missing', [
-            'NO_ACTIVE_UNITS', 'TRANSLATION_IT_MISSING', 'CANCELLATION_POLICY_MISSING', 'PAYMENTS_NOT_ENABLED',
+            'NO_ACTIVE_UNITS', 'TRANSLATION_IT_MISSING', 'CANCELLATION_POLICY_MISSING', 'PRIVACY_POLICY_MISSING', 'PAYMENTS_NOT_ENABLED',
         ]);
 
     expect(inTenant($this->tenant, fn () => DB::table('properties')->where('id', $this->property['id'])->value('status')))->toBe('DRAFT');
@@ -150,4 +151,37 @@ it('impedisce di togliere a una struttura pubblicata ciò che la pubblicazione r
     panelPatch($this, "/api/v1/admin/properties/{$this->property['id']}", ['translations' => ['it' => null]], $version)
         ->assertStatus(400)
         ->assertJsonStructure(['error' => ['details' => ['fields' => ['translations.it']]]]);
+});
+
+it('richiede la Idempotency-Key e restituisce la stessa risposta per la stessa chiave (I9)', function () {
+    publishReady($this->tenant, $this->property);
+
+    $this->withHeaders(['Referer' => TEST_PANEL_ORIGIN.'/app'])->postJson($this->publishUrl)
+        ->assertStatus(400)
+        ->assertJsonPath('error.code', 'VALIDATION_FAILED');
+
+    $key = uuid7();
+    $first = panelPost($this, $this->publishUrl, [], $key)->assertOk();
+    panelPost($this, $this->publishUrl, [], $key)->assertOk()->assertHeader('Idempotent-Replayed', 'true');
+    panelPost($this, $this->publishUrl, ['x' => 1], $key)->assertStatus(422)->assertJsonPath('error.code', 'IDEMPOTENCY_KEY_REUSED');
+
+    expect($first->json('status'))->toBe('PUBLISHED')
+        ->and(inTenant($this->tenant, fn () => AuditLog::query()->where('action', 'property.published')->count()))->toBe(1);
+});
+
+it('richiede il link all\'informativa privacy e non lo lascia togliere dopo la pubblicazione (3.7)', function () {
+    publishReady($this->tenant, $this->property);
+    inTenant($this->tenant, fn () => DB::table('properties')->where('id', $this->property['id'])->update(['privacy_policy_url' => null]));
+
+    panelPost($this, $this->publishUrl)
+        ->assertStatus(422)
+        ->assertJsonPath('error.code', 'PRIVACY_POLICY_MISSING')
+        ->assertJsonPath('error.details.missing', ['PRIVACY_POLICY_MISSING']);
+
+    inTenant($this->tenant, fn () => DB::table('properties')->where('id', $this->property['id'])->update(['privacy_policy_url' => 'https://example.test/privacy']));
+    panelPost($this, $this->publishUrl)->assertOk();
+
+    panelPatch($this, "/api/v1/admin/properties/{$this->property['id']}", ['privacy_policy_url' => null], 2)
+        ->assertStatus(400)
+        ->assertJsonStructure(['error' => ['details' => ['fields' => ['privacy_policy_url']]]]);
 });

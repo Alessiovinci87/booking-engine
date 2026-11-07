@@ -26,5 +26,16 @@ return [
         'MIN_NIGHTS_NOT_MET' => 'Il soggiorno non raggiunge il minimo di notti.',
         'OCCUPANCY_EXCEEDED' => 'Il numero di ospiti supera la capienza.',
         'AMOUNT_BELOW_MINIMUM' => 'L\'importo è inferiore al minimo pagabile online.',
+        'DATES_UNAVAILABLE' => 'Le date selezionate non sono più disponibili.',
+        'UNIT_NOT_BOOKABLE' => 'Questa unità al momento non è prenotabile.',
+        'PRICE_CHANGED' => 'Il prezzo è cambiato: controlla il nuovo totale.',
+        'IDEMPOTENCY_KEY_REUSED' => 'Richiesta già inviata con dati diversi. Ricarica la pagina e riprova.',
+        'CONFLICT_OPEN' => 'Ci sono conflitti aperti sulle date: risolvili prima di approvare.',
+        'PRIVACY_POLICY_MISSING' => 'Manca il link all\'informativa privacy della struttura.',
+        'PAYMENT_PROVIDER_UNAVAILABLE' => 'Il servizio di pagamento non risponde. Riprova tra poco.',
+        'IDEMPOTENCY_KEY_IN_USE' => 'La stessa richiesta è ancora in corso. Attendi qualche secondo e riprova.',
+    ],
+    'idempotency' => [
+        'key_required' => 'Header Idempotency-Key mancante o non valido (UUID).',
     ],
 ];

@@ -184,3 +184,42 @@ function goldenUnitRows(string $tenantId, ?string $propertyId = null): array
 
     return ['property' => $propertyId, 'unit' => $unitId, 'plan' => $plan, 'seasons' => $seasons];
 }
+
+/** Evento di un calendario esterno sull'unità (fonte 2 della disponibilità, 02). */
+function createExternalEventRow(string $tenantId, string $unitId, string $stay, string $status = 'ACTIVE'): string
+{
+    $calendar = uuid7();
+    $event = uuid7();
+
+    inTenant($tenantId, function () use ($tenantId, $unitId, $stay, $status, $calendar, $event): void {
+        DB::table('external_calendars')->insert([
+            'id' => $calendar, 'tenant_id' => $tenantId, 'unit_id' => $unitId, 'source' => 'BOOKING',
+            'url_encrypted' => 'cifrato', 'created_at' => now(), 'updated_at' => now(),
+        ]);
+        DB::table('external_calendar_events')->insert([
+            'id' => $event, 'tenant_id' => $tenantId, 'external_calendar_id' => $calendar, 'uid' => 'evt-'.$event,
+            'stay' => $stay, 'content_hash' => 'h', 'first_seen_at' => now(), 'last_seen_at' => now(),
+            'status' => $status, 'created_at' => now(), 'updated_at' => now(),
+        ]);
+    });
+
+    return $event;
+}
+
+/** Conflitto sull'unità (fonte 3 della disponibilità, 02). */
+function createConflictRow(string $tenantId, string $unitId, string $stay, string $status = 'OPEN'): string
+{
+    $event = createExternalEventRow($tenantId, $unitId, $stay, 'REMOVED');
+    $id = uuid7();
+
+    inTenant($tenantId, fn () => DB::table('inventory_conflicts')->insert(array_merge([
+        'id' => $id, 'tenant_id' => $tenantId, 'unit_id' => $unitId, 'external_event_id' => $event, 'stay' => $stay,
+        'status' => $status, 'detected_at' => now(), 'created_at' => now(), 'updated_at' => now(),
+    ], match ($status) {
+        'RESOLVED' => ['resolution' => 'FALSE_POSITIVE', 'resolved_at' => now()],
+        'IGNORED' => ['resolution_notes' => 'nota'],
+        default => [],
+    })));
+
+    return $id;
+}

@@ -36,6 +36,8 @@ test('M2: configurazione, anteprima golden e pubblicazione dal pannello', async 
 
         const secret = (await page.locator('code').textContent({ timeout: 15_000 }))?.trim() ?? '';
         expect(secret).toMatch(/^[A-Z2-7]{16,}$/);
+        // Stesso processo di Playwright (un solo worker): lo spec di M3 entra nel pannello con questo segreto.
+        process.env.E2E_DEMO_MFA_SECRET = secret;
 
         if (secondsLeftInStep() < 3) {
             await page.waitForTimeout(secondsLeftInStep() * 1000 + 500);
@@ -58,6 +60,8 @@ test('M2: configurazione, anteprima golden e pubblicazione dal pannello', async 
 
         const details = section(page, 'Dati della struttura');
         await details.getByLabel('Città').fill('Alghero');
+        // Guardia PRIVACY_POLICY_MISSING (ADR-0011): senza informativa la struttura non si pubblica.
+        await details.getByLabel("Indirizzo dell'informativa privacy (https)").fill('https://golden.example.test/privacy');
         await details.getByLabel('Politica di cancellazione predefinita').selectOption({ label: 'Flessibile (7 giorni)' });
 
         const it = details.locator('fieldset').filter({ hasText: 'Italiano' });

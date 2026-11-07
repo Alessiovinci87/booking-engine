@@ -71,6 +71,7 @@ jobs:
           POSTGRES_USER: postgres
           POSTGRES_DB: booking_engine
           APP_TEST_DATABASE: booking_engine_test
+          APP_E2E_DATABASE: booking_engine_e2e
           APP_MIGRATOR_PASSWORD: ci-migrator
           APP_RUNTIME_PASSWORD: ci-runtime
           APP_ADMIN_OPS_PASSWORD: ci-admin-ops

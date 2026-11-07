@@ -190,7 +190,7 @@ docker compose ps
 ```
 
 Entrambi i servizi devono risultare `healthy`. Al primo avvio gli script in `docker\postgres\init\` creano:
-- i database `booking_engine` e `booking_engine_test`, con l'estensione `btree_gist`;
+- i database `booking_engine` (sviluppo), `booking_engine_test` (Pest) e `booking_engine_e2e` (Playwright), con l'estensione `btree_gist`;
 - i ruoli `app_migrator`, `app_runtime`, `app_admin_ops`.
 
 Verifica:
@@ -300,7 +300,15 @@ Poi, con Docker avviato e `npm run dev` **fermo** (servono gli asset di `npm run
 npm run test:e2e
 ```
 
-**Attenzione:** il comando rigenera il database di sviluppo `booking_engine` (`migrate:fresh` e seeder demo) e accetta solo `APP_ENV=local`. Usa il server su http://127.0.0.1:8000: se `php artisan serve` è già avviato lo riusa, altrimenti lo avvia. Gli screenshot di ogni passo finiscono in `storage\e2e-screenshots\` (non committati).
+Il comando usa un database dedicato, `booking_engine_e2e` (`DB_E2E_DATABASE` in `.env`), che rigenera a ogni esecuzione (`migrate:fresh` e seeder demo). Il database di sviluppo `booking_engine` **non viene toccato**. Avvia un proprio server PHP su http://127.0.0.1:8001, collegato al database E2E, e lo chiude alla fine: puoi lasciare aperto `php artisan serve` sulla porta 8000. Accetta solo `APP_ENV=local`. Gli screenshot di ogni passo finiscono in `storage\e2e-screenshots\` (non committati).
+
+Se il volume Docker esisteva già prima di M3, il database E2E va creato una volta, senza perdere dati:
+
+```powershell
+docker compose up -d --force-recreate --wait postgres
+docker compose exec -T postgres bash /docker-entrypoint-initdb.d/01-databases-extensions.sh
+docker compose exec -T postgres bash /docker-entrypoint-initdb.d/02-roles.sh
+```
 
 ## 9. Avvio dell'applicazione in sviluppo
 

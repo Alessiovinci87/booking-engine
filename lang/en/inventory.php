@@ -9,4 +9,7 @@ return [
         'limit' => 'You can upload at most :max photos per unit.',
         'order_mismatch' => 'The order must contain all the photos of the unit.',
     ],
+    'availability' => [
+        'range_too_long' => 'The range can be at most :months months.',
+    ],
 ];

@@ -59,6 +59,7 @@ Server in UE gestiti con Laravel Forge; staging e produzione separati; PostgreSQ
 | Data | Milestone | Libreria | Motivo |
 |---|---|---|---|
 | 2026-11-23 | M2 (attività 2.2) | `intervention/image` v3, driver GD (estensioni PHP `gd` ed `exif`) | **Privacy delle foto**: ogni immagine caricata dal gestore si decodifica e si ricodifica in WebP (1600 px e miniatura 400 px), eliminando tutti i metadati EXIF, compresa la posizione GPS che spesso rivela l'indirizzo di casa o le abitudini di chi scatta (09). L'originale non si conserva. GD è già disponibile in Herd e nella CI, senza dipendenze di sistema come Imagick. |
+| 2026-11-07 | M3 (attività 3.7) | `react-day-picker` 9 con `date-fns` 4 (solo frontend) | **Calendario della pagina ospite**: selezione di un intervallo su due mesi, giorni disabilitati da una funzione (notti non disponibili, partenza al massimo fino alla prima notte occupata), localizzazione IT/EN, tastiera e lettori di schermo già gestiti. `date-fns` è la dipendenza di localizzazione richiesta dalla libreria; le date di soggiorno restano stringhe `YYYY-MM-DD` e nessun calcolo di prezzo o disponibilità avviene nel frontend. |
 
 ## Alternative considerate
 

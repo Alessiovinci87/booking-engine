@@ -1,0 +1,63 @@
+<?php
+
+// Booking transition emails (03). Real sending from M6; locally the "log" mailer.
+return [
+    'greeting' => 'Dear guest,',
+    'signature' => 'The :property team',
+    'confirmed' => [
+        'subject' => 'Booking confirmed :code',
+        'lines' => ['Booking :code for :unit from :check_in to :check_out is confirmed.', 'Total for the stay: :amount.'],
+    ],
+    'awaiting_approval' => [
+        'subject' => 'Request received :code',
+        'lines' => ['We received request :code for :unit from :check_in to :check_out.', 'The amount is only authorised: it will be charged if the property confirms.'],
+    ],
+    'approval_requested' => [
+        'subject' => 'New request to approve :code',
+        'lines' => ['New request :code for :unit from :check_in to :check_out.', 'Check the Booking and Airbnb calendars before approving.'],
+    ],
+    'expired' => [
+        'subject' => 'Booking not completed :code',
+        'lines' => ['The payment for booking :code was not completed in time and the dates have been released.'],
+    ],
+    'payment_failed' => [
+        'subject' => 'Payment failed :code',
+        'lines' => ['The payment for booking :code failed and the dates have been released.'],
+    ],
+    'late_payment' => [
+        'subject' => 'Late payment :code',
+        'lines' => ['The payment for booking :code arrived after the deadline, when the dates were no longer held.', 'We apologise: the amount will be returned to you automatically.'],
+    ],
+    'rejected' => [
+        'subject' => 'Request not accepted :code',
+        'lines' => ['The property could not accept request :code. No amount has been charged.'],
+    ],
+    'approval_expired' => [
+        'subject' => 'Request expired :code',
+        'lines' => ['Request :code expired without an answer from the property. No amount has been charged.'],
+    ],
+    'approval_expired_manager' => [
+        'subject' => 'Request expired without an answer :code',
+        'lines' => ['Request :code for :unit from :check_in to :check_out has expired and the dates have been released.'],
+    ],
+    'capture_failed' => [
+        'subject' => 'URGENT: charge failed :code',
+        'lines' => ['The charge for booking :code failed. The dates stay held for 24 hours.', 'Send the guest a payment link or release the dates.'],
+    ],
+    'recovery_link' => [
+        'subject' => 'Complete your payment :code',
+        'lines' => ['The payment for booking :code did not go through. You can complete it from the booking page.'],
+    ],
+    'dates_released' => [
+        'subject' => 'Booking cancelled :code',
+        'lines' => ['The payment for booking :code was not completed and the dates have been released.'],
+    ],
+    'cancelled' => [
+        'subject' => 'Booking cancelled :code',
+        'lines' => ['Booking :code has been cancelled.', 'Refund started: :amount. We will write again when it is completed.'],
+    ],
+    'refund_completed' => [
+        'subject' => 'Refund completed :code',
+        'lines' => ['The refund of :amount for booking :code has been completed.'],
+    ],
+];

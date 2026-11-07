@@ -73,7 +73,9 @@ it('ogni tabella con tenant_id ha la policy tenant_isolation fail-closed di 08',
 
 it('nessuna policy permissiva aggiuntiva apre le tabelle tenant-scoped ad app_runtime', function () {
     // Le policy permissive si sommano (OR): una policy in più per PUBLIC o app_runtime annullerebbe
-    // l'isolamento. Ammesse solo tenant_isolation e definer_lookup (riservata ad app_migrator).
+    // l'isolamento. Ammesse solo tenant_isolation e definer_lookup (riservata ad app_migrator, cioè
+    // alle funzioni SECURITY DEFINER: risoluzione del tenant per slug, membership e, da M3, per
+    // codice + token della prenotazione).
     $extra = DB::select(<<<'SQL'
         SELECT c.relname AS table_name, p.polname,
                ARRAY(SELECT CASE WHEN r = 0 THEN 'public' ELSE pg_get_userbyid(r) END FROM unnest(p.polroles) r) AS roles
@@ -85,7 +87,7 @@ it('nessuna policy permissiva aggiuntiva apre le tabelle tenant-scoped ad app_ru
 
     $violations = array_values(array_filter(
         array_map(fn ($row) => "{$row->table_name}.{$row->polname} {$row->roles}", $extra),
-        fn (string $line) => ! preg_match('/^(tenants|tenant_members)\.definer_lookup \{app_migrator\}$/', $line),
+        fn (string $line) => ! preg_match('/^(tenants|tenant_members|reservations)\.definer_lookup \{app_migrator\}$/', $line),
     ));
 
     expect($violations)->toBe([]);

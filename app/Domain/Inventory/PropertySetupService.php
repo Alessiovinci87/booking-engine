@@ -30,6 +30,8 @@ final class PropertySetupService
 
     public const GUARD_CANCELLATION_POLICY = 'CANCELLATION_POLICY_MISSING';
 
+    public const GUARD_PRIVACY_POLICY = 'PRIVACY_POLICY_MISSING';
+
     public const GUARD_PAYMENTS = 'PAYMENTS_NOT_ENABLED';
 
     public function __construct(private readonly AuditLogger $audit) {}
@@ -132,6 +134,11 @@ final class PropertySetupService
             $missing[] = self::GUARD_CANCELLATION_POLICY;
         }
 
+        // La pagina ospite chiede di accettare l'informativa con il link della struttura (3.7, 09).
+        if ($property->privacy_policy_url === null || trim($property->privacy_policy_url) === '') {
+            $missing[] = self::GUARD_PRIVACY_POLICY;
+        }
+
         // 07 ammette in alternativa "solo unità con prenotazione manuale", ma il modello dati (02) non
         // ha un'unità solo manuale: serve l'account Stripe abilitato agli incassi (rapporto di M2).
         if (! StripeAccount::query()->where('charges_enabled', true)->exists()) {
@@ -153,6 +160,10 @@ final class PropertySetupService
 
         if (array_key_exists('default_cancellation_policy_id', $attributes) && $attributes['default_cancellation_policy_id'] === null) {
             $errors['default_cancellation_policy_id'] = __('inventory.validation.required_when_published');
+        }
+
+        if (array_key_exists('privacy_policy_url', $attributes) && ($attributes['privacy_policy_url'] === null || $attributes['privacy_policy_url'] === '')) {
+            $errors['privacy_policy_url'] = __('inventory.validation.required_when_published');
         }
 
         if ($translations !== null && array_key_exists('it', $translations) && $translations['it'] === null) {
