@@ -7,8 +7,12 @@ use App\Domain\Calendar\Http\RawResponse;
 use App\Domain\Calendar\IcalImportService;
 use App\Domain\Calendar\Models\ExternalCalendar;
 use App\Domain\Calendar\Models\ExternalCalendarEvent;
+use App\Domain\Calendar\Models\IcsFeed;
 use App\Domain\Calendar\Models\SyncRun;
+use App\Domain\Tenancy\TenantContext;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 /*
@@ -176,4 +180,45 @@ function calendarEvents(array $fx): array
 function freshCalendar(array $fx): ExternalCalendar
 {
     return inTenant($fx['tenant'], fn (): ExternalCalendar => ExternalCalendar::query()->findOrFail($fx['calendar']->id));
+}
+
+/**
+ * Calendario importato sull'unità di un tenant di prova già esistente (es. bookableTenant), con
+ * trasporto HTTP finto condiviso.
+ *
+ * @return array{tenant: string, unit: string, calendar: ExternalCalendar, http: FakeTransport, url: string}
+ */
+function calendarOn(array $fx, string $source = 'BOOKING', ?FakeTransport $http = null): array
+{
+    $http ??= app()->bound(HttpTransport::class) && app(HttpTransport::class) instanceof FakeTransport ? app(HttpTransport::class) : fakeCalendarHttp();
+    $url = 'https://ical.example.com/'.strtolower($source).'/'.Str::random(12).'.ics';
+    // I12: un'unità con calendari esterni è sempre REQUEST (le prenotazioni già fatte restano).
+    inTenant($fx['tenant'], fn () => DB::table('units')->where('id', $fx['unit'])->update(['booking_mode' => 'REQUEST']));
+
+    return ['tenant' => $fx['tenant'], 'unit' => $fx['unit'], 'calendar' => createCalendar($fx['tenant'], $fx['unit'], $source, $url), 'http' => $http, 'url' => $url];
+}
+
+/** Sincronizza un calendario con il contenuto indicato. */
+function syncWith(array $cal, string $ics): ?SyncRun
+{
+    $cal['http']->responses[$cal['url']] = icsResponse($ics);
+
+    return syncCalendar($cal);
+}
+
+/** Feed iCal esportato (token finto) con eventuale ultima lettura dell'OTA. */
+function createFeed(string $tenantId, string $unitId, string $destination, ?string $pairedCalendarId = null, ?CarbonImmutable $lastFetchedAt = null, string $status = 'ACTIVE'): IcsFeed
+{
+    return inTenant($tenantId, function () use ($unitId, $destination, $pairedCalendarId, $lastFetchedAt, $status): IcsFeed {
+        $token = Str::random(43);
+        $id = (string) Str::uuid7();
+        DB::table('ics_feeds')->insert([
+            'id' => $id, 'tenant_id' => app(TenantContext::class)->currentTenantId(), 'unit_id' => $unitId, 'destination' => $destination,
+            'paired_external_calendar_id' => $pairedCalendarId, 'token_encrypted' => Crypt::encryptString($token),
+            'token_hash' => hash('sha256', $token), 'status' => $status, 'last_fetched_at' => $lastFetchedAt,
+            'created_at' => now(), 'updated_at' => now(),
+        ]);
+
+        return IcsFeed::query()->findOrFail($id);
+    });
 }

@@ -336,6 +336,41 @@ final class InventoryService
     }
 
     /**
+     * Occupazioni attive di un'unità che toccano l'intervallo, come fatti in sola lettura per i feed
+     * iCal, la classificazione degli echi e i conflitti (06). Nessun dato personale (la nota resta fuori).
+     *
+     * @return list<array{id: string, kind: OccupancyKind, reservation_id: string|null, stay: StayRange, ics_uid: string, created_at: CarbonImmutable, updated_at: CarbonImmutable}>
+     */
+    public function occupancyFacts(string $unitId, StayRange $range): array
+    {
+        return $this->activeInRange($unitId, $range)->map(fn (InventoryOccupancy $o): array => [
+            'id' => $o->id,
+            'kind' => $o->kind,
+            'reservation_id' => $o->reservation_id,
+            'stay' => $o->stay,
+            'ics_uid' => $o->ics_uid,
+            'created_at' => CarbonImmutable::instance($o->created_at ?? now()),
+            'updated_at' => CarbonImmutable::instance($o->updated_at ?? now()),
+        ])->values()->all();
+    }
+
+    /**
+     * Prenotazione di ciascuna occupazione (null per i blocchi manuali), per le viste del pannello.
+     *
+     * @param  list<string>  $occupancyIds
+     * @return array<string, string|null>
+     */
+    public function reservationIdsFor(array $occupancyIds): array
+    {
+        if ($occupancyIds === []) {
+            return [];
+        }
+
+        return InventoryOccupancy::query()->whereIn('id', $occupancyIds)->pluck('reservation_id', 'id')
+            ->map(fn ($id) => $id === null ? null : (string) $id)->all();
+    }
+
+    /**
      * Occupazioni attive di un'unità nell'intervallo per il calendario del pannello (07), come array:
      * fuori da questo servizio il modello delle occupazioni non si usa (CLAUDE.md regola 13).
      *

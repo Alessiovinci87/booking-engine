@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\Admin\Auth\MfaVerifyController;
 use App\Http\Controllers\Api\V1\Admin\Auth\SessionController;
 use App\Http\Controllers\Api\V1\Admin\BlockController;
 use App\Http\Controllers\Api\V1\Admin\CalendarController;
+use App\Http\Controllers\Api\V1\Admin\ConflictController;
 use App\Http\Controllers\Api\V1\Admin\DisputeController;
 use App\Http\Controllers\Api\V1\Admin\MeController;
 use App\Http\Controllers\Api\V1\Admin\PricePreviewController;
@@ -108,6 +109,12 @@ Route::prefix('admin')->middleware(EnsureFrontendRequestsAreStateful::class)->gr
         Route::patch('reservations/{reservation}', [ReservationController::class, 'update'])->name('admin.reservations.update');
         Route::get('refunds', [RefundController::class, 'index'])->name('admin.refunds.index');
         Route::get('disputes', [DisputeController::class, 'index'])->name('admin.disputes.index');
+
+        Route::get('conflicts', [ConflictController::class, 'index'])->name('admin.conflicts.index');
+        Route::post('conflicts/{conflict}/investigate', [ConflictController::class, 'investigate'])->name('admin.conflicts.investigate');
+        Route::post('conflicts/{conflict}/resolve', [ConflictController::class, 'resolve'])->name('admin.conflicts.resolve');
+        Route::post('conflicts/{conflict}/ignore', [ConflictController::class, 'ignore'])->name('admin.conflicts.ignore');
+        Route::post('external-events/{event}/not-echo', [ConflictController::class, 'notAnEcho'])->name('admin.external-events.not-echo');
     });
 });
 

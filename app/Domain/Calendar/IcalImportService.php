@@ -32,7 +32,9 @@ use Illuminate\Support\Str;
  * 3. `304` → NOT_MODIFIED.
  * 4. Risposta valida → in una transazione con la riga del calendario bloccata: eventi nuovi, modificati
  *    (audit), ricomparsi; assenti in due passi (PENDING_REMOVAL, poi REMOVED ad almeno 10 minuti);
- *    salvaguardia anti-svuotamento → SUSPICIOUS senza rimozioni e allerta.
+ *    salvaguardia anti-svuotamento → SUSPICIOUS senza rimozioni e allerta. Classificazione degli echi
+ *    (EchoClassifier) e conflitti (ConflictDetector) per gli eventi nuovi, modificati o ricomparsi;
+ *    i conflitti aperti di un evento rimosso si risolvono da soli (ConflictService).
  *
  * Prossimo giro dopo 10 minuti ± 90 secondi. Nei log solo ID: l'URL può contenere il token dell'OTA.
  */
@@ -54,6 +56,8 @@ class IcalImportService
         private readonly EchoClassifier $echoes,
         private readonly ExternalEventStateMachine $events,
         private readonly ExternalCalendarStateMachine $calendars,
+        private readonly ConflictDetector $detector,
+        private readonly ConflictService $conflicts,
     ) {}
 
     /**
@@ -193,13 +197,14 @@ class IcalImportService
 
                 if ($current === null) {
                     [$echo, $echoOf] = $this->echoes->classify($calendar, $event);
-                    $this->events->create($calendar, $event, $echo, $echoOf, $now);
+                    $this->detector->detect($calendar, $this->events->create($calendar, $event, $echo, $echoOf, $now));
                     $added++;
 
                     continue;
                 }
 
                 if ($this->events->seen($current, $event, $now)) {
+                    $this->detector->detect($calendar, $current);
                     $updated++;
                 }
             }
@@ -213,6 +218,7 @@ class IcalImportService
                         $this->events->markPendingRemoval($event, $now);
                         $pending++;
                     } elseif ($this->events->confirmRemoval($event, $now)) {
+                        $this->conflicts->eventRemoved($event);
                         $removed++;
                     }
                 }

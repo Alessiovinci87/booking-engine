@@ -31,6 +31,15 @@ L'implementazione di M5 (import ed export iCal, conflitti, preventivi) ha incont
 13. **Macchine a stati.** Gli stati di eventi e calendari importati cambiano solo in `ExternalEventStateMachine` e `ExternalCalendarStateMachine` (CLAUDE.md regola 5); l'audit registra date e stati, mai il SUMMARY.
 14. **Libreria.** `sabre/vobject` 4.5.9 (ADR-0006): la 4.5.0 genera avvisi di deprecazione con PHP 8.4.
 
+### Echi e conflitti (5.3)
+
+15. **Contenuto dei feed in un solo punto.** La matrice dei flussi di 06 è implementata da `Calendar\Export\FeedContents`, usata sia dal classificatore degli echi sia (5.4) dal builder del feed: "intervallo identico a un evento che esportiamo nel feed di quella OTA" significa esattamente un elemento di `FeedContents` per quella destinazione. Il feed per Booking o Airbnb esclude gli eventi di qualsiasi calendario della stessa OTA sull'unità, oltre al calendario accoppiato.
+16. **"Comparso dopo che l'OTA ha letto il nostro feed".** L'elemento esportato deve esistere da prima dell'ultima lettura (`last_fetched_at`) del feed accoppiato al calendario (o, senza accoppiamento, del feed dell'unità con la stessa destinazione, `ACTIVE` o `FROZEN`). Mai letto → nessuna eco sospetta. L'eco sospetta non salva l'elemento di cui sembra l'eco (`echo_of_ics_uid` è solo per le confermate, vincolo del database): lo si ricalcola quando serve.
+17. **Conflitti.** Notti del conflitto = intersezione dei due intervalli. Una coppia (evento, occupazione) o (evento, evento) con un conflitto già `OPEN` o `INVESTIGATING` non ne apre un secondo. Il rilevamento gira per eventi nuovi, con date cambiate o ricomparsi; un'eco sospetta genera conflitti (`suspected_echo = true`) solo con elementi diversi da quello di cui sembra l'eco. Gli eventi `PENDING_REMOVAL` non generano conflitti (06 parla di eventi `ACTIVE`) ma restano esportati, perché bloccano ancora le date.
+18. **Risoluzione automatica** (06 "Rimozione" punto 4, 03 sezione 5): solo dai conflitti `OPEN` (un conflitto preso in carico resta al gestore), con `resolution = CANCELLED_EXTERNAL` e nota automatica; notifica `calendar.conflict_auto_resolved`.
+19. **Notifiche al gestore** tramite outbox: `calendar.conflict_opened`, `calendar.conflict_auto_resolved` (e `calendar.sync_unhealthy`, 5.6), consegnate da `SendCalendarEmail` all'email di contatto della struttura, senza dati dell'ospite.
+20. **API aggiunta**: `POST /admin/external-events/{id}/not-echo` per la riclassificazione "non è un'eco, è una prenotazione vera" prevista da 06; `409 ILLEGAL_TRANSITION` se l'evento non è un'eco sospetta. `GET /admin/conflicts` accetta `status[]` (predefinito `OPEN` e `INVESTIGATING`) e `unit_id`; ogni conflitto riporta `kind` (`RESERVATION`, `MANUAL_BLOCK`, `EXTERNAL`), la prenotazione coinvolta e gli eventi esterni con origine.
+
 ## Alternative considerate
 
 | Alternativa | Perché scartata |
@@ -44,7 +53,7 @@ L'implementazione di M5 (import ed export iCal, conflitti, preventivi) ha incont
 
 ## Impatto sui test
 
-- Test aggiunti: `Unit/Calendar/SafeHttpFetcherTest`, `Unit/Calendar/IcsParserTest`, `Feature/Calendar/IcalImportTest`, `SyncErrorKeepsDatesTest`, `AntiWipeSafeguardTest`.
+- Test aggiunti: `Unit/Calendar/SafeHttpFetcherTest`, `Unit/Calendar/IcsParserTest`, `Feature/Calendar/IcalImportTest`, `SyncErrorKeepsDatesTest`, `AntiWipeSafeguardTest`, `ConflictOnConfirmedTest`, `ConflictCloseKeepsDatesTest`, `EchoLoopTest`.
 - Test modificati: `Arch/ExternalHttpTest` (eccezione per `CurlTransport`).
 
 ## Aggiornamento della specifica
