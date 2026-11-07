@@ -3,6 +3,7 @@
 use App\Domain\Calendar\Outbox\SendCalendarEmail;
 use App\Domain\Quotes\Outbox\SendQuoteEmail;
 use App\Domain\Reservations\Outbox\SendReservationEmail;
+use App\Domain\Tenancy\Offboarding\SendOffboardingEmail;
 use App\Domain\Tenancy\Outbox\SendAccountEmail;
 
 /*
@@ -38,6 +39,8 @@ return [
         'quote.sent' => SendQuoteEmail::class,
         'account.password_reset' => SendAccountEmail::class,
         'account.password_changed' => SendAccountEmail::class,
+        'tenant.export_ready' => SendOffboardingEmail::class,
+        'offboarding.feed_still_read' => SendOffboardingEmail::class,
     ],
 
     // Tentativi massimi prima dello stato FAILED.

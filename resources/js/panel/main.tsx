@@ -21,6 +21,7 @@ import { MfaVerifyPage } from './pages/MfaVerifyPage';
 import { GuestDataPage } from './pages/GuestDataPage';
 import { MetricsPage } from './pages/MetricsPage';
 import { NewReservationPage } from './pages/NewReservationPage';
+import { OffboardingPage } from './pages/OffboardingPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { PaymentsPage } from './pages/PaymentsPage';
 import { PropertiesPage } from './pages/PropertiesPage';
@@ -29,6 +30,7 @@ import { QuotesPage } from './pages/QuotesPage';
 import { ReservationDetailPage } from './pages/ReservationDetailPage';
 import { ReservationsPage } from './pages/ReservationsPage';
 import { ResetPasswordPage } from './pages/ResetPasswordPage';
+import { SupportAccessPage } from './pages/SupportAccessPage';
 import { UnitPage } from './pages/UnitPage';
 
 const queryClient: QueryClient = new QueryClient({
@@ -118,6 +120,8 @@ createRoot(container).render(
                             <Route path="metriche" element={<MetricsPage />} />
                             <Route path="ospiti/:guestId/dati" element={<GuestDataPage />} />
                             <Route path="account" element={<AccountPage />} />
+                            <Route path="uscita" element={<OffboardingPage />} />
+                            <Route path="accessi-supporto" element={<SupportAccessPage />} />
                             <Route path="*" element={<NotFoundPage />} />
                         </Route>
                     </Routes>

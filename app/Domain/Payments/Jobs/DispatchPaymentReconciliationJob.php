@@ -5,6 +5,7 @@ namespace App\Domain\Payments\Jobs;
 use App\Domain\Communications\Alerts\AlertSignal;
 use App\Domain\Communications\Alerts\OperationalAlerts;
 use App\Domain\Inventory\InventoryService;
+use App\Domain\Tenancy\Database\DbRow;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Database\DatabaseManager;
@@ -39,7 +40,7 @@ final class DispatchPaymentReconciliationJob implements ShouldQueue
             $bindings[] = $now->subMinutes(ReconcilePaymentsJob::PENDING_WITHOUT_SESSION_MINUTES)->toIso8601ZuluString('microsecond');
         }
 
-        $tenants = array_map(fn (object $row): string => (string) $row->tenant_id, $connection->select(
+        $tenants = array_map(fn (object $row): string => DbRow::string($row, 'tenant_id'), $connection->select(
             'select distinct p.tenant_id::text as tenant_id from payments p where '.implode(' or ', $conditions).' limit 500',
             $bindings,
         ));
@@ -50,7 +51,7 @@ final class DispatchPaymentReconciliationJob implements ShouldQueue
                  where (status = 'PENDING' and updated_at < ?) or (status = 'FAILED' and next_attempt_at <= ?) limit 500",
                 [$now->subMinutes(ReconcilePaymentsJob::PENDING_REFUND_MINUTES)->toIso8601ZuluString('microsecond'), $now->toIso8601ZuluString('microsecond')],
             );
-            $tenants = array_values(array_unique([...$tenants, ...array_map(fn (object $row): string => (string) $row->tenant_id, $refundTenants)]));
+            $tenants = array_values(array_unique([...$tenants, ...array_map(fn (object $row): string => DbRow::string($row, 'tenant_id'), $refundTenants)]));
 
             foreach (InventoryService::i15Violations($connection) as $violation) {
                 // Incoerenza stato/occupazione (08: incidente P1): log critical ed email alla piattaforma.

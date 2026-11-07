@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Admin;
 
+use App\Domain\Tenancy\Models\SupportAccessGrant;
 use App\Domain\Tenancy\Models\Tenant;
 use App\Domain\Tenancy\Models\TenantMember;
 use App\Domain\Tenancy\Models\User;
@@ -15,7 +16,7 @@ final class MeResource extends JsonResource
 {
     public static $wrap = null;
 
-    public function __construct(User $user, private readonly Tenant $tenant, private readonly TenantMember $member)
+    public function __construct(User $user, private readonly Tenant $tenant, private readonly ?TenantMember $member, private readonly ?SupportAccessGrant $support = null)
     {
         parent::__construct($user);
     }
@@ -33,11 +34,19 @@ final class MeResource extends JsonResource
                 'id' => $this->tenant->id,
                 'name' => $this->tenant->name,
                 'slug' => $this->tenant->slug,
+                // Stato del tenant: in uscita il pannello mostra il banner e resta in sola lettura (7.1).
+                'status' => $this->tenant->status->value,
                 // DPA (09 requisito 1): visibile al gestore, registrato dalla piattaforma.
                 'dpa_signed_at' => $this->tenant->dpa_signed_at?->toIso8601ZuluString(),
                 'dpa_version' => $this->tenant->dpa_version,
             ],
-            'role' => $this->member->role->value,
+            // Operatore di piattaforma (7.5): nessun ruolo, sola lettura fino alla scadenza.
+            'role' => $this->member?->role->value,
+            'support' => $this->support === null ? null : [
+                'id' => $this->support->id,
+                'reason' => $this->support->reason,
+                'expires_at' => $this->support->expires_at->toIso8601ZuluString(),
+            ],
         ];
     }
 }

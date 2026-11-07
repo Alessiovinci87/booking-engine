@@ -16,6 +16,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $id
  * @property string $property_id
  * @property CancellationPolicyCode $code
+ * @property-read Property $property relazione su FK NOT NULL (7.4)
  */
 class CancellationPolicy extends TenantModel
 {

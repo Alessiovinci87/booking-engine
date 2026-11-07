@@ -30,7 +30,9 @@ use App\Domain\Reservations\StateMachines\ReservationStateMachine;
 use App\Domain\Reservations\StayRange;
 use App\Domain\Tenancy\Audit\AuditLogger;
 use App\Domain\Tenancy\Enums\Locale;
+use App\Domain\Tenancy\Enums\TenantStatus;
 use App\Domain\Tenancy\Exceptions\BusinessRuleViolation;
+use App\Domain\Tenancy\Models\Tenant;
 use App\Domain\Tenancy\Outbox\Outbox;
 use App\Domain\Tenancy\TenantContext;
 use Carbon\CarbonImmutable;
@@ -154,7 +156,8 @@ final class QuoteService
     {
         $quote = Quote::query()->with(['unit.translations', 'unit.property.translations'])->where('public_token_hash', $tokenHash)->first();
 
-        if ($quote === null || $quote->status === QuoteStatus::DRAFT) {
+        // Tenant sospeso, in uscita o chiuso: vendite chiuse anche per i preventivi (09 "Uscita del cliente").
+        if ($quote === null || $quote->status === QuoteStatus::DRAFT || ! self::tenantSells()) {
             throw BusinessRuleViolation::make(404, 'NOT_FOUND');
         }
 
@@ -180,7 +183,7 @@ final class QuoteService
         $step = $this->tenants->run($tenantId, function () use ($tokenHash, $guest): array {
             $quote = Quote::query()->where('public_token_hash', $tokenHash)->lockForUpdate()->first();
 
-            if ($quote === null || $quote->status === QuoteStatus::DRAFT) {
+            if ($quote === null || $quote->status === QuoteStatus::DRAFT || ! self::tenantSells()) {
                 throw BusinessRuleViolation::make(404, 'NOT_FOUND');
             }
 
@@ -337,5 +340,10 @@ final class QuoteService
             QuoteStatus::ACCEPTED, QuoteStatus::IN_CHECKOUT => $allowFinal ? null : throw BusinessRuleViolation::make(409, 'QUOTE_ALREADY_ACCEPTED'),
             default => null,
         };
+    }
+
+    private static function tenantSells(): bool
+    {
+        return Tenant::query()->where('status', TenantStatus::ACTIVE->value)->exists();
     }
 }

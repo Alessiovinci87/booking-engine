@@ -2,6 +2,7 @@
 
 namespace App\Domain\Tenancy\Outbox;
 
+use App\Domain\Tenancy\Database\DbRow;
 use Illuminate\Database\DatabaseManager;
 
 /**
@@ -22,6 +23,6 @@ final class AdminOpsPendingOutboxMessages implements PendingOutboxMessages
             [$limit],
         );
 
-        return array_map(fn (object $row): array => ['tenant_id' => $row->tenant_id, 'id' => $row->id], $rows);
+        return array_values(array_map(fn (object $row): array => ['tenant_id' => DbRow::string($row, 'tenant_id'), 'id' => DbRow::string($row, 'id')], $rows));
     }
 }

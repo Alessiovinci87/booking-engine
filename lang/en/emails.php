@@ -109,4 +109,12 @@ return [
         'subject' => 'Your password has been changed',
         'lines' => ['The password of your panel account was changed on :changed_at (UTC). All other open sessions have been closed.', 'If you did not change it, reset it right away from the link below and contact support.'],
     ],
+    'tenant_export_ready' => [
+        'subject' => 'Your data export is ready',
+        'lines' => ['The full export of your property data is ready: you will find it on the "Leaving the platform" page of the panel, which asks for your password.', 'It can be downloaded until :expires_at; after that date the file is deleted.'],
+    ],
+    'offboarding_feed_still_read' => [
+        'subject' => 'The calendar of :unit is still read by :destination',
+        'lines' => [':destination last read the calendar of :unit on :last_fetched_at: the link is still active, so we do not switch it off, to avoid leaving dates open by mistake.', 'Remove the calendar from the :destination settings and confirm on the "Leaving the platform" page of the panel.'],
+    ],
 ];

@@ -4,6 +4,7 @@ namespace App\Domain\Communications\Alerts\Jobs;
 
 use App\Domain\Communications\Alerts\AlertSignal;
 use App\Domain\Communications\Alerts\OperationalAlerts;
+use App\Domain\Tenancy\Database\DbRow;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Database\DatabaseManager;
@@ -30,7 +31,7 @@ final class UnhealthyCalendarsSummaryJob implements ShouldQueue
             return;
         }
 
-        $context = ['tenants' => count($rows), 'calendars' => array_sum(array_map(fn (object $r): int => (int) $r->calendars, $rows))];
+        $context = ['tenants' => count($rows), 'calendars' => array_sum(array_map(fn (object $r): int => DbRow::int($r, 'calendars'), $rows))];
 
         foreach ($rows as $row) {
             $context['tenant '.$row->tenant_id] = (int) $row->calendars;

@@ -21,6 +21,8 @@ use App\Http\Controllers\Api\V1\Admin\RatePlanController;
 use App\Http\Controllers\Api\V1\Admin\RefundController;
 use App\Http\Controllers\Api\V1\Admin\ReservationController;
 use App\Http\Controllers\Api\V1\Admin\StripeAccountController;
+use App\Http\Controllers\Api\V1\Admin\SupportAccessController;
+use App\Http\Controllers\Api\V1\Admin\TenantOffboardingController;
 use App\Http\Controllers\Api\V1\Admin\UnitController;
 use App\Http\Controllers\Api\V1\Admin\UnitPhotoController;
 use App\Http\Controllers\Api\V1\Public\PropertyController as PublicPropertyController;
@@ -30,7 +32,7 @@ use Illuminate\Support\Facades\Route;
 use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful;
 
 // Identificativi UUID nei percorsi: un valore diverso non trova la rotta (404) e non arriva mai al database.
-foreach (['property', 'unit', 'photo', 'season', 'reservation', 'block', 'refund', 'quote', 'guest'] as $parameter) {
+foreach (['property', 'unit', 'photo', 'season', 'reservation', 'block', 'refund', 'quote', 'guest', 'export', 'feed', 'grant'] as $parameter) {
     Route::pattern($parameter, '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}');
 }
 
@@ -64,7 +66,7 @@ Route::prefix('admin')->middleware(EnsureFrontendRequestsAreStateful::class)->gr
     });
 
     // L'Idempotency-Key (07, I9) precede il middleware tenant: la risposta si salva dopo il commit.
-    Route::middleware(['auth:sanctum', 'panel.fresh', 'mfa', 'throttle:admin', 'idempotent', 'tenant'])->group(function (): void {
+    Route::middleware(['auth:sanctum', 'panel.fresh', 'mfa', 'support', 'throttle:admin', 'idempotent', 'tenant', 'tenant.writable'])->group(function (): void {
         Route::post('properties/{property}/publish', [PropertyController::class, 'publish'])->name('admin.properties.publish');
 
         Route::post('reservations', [ReservationController::class, 'store'])->name('admin.reservations.store');
@@ -84,24 +86,24 @@ Route::prefix('admin')->middleware(EnsureFrontendRequestsAreStateful::class)->gr
     });
 
     // Chiamate al servizio di pagamento fuori transazione (05): il servizio apre i propri passi.
-    Route::middleware(['auth:sanctum', 'panel.fresh', 'mfa', 'throttle:admin', 'idempotent', 'tenant:panel,steps'])->group(function (): void {
+    Route::middleware(['auth:sanctum', 'panel.fresh', 'mfa', 'support', 'throttle:admin', 'idempotent', 'tenant:panel,steps', 'tenant.writable'])->group(function (): void {
         Route::post('reservations/{reservation}/recovery-link', [ReservationController::class, 'recoveryLink'])->name('admin.reservations.recovery-link');
     });
 
     // Calendari importati (5.6): download con SafeHttpFetcher fuori transazione, il servizio apre i propri passi.
-    Route::middleware(['auth:sanctum', 'panel.fresh', 'mfa', 'throttle:admin', 'tenant:panel,steps'])->group(function (): void {
+    Route::middleware(['auth:sanctum', 'panel.fresh', 'mfa', 'support', 'throttle:admin', 'tenant:panel,steps', 'tenant.writable'])->group(function (): void {
         Route::post('units/{unit}/external-calendars', [ExternalCalendarController::class, 'store'])->name('admin.units.external-calendars.store');
         Route::patch('external-calendars/{calendar}', [ExternalCalendarController::class, 'update'])->name('admin.external-calendars.update');
         Route::post('external-calendars/{calendar}/sync-now', [ExternalCalendarController::class, 'syncNow'])->name('admin.external-calendars.sync-now');
     });
 
     // Collegamento Stripe (4.1): letture e link di onboarding con chiamate a Stripe fuori transazione.
-    Route::middleware(['auth:sanctum', 'panel.fresh', 'mfa', 'throttle:admin', 'tenant:panel,steps'])->group(function (): void {
+    Route::middleware(['auth:sanctum', 'panel.fresh', 'mfa', 'support', 'throttle:admin', 'tenant:panel,steps', 'tenant.writable'])->group(function (): void {
         Route::get('stripe/account', [StripeAccountController::class, 'show'])->name('admin.stripe.account');
         Route::post('stripe/onboarding-link', [StripeAccountController::class, 'onboardingLink'])->middleware('reauth')->name('admin.stripe.onboarding-link');
     });
 
-    Route::middleware(['auth:sanctum', 'panel.fresh', 'mfa', 'throttle:admin', 'tenant'])->group(function (): void {
+    Route::middleware(['auth:sanctum', 'panel.fresh', 'mfa', 'support', 'throttle:admin', 'tenant', 'tenant.writable'])->group(function (): void {
         Route::get('me', MeController::class)->name('admin.me');
         Route::get('properties', [PropertyController::class, 'index'])->name('admin.properties.index');
         Route::post('properties', [PropertyController::class, 'store'])->name('admin.properties.store');
@@ -160,7 +162,19 @@ Route::prefix('admin')->middleware(EnsureFrontendRequestsAreStateful::class)->gr
         // Export con dati personali (08 "export completo", 6.7): password confermata negli ultimi 15 minuti.
         Route::get('guests/{guest}/export', [GuestPrivacyController::class, 'export'])->middleware('reauth')->name('admin.guests.export');
         Route::get('exports/reservations.csv', [MetricsController::class, 'reservationsCsv'])->middleware('reauth')->name('admin.exports.reservations');
+
+        // Uscita del cliente (7.1; 06, 09, ADR-0018).
+        Route::get('tenant/offboarding', [TenantOffboardingController::class, 'show'])->name('admin.tenant.offboarding');
+        Route::post('tenant/offboarding/start', [TenantOffboardingController::class, 'start'])->middleware('reauth')->name('admin.tenant.offboarding.start');
+        Route::post('tenant/offboarding/channels/{feed}/confirm-removed', [TenantOffboardingController::class, 'confirmRemoved'])->middleware('reauth')->name('admin.tenant.offboarding.confirm-removed');
+        Route::post('tenant/export', [TenantOffboardingController::class, 'export'])->middleware('reauth')->name('admin.tenant.export');
+        Route::get('tenant/exports', [TenantOffboardingController::class, 'exports'])->name('admin.tenant.exports');
+        Route::get('tenant/exports/{export}/download', [TenantOffboardingController::class, 'download'])->middleware(['signed:relative', 'reauth'])->name('admin.tenant.exports.download');
         Route::get('quotes/{quote}', [QuoteController::class, 'show'])->name('admin.quotes.show');
+
+        // Accessi di supporto (7.5; 08, ADR-0018): elenco visibile al gestore e revoca.
+        Route::get('support-access', [SupportAccessController::class, 'index'])->name('admin.support-access.index');
+        Route::post('support-access/{grant}/revoke', [SupportAccessController::class, 'revoke'])->middleware('reauth')->name('admin.support-access.revoke');
     });
 });
 

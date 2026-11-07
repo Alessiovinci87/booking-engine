@@ -18,6 +18,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int|null $width
  * @property int|null $height
  * @property int $position 0 = copertina
+ * @property-read Unit $unit relazione su FK NOT NULL (7.4)
  */
 class UnitPhoto extends TenantModel
 {

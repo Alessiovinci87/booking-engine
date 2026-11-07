@@ -15,6 +15,7 @@ use App\Domain\Reservations\Enums\ReservationStatus;
 use App\Domain\Reservations\Models\Reservation;
 use App\Domain\Reservations\StayRange;
 use App\Domain\Tenancy\Audit\AuditLogger;
+use App\Domain\Tenancy\Database\DbRow;
 use App\Domain\Tenancy\Exceptions\BusinessRuleViolation;
 use Carbon\CarbonImmutable;
 use Closure;
@@ -252,7 +253,7 @@ final class InventoryService
             $ranges[] = StayRange::fromPostgres((string) $row->stay);
         }
 
-        return $ranges;
+        return array_values($ranges);
     }
 
     /**
@@ -292,10 +293,10 @@ final class InventoryService
      */
     public function expiredReservations(CarbonImmutable $now, array $reasons, int $limit = 100): array
     {
-        return $this->expiredTemporary($now, $reasons, $limit)
+        return array_values($this->expiredTemporary($now, $reasons, $limit)
             ->filter(fn (InventoryOccupancy $o): bool => $o->reservation_id !== null && $o->expires_at !== null)
             ->map(fn (InventoryOccupancy $o): array => ['reservation_id' => (string) $o->reservation_id, 'expires_at' => $o->expires_at ?? $now])
-            ->values()->all();
+            ->all());
     }
 
     /**
@@ -315,7 +316,7 @@ final class InventoryService
             [...array_map(fn (OccupancyTempReason $r): string => $r->value, $reasons), $now->toIso8601ZuluString('microsecond'), $limit],
         );
 
-        return array_map(fn (object $row): string => (string) $row->tenant_id, $rows);
+        return array_values(array_map(fn (object $row): string => DbRow::string($row, 'tenant_id'), $rows));
     }
 
     /**
@@ -345,7 +346,7 @@ final class InventoryService
             [$limit, $limit],
         );
 
-        return array_map(fn (object $row): array => ['tenant_id' => (string) $row->tenant_id, 'reservation_id' => (string) $row->reservation_id, 'problem' => (string) $row->problem], $rows);
+        return array_values(array_map(fn (object $row): array => ['tenant_id' => DbRow::string($row, 'tenant_id'), 'reservation_id' => DbRow::string($row, 'reservation_id'), 'problem' => DbRow::string($row, 'problem')], $rows));
     }
 
     /**
@@ -356,7 +357,7 @@ final class InventoryService
      */
     public function occupancyFacts(string $unitId, StayRange $range): array
     {
-        return $this->activeInRange($unitId, $range)->map(fn (InventoryOccupancy $o): array => [
+        return array_values($this->activeInRange($unitId, $range)->map(fn (InventoryOccupancy $o): array => [
             'id' => $o->id,
             'kind' => $o->kind,
             'reservation_id' => $o->reservation_id,
@@ -365,7 +366,7 @@ final class InventoryService
             'ics_sequence' => $o->ics_sequence,
             'created_at' => CarbonImmutable::instance($o->created_at ?? now()),
             'updated_at' => CarbonImmutable::instance($o->updated_at ?? now()),
-        ])->values()->all();
+        ])->values()->all());
     }
 
     /**
@@ -392,7 +393,7 @@ final class InventoryService
      */
     public function calendarOccupancies(string $unitId, StayRange $range): array
     {
-        return $this->activeInRange($unitId, $range)->map(fn (InventoryOccupancy $o): array => self::view($o))->values()->all();
+        return array_values($this->activeInRange($unitId, $range)->map(fn (InventoryOccupancy $o): array => self::view($o))->all());
     }
 
     /**
@@ -436,6 +437,36 @@ final class InventoryService
 
             throw $e;
         }
+    }
+
+    /** Tabella delle occupazioni, per i cataloghi che devono nominarla (cancellazione del tenant, 7.1). */
+    public const OCCUPANCY_TABLE = 'inventory_occupancies';
+
+    /**
+     * Cancellazione di tutte le occupazioni del tenant secondo il DPA (7.1, ADR-0018): solo dentro
+     * RetentionDatabase (ruolo app_retention), con il tenant in uscita e senza vendite. Non è
+     * un rilascio: le righe spariscono insieme a prenotazioni, eventi esterni e conflitti.
+     */
+    public function purgeTenant(ConnectionInterface $retention, string $tenantId): int
+    {
+        return $retention->table(self::OCCUPANCY_TABLE)->where('tenant_id', $tenantId)->delete();
+    }
+
+    /**
+     * Cancellazione delle occupazioni di prenotazioni concluse oltre la durata della categoria A (7.2,
+     * ADR-0018): solo dentro RetentionDatabase (ruolo app_retention), insieme alle prenotazioni stesse.
+     *
+     * @param  list<string>  $reservationIds
+     */
+    public function purgeReservations(ConnectionInterface $retention, string $tenantId, array $reservationIds): int
+    {
+        $deleted = 0;
+
+        foreach (array_chunk($reservationIds, 500) as $chunk) {
+            $deleted += $retention->table(self::OCCUPANCY_TABLE)->where('tenant_id', $tenantId)->whereIn('reservation_id', $chunk)->delete();
+        }
+
+        return $deleted;
     }
 
     private function lockUnit(string $unitId): Unit

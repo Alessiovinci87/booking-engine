@@ -28,6 +28,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property CarbonImmutable|null $next_poll_at
  * @property CarbonImmutable|null $url_changed_at
  * @property bool $demo calendario dimostrativo del seeder: niente polling né salute (ADR-0013 punto 44)
+ * @property-read Unit $unit relazione su FK NOT NULL (7.4)
  */
 class ExternalCalendar extends TenantModel
 {

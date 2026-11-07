@@ -46,6 +46,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $checkout_attempts
  * @property int $max_checkout_attempts
  * @property int $version
+ * @property-read Unit $unit relazione su FK NOT NULL (7.4)
  */
 #[PersonalData('guest_name', 'guest_email')]
 #[UseEloquentBuilder(StatusGuardedBuilder::class)]

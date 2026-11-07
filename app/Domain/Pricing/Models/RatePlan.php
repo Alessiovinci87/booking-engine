@@ -18,6 +18,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int $base_nightly_cents
  * @property string $currency
  * @property bool $active
+ * @property-read Unit $unit relazione su FK NOT NULL (7.4)
  */
 class RatePlan extends TenantModel
 {

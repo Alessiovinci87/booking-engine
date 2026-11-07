@@ -83,3 +83,28 @@ it('app_admin_ops può leggere ma non scrivere', function () {
 
     $adminOps->table('migrations')->insert(['migration' => 'admin_ops_should_not_write', 'batch' => 0]);
 })->throws(QueryException::class, 'permission denied');
+
+it('app_retention non scavalca RLS e ha solo SELECT e DELETE sulle tabelle previste (7.1, 7.2)', function () {
+    $retention = roleAttributes('app_retention');
+    $privilege = fn (string $table, string $privilege): bool => DB::selectOne(
+        'select has_table_privilege(?, ?, ?) as granted',
+        ['app_retention', 'public.'.$table, $privilege]
+    )->granted;
+
+    expect($retention->rolsuper)->toBeFalse()
+        ->and($retention->rolbypassrls)->toBeFalse()
+        ->and($retention->rolcreatedb)->toBeFalse()
+        ->and($retention->rolcreaterole)->toBeFalse();
+
+    foreach (['reservations', 'guests', 'audit_log', 'tenant_exports', 'users', 'user_password_resets'] as $table) {
+        expect($privilege($table, 'SELECT'))->toBeTrue("SELECT su {$table}")
+            ->and($privilege($table, 'DELETE'))->toBeTrue("DELETE su {$table}")
+            ->and($privilege($table, 'INSERT'))->toBeFalse("INSERT su {$table}")
+            ->and($privilege($table, 'UPDATE'))->toBeFalse("UPDATE su {$table}")
+            ->and($privilege($table, 'TRUNCATE'))->toBeFalse("TRUNCATE su {$table}");
+    }
+
+    foreach (['tenants', 'webhook_events', 'retention_policies', 'migrations'] as $table) {
+        expect($privilege($table, 'DELETE'))->toBeFalse("DELETE su {$table}");
+    }
+});

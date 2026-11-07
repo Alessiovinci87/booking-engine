@@ -64,6 +64,8 @@ Le categorie sono separate perché hanno basi giuridiche e durate diverse:
 
 Il job di retention gira ogni notte, per tenant, e registra in `AuditLog` quante righe ha trattato per categoria. La categoria H riguarda una tabella globale (senza tenant): il job la tratta una volta per esecuzione, non per tenant.
 
+Finché una categoria non è validata il job gira **in simulazione**: registra quante righe tratterebbe, senza modificare nulla; agisce solo sulle categorie validate. La validazione si registra con `php artisan retention validate` (nome del professionista e data). Selezione per categoria, ruolo e comandi: ADR-0018 punti 11–16.
+
 ### Anonimizzazione effettiva
 
 Anonimizzare un ospite significa togliere i suoi dati da **tutte** le copie che controlliamo, non solo dalla tabella `guests`:
@@ -126,6 +128,8 @@ La disattivazione dei calendari esportati è la parte delicata: se un feed spari
 5. **Revoca degli altri collegamenti**: calendari importati disattivati; l'account Stripe resta della struttura, la piattaforma revoca solo il proprio accesso.
 6. **Cancellazione o restituzione dei dati secondo il DPA**: dopo il ritiro dei feed e almeno 30 giorni dall'export, o su istruzione scritta; restano solo i dati che la piattaforma deve conservare per obblighi propri (fatturazione SaaS). I backup scadono con la rotazione naturale.
 7. **Chiusura**: conferma scritta al cliente; `Tenant.status = CLOSED`.
+
+Dettagli tecnici (ruolo `app_retention`, cosa si cancella e cosa resta, formato dell'export, rotte ammesse in sola lettura): ADR-0018. Procedura per la piattaforma: `docs/guide/uscita-cliente.md`.
 
 ## Privacy by design nel codice
 

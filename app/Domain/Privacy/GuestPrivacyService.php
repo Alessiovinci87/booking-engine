@@ -16,6 +16,7 @@ use App\Domain\Reservations\Models\ReservationChange;
 use App\Domain\Tenancy\Audit\AuditLogger;
 use App\Domain\Tenancy\Exceptions\BusinessRuleViolation;
 use App\Domain\Tenancy\Models\OutboxMessage;
+use App\Domain\Tenancy\Offboarding\OffboardingService;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -39,6 +40,7 @@ final class GuestPrivacyService
     public function __construct(
         private readonly InventoryService $inventory,
         private readonly AuditLogger $audit,
+        private readonly OffboardingService $offboarding,
     ) {}
 
     /**
@@ -153,7 +155,7 @@ final class GuestPrivacyService
         $paymentIds = Payment::query()->whereIn('reservation_id', $reservationIds)->pluck('id');
         $refundIds = Refund::query()->whereIn('payment_id', $paymentIds)->pluck('id');
         $quoteIds = $reservations->pluck('quote_id')->filter()->values();
-        $occupancyIds = $this->inventory->occupancyIdsFor($reservationIds->values()->all());
+        $occupancyIds = $this->inventory->occupancyIdsFor(array_values($reservationIds->map(fn ($id): string => (string) $id)->all()));
         $conflicts = InventoryConflict::query()->whereIn('occupancy_id', $occupancyIds)->get(['id', 'external_event_id', 'other_external_event_id']);
         $eventIds = $conflicts->pluck('external_event_id')->merge($conflicts->pluck('other_external_event_id'))->filter()->unique()->values();
 
@@ -178,11 +180,31 @@ final class GuestPrivacyService
             'refund_reasons' => $this->redact(Refund::query()->whereIn('id', $refundIds), 'reason'),
             'quotes' => Quote::query()->whereIn('id', $quoteIds)->update(['guest_name' => self::REMOVED, 'guest_email' => null]),
             'outbox_payloads' => $this->purgeOutbox($reservationIds, $refundIds, $quoteIds),
+            // Export completi ancora scaricabili creati dopo l'ospite: lo contengono (09, I22; 7.1).
+            'tenant_exports' => $this->offboarding->expireExportsContaining(CarbonImmutable::parse($guest->created_at)),
         ];
 
         $this->audit->record('guest.erased', 'guest', $guest->id, $counts);
 
         return $guest;
+    }
+
+    /**
+     * Dati dell'ospite dei preventivi non accettati (categoria D di 09, job di conservazione 7.2): nome
+     * sostituito ed email tolta, come nell'anonimizzazione; payload dell'outbox svuotati.
+     *
+     * @param  list<string>  $quoteIds
+     */
+    public function anonymizeQuotes(array $quoteIds): int
+    {
+        if ($quoteIds === []) {
+            return 0;
+        }
+
+        $updated = Quote::query()->whereIn('id', $quoteIds)->update(['guest_name' => self::REMOVED, 'guest_email' => null]);
+        $this->purgeOutbox(collect(), collect(), collect($quoteIds));
+
+        return $updated;
     }
 
     /**

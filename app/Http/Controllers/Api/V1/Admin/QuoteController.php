@@ -77,7 +77,7 @@ final class QuoteController extends Controller
             return $this->tooLong();
         }
 
-        $unit = Unit::query()->findOrFail($validated['unit_id']);
+        $unit = Unit::query()->findOrFail((string) $validated['unit_id']);
         $email = isset($validated['guest_email']) ? mb_strtolower(trim((string) $validated['guest_email'])) : null;
         $name = isset($validated['guest_name']) && trim((string) $validated['guest_name']) !== '' ? trim((string) $validated['guest_name']) : null;
 

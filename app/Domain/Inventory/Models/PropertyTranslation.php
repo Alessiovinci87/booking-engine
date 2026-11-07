@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $name
  * @property string|null $description
  * @property string|null $house_rules
+ * @property-read Property $property relazione su FK NOT NULL (7.4)
  */
 class PropertyTranslation extends TenantModel
 {

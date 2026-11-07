@@ -23,6 +23,10 @@ final class CurlTransport implements HttpTransport
             $requestHeaders[] = $name.': '.$value;
         }
 
+        if ($url === '') {
+            throw new \InvalidArgumentException('URL vuoto.');
+        }
+
         $handle = curl_init();
         curl_setopt_array($handle, [
             CURLOPT_URL => $url,

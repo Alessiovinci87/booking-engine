@@ -140,8 +140,10 @@ export interface SessionState {
 
 export interface Me {
     user: { id: string; email: string; locale: string };
-    tenant: { id: string; name: string; slug: string; dpa_signed_at: string | null; dpa_version: string | null };
-    role: string;
+    tenant: { id: string; name: string; slug: string; status: 'ACTIVE' | 'SUSPENDED' | 'OFFBOARDING' | 'CLOSED'; dpa_signed_at: string | null; dpa_version: string | null };
+    /** null per un operatore di piattaforma in accesso di supporto (7.5). */
+    role: string | null;
+    support: { id: string; reason: string; expires_at: string } | null;
 }
 
 export const api = {

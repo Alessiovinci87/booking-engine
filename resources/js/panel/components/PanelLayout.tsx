@@ -59,9 +59,25 @@ export function PanelLayout() {
                     </div>
                 </div>
             </header>
+            {me.data?.support && (
+                <p className="border-b border-violet-300 bg-violet-50 px-4 py-2 text-center text-sm font-medium text-violet-900" role="status" data-testid="support-banner">
+                    {t('support.banner', {
+                        time: new Date(me.data.support.expires_at).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }),
+                        reason: me.data.support.reason,
+                    })}
+                </p>
+            )}
             {me.data !== undefined && me.data.tenant.dpa_signed_at === null && (
                 <p className="border-b border-amber-200 bg-amber-50 px-4 py-2 text-center text-sm text-amber-900" data-testid="dpa-missing">
                     {t('privacy.dpaMissing')}
+                </p>
+            )}
+            {me.data !== undefined && (me.data.tenant.status === 'OFFBOARDING' || me.data.tenant.status === 'CLOSED') && (
+                <p className="border-b border-red-200 bg-red-50 px-4 py-2 text-center text-sm text-red-900" data-testid="offboarding-banner">
+                    {t(me.data.tenant.status === 'CLOSED' ? 'offboarding.bannerClosed' : 'offboarding.banner')}{' '}
+                    <Link to="/uscita" className="font-medium underline">
+                        {t('offboarding.bannerLink')}
+                    </Link>
                 </p>
             )}
             <Outlet />

@@ -20,6 +20,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
  * @property CarbonImmutable|null $mfa_enabled_at
  * @property CarbonImmutable|null $sessions_revoked_at
  * @property Locale $locale
+ * @property bool $is_platform_operator operatore di piattaforma per l'accesso di supporto (7.5)
  */
 #[PersonalData('email')]
 class User extends Authenticatable
@@ -49,6 +50,7 @@ class User extends Authenticatable
             'mfa_enabled_at' => 'immutable_datetime',
             'sessions_revoked_at' => 'immutable_datetime',
             'locale' => Locale::class,
+            'is_platform_operator' => 'boolean',
         ];
     }
 

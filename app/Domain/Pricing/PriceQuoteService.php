@@ -65,6 +65,7 @@ final class PriceQuoteService
             ))
             ->values()
             ->all();
+        $seasons = array_values($seasons);
 
         return [
             new PricingUnit(

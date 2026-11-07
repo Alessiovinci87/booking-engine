@@ -48,7 +48,7 @@ final class PropertyRequest extends FormRequest
         // Alla creazione le politiche della struttura non esistono ancora: la predefinita si sceglie dopo.
         if (! $creating) {
             $rules['default_cancellation_policy_id'] = ['sometimes', 'nullable', 'uuid',
-                Rule::exists(CancellationPolicy::class, 'id')->where('property_id', $propertyId)];
+                Rule::exists(CancellationPolicy::class, 'id')->where('property_id', is_string($propertyId) ? $propertyId : null)];
         }
 
         return $rules;
