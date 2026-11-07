@@ -1,6 +1,6 @@
 # 08 — Sicurezza e operatività
 
-Versione: 1.2 · Data: 06/11/2026 · Modifiche: ADR-0005, [CHANGELOG-v1.1](CHANGELOG-v1.1.md); 1.2: ADR-0008, ADR-0009; 1.3: ADR-0013 (SSRF: solo porta 443, nomi riservati, tutti gli indirizzi risolti pubblici, reti bloccate aggiuntive, `CURLOPT_RESOLVE`; token dei feed e dei preventivi cercati per hash con funzioni SECURITY DEFINER)
+Versione: 1.4 · Data: 07/11/2026 · Modifiche: ADR-0005, [CHANGELOG-v1.1](CHANGELOG-v1.1.md); 1.2: ADR-0008, ADR-0009; 1.3: ADR-0013 (SSRF: solo porta 443, nomi riservati, tutti gli indirizzi risolti pubblici, reti bloccate aggiuntive, `CURLOPT_RESOLVE`; token dei feed e dei preventivi cercati per hash con funzioni SECURITY DEFINER); 1.4: ADR-0016 (gestione password del gestore)
 
 > Le precisazioni di sicurezza di [ADR-0013](adr/0013-precisazioni-m5-calendari-preventivi.md) (punti 1–6, 24, 36) valgono come parte di questo documento.
 
@@ -55,6 +55,7 @@ Solo `InventoryService` scrive `inventory_occupancies` (02). Un controllo static
 - Pannello: Laravel Sanctum con cookie SPA, `SameSite=Lax`, `Secure`, `HttpOnly`; CSRF attivo (token mancante o scaduto → `419 CSRF_TOKEN_EXPIRED`, ADR-0008). Rotte di accesso sotto `/api/v1/admin/auth/*` (07).
 - Password: minimo 12 caratteri, controllo contro liste di password compromesse (Have I Been Pwned, solo il prefisso di 5 caratteri dello SHA-1; fail-open con avviso nel log a ogni mancata risposta, senza password né email; ADR-0009), hash Argon2id.
 - **MFA obbligatoria** (TOTP) per ogni utente del pannello, con 10 codici di recupero monouso salvati come hash (`user_recovery_codes`, ADR-0008). Un codice TOTP già usato non vale una seconda volta. Nessuna operazione admin senza MFA verificata nella sessione; la configurazione è possibile solo finché la MFA non è attiva.
+- Password del gestore ([ADR-0016](adr/0016-gestione-password-gestore.md)): cambio dal pannello con la password attuale e la MFA verificata; "password dimenticata" con risposta sempre identica, link monouso di 60 minuti salvato come hash (token nel frammento dell'indirizzo), 3 richieste/ora per email e 10 per IP; la reimpostazione non apre la sessione e la MFA resta obbligatoria. Cambio e reimpostazione chiudono le altre sessioni (`users.sessions_revoked_at`, confronto al microsecondo) e inviano un'email di avviso.
 - Sessione: scadenza per inattività 2 h, assoluta 12 h; ri-autenticazione per azioni sensibili (rimborsi: cancellazione con rimborso > 0, "Riprova", "Segna come rimborsato", ADR-0012 punto 24; cambio account Stripe, export completo (anche l'export CSV delle prenotazioni e l'export dei dati di un ospite, ADR-0014 punto 25), cambio email, anonimizzazione dell'ospite ADR-0014), valida 15 minuti.
 - Ruoli: `OWNER` attivo nella 1.0; `MANAGER` e `STAFF` definiti nelle policy ma non assegnabili da UI.
 - Accesso di supporto al tenant di un cliente: solo con ruolo `app_admin_ops`, motivazione obbligatoria, durata limitata, `AuditLog` visibile al cliente.

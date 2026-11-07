@@ -1,6 +1,6 @@
 # 09 — Privacy e GDPR
 
-Versione: 1.3 · Data: 07/11/2026 · Modifiche: ADR-0003, [CHANGELOG-v1.1](CHANGELOG-v1.1.md); 1.2: ADR-0009; 1.3: ADR-0014 (DPA prima della pubblicazione, export stampabile, ri-autenticazione dell'anonimizzazione, link della piattaforma)
+Versione: 1.4 · Data: 07/11/2026 · Modifiche: ADR-0003, [CHANGELOG-v1.1](CHANGELOG-v1.1.md); 1.2: ADR-0009; 1.3: ADR-0014 (DPA prima della pubblicazione, export stampabile, ri-autenticazione dell'anonimizzazione, link della piattaforma); 1.4: ADR-0016 (categoria H, link di reimpostazione della password)
 
 > Questo documento è una specifica tecnica e organizzativa, **non** un parere legale. DPA, informative, registro e condizioni di prenotazione vanno redatti o verificati da un professionista prima del pilota con ospiti reali.
 
@@ -60,8 +60,9 @@ Le categorie sono separate perché hanno basi giuridiche e durate diverse:
 | E — Eventi iCal importati | intervalli, UID, sommario ridotto | esecuzione del servizio | 30 giorni dopo il check-out | cancellazione |
 | F — Log di sicurezza e audit | azioni, attori, IP | interesse legittimo alla sicurezza | 24 mesi (audit), 30 giorni (log applicativi) | cancellazione |
 | G — Comunicazioni | payload outbox, log del provider email | esecuzione del servizio | 30 giorni dopo l'invio | svuotamento / cancellazione presso il provider |
+| H — Link di reimpostazione della password | righe di `user_password_resets` usate o scadute (hash del token, utente, istanti; la copia cifrata del token è già azzerata) | interesse legittimo alla sicurezza dell'account | 30 giorni dall'uso o dalla scadenza | cancellazione (job di conservazione, 7.2; ADR-0016) |
 
-Il job di retention gira ogni notte, per tenant, e registra in `AuditLog` quante righe ha trattato per categoria.
+Il job di retention gira ogni notte, per tenant, e registra in `AuditLog` quante righe ha trattato per categoria. La categoria H riguarda una tabella globale (senza tenant): il job la tratta una volta per esecuzione, non per tenant.
 
 ### Anonimizzazione effettiva
 

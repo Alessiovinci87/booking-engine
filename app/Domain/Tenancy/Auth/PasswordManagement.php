@@ -166,11 +166,11 @@ final class PasswordManagement
 
     /**
      * Nuova password (hash Argon2id dal cast del modello) e revoca di tutte le sessioni aperte. Istante
-     * al secondo: è la precisione con cui viene salvato e confrontato (PanelSession).
+     * al microsecondo, come viene salvato (timestamptz) e confrontato (PanelSession).
      */
     private function setPassword(User $user, string $password): CarbonImmutable
     {
-        $revokedAt = CarbonImmutable::now()->startOfSecond();
+        $revokedAt = CarbonImmutable::now();
         $user->forceFill(['password_hash' => $password, 'sessions_revoked_at' => $revokedAt])->save();
 
         return $revokedAt;

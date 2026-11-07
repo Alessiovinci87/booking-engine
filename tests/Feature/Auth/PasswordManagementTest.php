@@ -178,8 +178,7 @@ it('reimpostazione: la MFA resta obbligatoria, con il codice o con un codice di 
     // La reimpostazione non apre la sessione.
     $this->assertGuest('web');
 
-    // Il gestore torna al login (almeno un secondo dopo: le sessioni iniziate nel secondo della revoca
-    // si chiudono).
+    // Il gestore torna al login poco dopo.
     Carbon::setTestNow(now()->addSeconds(5));
 
     // La vecchia password non vale più.
@@ -349,4 +348,52 @@ it('cambio password: senza sessione non è disponibile', function () {
         'password' => NEW_PANEL_PASSWORD,
         'password_confirmation' => NEW_PANEL_PASSWORD,
     ])->assertUnauthorized()->assertJsonPath('error.code', 'UNAUTHENTICATED');
+});
+
+it('revoca al microsecondo: una sessione aperta subito dopo la revoca, nello stesso secondo, resta aperta', function () {
+    $p = panelUser();
+    Carbon::setTestNow('2027-02-08 10:00:00.100000');
+    actingAsPanelUser($this, $p['user']);
+
+    Carbon::setTestNow('2027-02-08 10:00:00.400000');
+    panelPost($this, '/api/v1/admin/auth/password', [
+        'current_password' => TEST_PANEL_PASSWORD,
+        'password' => NEW_PANEL_PASSWORD,
+        'password_confirmation' => NEW_PANEL_PASSWORD,
+    ])->assertNoContent();
+
+    // Salvato con i microsecondi (timestamptz) e riletto uguale dal database.
+    $p['user']->refresh();
+    expect($p['user']->sessions_revoked_at?->format('Y-m-d H:i:s.u'))->toBe('2027-02-08 10:00:00.400000')
+        ->and(DB::table('users')->where('id', $p['user']->id)->value('sessions_revoked_at'))->toContain('10:00:00.4');
+
+    // La sessione che ha cambiato la password resta aperta.
+    panelGet($this, '/api/v1/admin/me')->assertOk();
+
+    // Aperta 0,1 s prima della revoca: si chiude.
+    $this->flushSession();
+    Carbon::setTestNow('2027-02-08 10:00:00.300000');
+    actingAsPanelUser($this, $p['user']);
+    Carbon::setTestNow('2027-02-08 10:00:00.700000');
+    panelGet($this, '/api/v1/admin/me')->assertUnauthorized()->assertJsonPath('error.code', 'UNAUTHENTICATED');
+
+    // Aperta 0,2 s dopo la revoca, nello stesso secondo: resta aperta.
+    $this->flushSession();
+    Carbon::setTestNow('2027-02-08 10:00:00.600000');
+    actingAsPanelUser($this, $p['user']);
+    Carbon::setTestNow('2027-02-08 10:00:00.900000');
+    panelGet($this, '/api/v1/admin/me')->assertOk();
+});
+
+it('revoca al microsecondo: il login subito dopo la reimpostazione apre una sessione valida', function () {
+    $p = panelUser();
+    Carbon::setTestNow('2027-02-08 10:00:00.250000');
+    forgot($this, $p['user']->email)->assertStatus(202);
+    resetPassword($this, lastResetToken($p['user']->id))->assertNoContent();
+
+    // Login nello stesso secondo della revoca: la sessione nasce dopo e resta valida.
+    Carbon::setTestNow('2027-02-08 10:00:00.750000');
+    panelPost($this, '/api/v1/admin/auth/login', ['email' => $p['user']->email, 'password' => NEW_PANEL_PASSWORD])->assertOk();
+    panelPost($this, '/api/v1/admin/auth/mfa/verify', ['code' => currentOtp($p['secret'])])->assertOk();
+    panelGet($this, '/api/v1/admin/me')->assertOk();
 });

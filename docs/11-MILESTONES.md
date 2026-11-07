@@ -1,6 +1,6 @@
 # 11 — Piano di sviluppo a milestone
 
-Versione: 1.3 · Data: 07/11/2026 · Modifiche 1.2: criterio di uscita della demo di M2, attività 3.2 e 3.7 dopo la verifica di M2 (ADR-0010) · 1.3: gate pilota sull'attivazione dei piloti (ADR-0007 aggiornata), attività 6.10 e 7.5 (ADR-0014), attività 6.11 (ADR-0016, Proposta) · Scelte tecniche: [ADR-0006](adr/0006-scelte-di-implementazione.md) · Calendario: [ADR-0007](adr/0007-sviluppo-anticipato.md) (sviluppo anticipato)
+Versione: 1.3 · Data: 07/11/2026 · Modifiche 1.2: criterio di uscita della demo di M2, attività 3.2 e 3.7 dopo la verifica di M2 (ADR-0010) · 1.3: gate pilota sull'attivazione dei piloti (ADR-0007 aggiornata), attività 6.10 e 7.5 (ADR-0014), attività 6.11 (ADR-0016) · Scelte tecniche: [ADR-0006](adr/0006-scelte-di-implementazione.md) · Calendario: [ADR-0007](adr/0007-sviluppo-anticipato.md) (sviluppo anticipato)
 
 Questo documento è **vincolante**: lo sviluppo procede una milestone alla volta, nell'ordine indicato, e si passa alla successiva solo quando i criteri di uscita sono soddisfatti. Le decisioni tecniche sono già prese (specifica 01–10 e ADR-0006). Durante lo sviluppo non si discutono scelte, salvo i casi elencati in "Quando ci si ferma".
 
@@ -228,7 +228,7 @@ Alla fine apri la pull request e scrivi il rapporto di fine milestone.
 | 6.7 | Revisione di sicurezza con la checklist di 08; test di ripristino del backup (AC12, I10) |
 | 6.8 | Procedura di attivazione dei piloti e guida rapida per i gestori, insieme a Giuseppe |
 | 6.10 | Strumenti di piattaforma per il pilota: `tenant:embed-origins` (domini della vista embed, con audit) e `user:reset-mfa` (azzeramento della MFA con chiusura delle sessioni e audit), procedura in `docs/guide/` (ADR-0014 punto 30) |
-| 6.11 | Gestione password del gestore: cambio password nel pannello (password attuale e MFA verificata, chiusura delle altre sessioni) e "password dimenticata" (risposta identica, link monouso di 60 minuti salvato come hash, limiti per email e IP, la MFA resta obbligatoria), audit ed email di avviso (ADR-0016, Proposta) |
+| 6.11 | Gestione password del gestore: cambio password nel pannello (password attuale e MFA verificata, chiusura delle altre sessioni) e "password dimenticata" (risposta identica, link monouso di 60 minuti salvato come hash, limiti per email e IP, la MFA resta obbligatoria), audit ed email di avviso (ADR-0016) |
 | 6.9 | Verifica dei calendari reali di Booking e Airbnb con i risultati della Fase 0 (ADR-0007): formati, etichette di `SUMMARY`, eventi con orario, frequenza di lettura del nostro feed, risposta a `503`; adeguamento di `EchoClassifier`, `IcsParser` e dei file di prova (verifica di M5, ADR-0013). Da fare appena arrivano i risultati, prima di 6.6 |
 
 **Criteri di uscita:** tutti i criteri di accettazione tranne AC18 verdi su staging; backup ripristinato; prima struttura pilota configurata in produzione.
@@ -244,7 +244,7 @@ Alla fine apri la pull request e scrivi il rapporto di fine milestone.
 | # | Attività |
 |---|---|
 | 7.1 | `OffboardingService` e procedura di uscita completa (06, 09) |
-| 7.2 | `RetentionPolicy` configurabile e job di conservazione, con le durate validate dal professionista. Ruolo PostgreSQL dedicato `app_retention`, con `DELETE` solo sulle tabelle soggette a conservazione (compresi `audit_log` e `payment_events`, append-only per `app_runtime`), usato solo dal job di conservazione (ADR-0009) |
+| 7.2 | `RetentionPolicy` configurabile e job di conservazione, con le durate validate dal professionista. Ruolo PostgreSQL dedicato `app_retention`, con `DELETE` solo sulle tabelle soggette a conservazione (compresi `audit_log` e `payment_events`, append-only per `app_runtime`), usato solo dal job di conservazione (ADR-0009). Cancella anche i link di reimpostazione della password usati o scaduti (categoria H, 30 giorni; ADR-0016) |
 | 7.3 | Correzioni e miglioramenti emersi dal pilota, in ordine di gravità |
 | 7.4 | Larastan a livello 8 |
 | 7.5 | Accesso di supporto al tenant in sola lettura (08): motivazione obbligatoria, durata massima 2 ore, audit visibile al gestore nel pannello (ADR-0014 punto 31) |

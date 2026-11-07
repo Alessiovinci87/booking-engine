@@ -53,6 +53,15 @@ export default function globalSetup(): void {
     artisan(['cache:forget', limiterKey]);
     artisan(['cache:forget', `${limiterKey}:timer`]);
 
+    // Stesso motivo per "password dimenticata" (6.11: 3 richieste all'ora per email, 10 per IP), usata da
+    // m6-password: chiavi del RateLimiter con l'hash dell'email del proprietario demo e dell'IP.
+    const sha256 = (value: string) => createHash('sha256').update(value).digest('hex');
+
+    for (const key of [`password-reset:email:${sha256('proprietario.demo@example.test')}`, `password-reset:ip:${sha256('127.0.0.1')}`]) {
+        artisan(['cache:forget', key]);
+        artisan(['cache:forget', `${key}:timer`]);
+    }
+
     rmSync(SCREENSHOT_DIR, { recursive: true, force: true });
     mkdirSync(SCREENSHOT_DIR, { recursive: true });
 }
