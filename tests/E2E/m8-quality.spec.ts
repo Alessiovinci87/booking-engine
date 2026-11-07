@@ -70,6 +70,13 @@ async function layoutProblems(page: Page): Promise<{ overflow: number; smallTarg
                 continue;
             }
 
+            // Link dentro una frase: eccezione "inline" di WCAG 2.5.8 (dimensione decisa dal testo).
+            const parentText = el.parentElement?.textContent?.trim() ?? '';
+
+            if (el.tagName === 'A' && parentText.length > (el.textContent?.trim().length ?? 0) + 10) {
+                continue;
+            }
+
             // Caselle e radio: conta l'etichetta che le contiene (area toccabile reale).
             const target = (el instanceof HTMLInputElement && (el.type === 'checkbox' || el.type === 'radio') && el.closest('label')) || el;
             const box = target.getBoundingClientRect();
@@ -170,6 +177,23 @@ test.describe('M8 qualità del frontend', () => {
         await expect(firstName).toBeFocused();
         await expect(firstName).toHaveAttribute('aria-invalid', 'true');
         await checkAccessibility(page, 'm8-tastiera-errori');
+        await context.close();
+    });
+
+    test('galleria: la foto si apre ingrandita e si chiude con Esc', async ({ browser }) => {
+        test.skip(process.env.E2E_DEMO_MFA_SECRET === undefined, 'Serve la struttura con foto creata dallo spec di M2.');
+
+        const { defaultBrowserType: _ignored, ...device } = devices['iPhone 15'];
+        const context = await browser.newContext({ ...device, locale: 'it-IT', timezoneId: 'Europe/Rome' });
+        const page = await context.newPage();
+        await page.goto(`/p/${TENANT}/casa-golden-e2e`);
+        await page.getByTestId('unit-card').first().getByRole('link').first().click();
+        await page.getByTestId('gallery-zoom').click();
+        await expect(page.getByTestId('gallery-dialog')).toBeVisible();
+        await expect(page.getByRole('button', { name: 'Chiudi' })).toBeFocused();
+        await snap(page, 'm8-galleria-ingrandita');
+        await page.keyboard.press('Escape');
+        await expect(page.getByTestId('gallery-dialog')).toBeHidden();
         await context.close();
     });
 

@@ -24,7 +24,8 @@
         "contact": "Contact",
         "photoAlt": "Photo of {{name}}",
         "galleryPrevious": "Previous photo",
-        "galleryNext": "Next photo"
+        "galleryNext": "Next photo",
+        "galleryZoom": "Enlarge photo"
     },
     "unit": {
         "guests": "Up to {{count}} guests",
@@ -83,7 +84,9 @@
         "invalidEmail": "Invalid email address.",
         "invalidPhone": "Invalid phone number.",
         "mustAccept": "You must accept to continue.",
-        "fixErrors": "Please check the highlighted fields."
+        "fixErrors": "Please check the highlighted fields.",
+        "proceedShort": "Book",
+        "proceedRequestShort": "Request"
     },
     "lines": {
         "NIGHT": "Night of {{date}}",

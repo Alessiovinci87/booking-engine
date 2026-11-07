@@ -450,6 +450,7 @@ function BookingForm({ property, unit, embed }: { property: PublicProperty; unit
                 <div className="space-y-2">
                     <button
                         type="submit"
+                        id="booking-submit"
                         disabled={reserve.isPending || quote.data === undefined || stay === null}
                         className="w-full rounded-card bg-brand-700 px-4 py-3.5 text-base font-semibold text-white hover:bg-brand-800 disabled:cursor-not-allowed disabled:bg-slate-300"
                     >
@@ -458,7 +459,47 @@ function BookingForm({ property, unit, embed }: { property: PublicProperty; unit
                     <p className="text-center text-xs text-muted">{t('booking.paymentNote')}</p>
                 </div>
             </form>
+            {quote.data !== undefined && stay !== null && !quote.isError && (
+                <PriceSummaryBar total={formatMoney(quote.data.total, i18n.language)} nights={nights} label={requestMode ? t('booking.proceedRequestShort') : t('booking.proceedShort')} />
+            )}
         </Shell>
+    );
+}
+
+/**
+ * Riepilogo del prezzo sempre raggiungibile sul telefono (8.3): fisso in basso sotto i 640 px, con il
+ * totale e un pulsante che porta all'invio del modulo. Lo spazio sotto la pagina evita che copra il
+ * contenuto.
+ */
+export function PriceSummaryBar({ total, nights, label }: { total: string; nights: number; label: string }) {
+    const { t } = useTranslation();
+
+    return (
+        <>
+            <div className="h-24 sm:hidden" aria-hidden="true" />
+            <div
+                className="fixed inset-x-0 bottom-0 z-40 border-t border-line-soft bg-surface/95 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-overlay backdrop-blur sm:hidden"
+                data-testid="price-summary-bar"
+            >
+                <div className="mx-auto flex max-w-3xl items-center justify-between gap-3">
+                    <p className="text-sm text-muted">
+                        <span className="block text-lg font-semibold text-ink tabular-nums">{total}</span>
+                        {t('booking.nights', { count: nights })}
+                    </p>
+                    <button
+                        type="button"
+                        className="min-h-tap rounded-control bg-brand-700 px-5 font-semibold text-white hover:bg-brand-800"
+                        onClick={() => {
+                            const submit = document.getElementById('booking-submit');
+                            submit?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            submit?.focus({ preventScroll: true });
+                        }}
+                    >
+                        {label}
+                    </button>
+                </div>
+            </div>
+        </>
     );
 }
 

@@ -24,7 +24,8 @@
         "contact": "Contatti",
         "photoAlt": "Foto di {{name}}",
         "galleryPrevious": "Foto precedente",
-        "galleryNext": "Foto successiva"
+        "galleryNext": "Foto successiva",
+        "galleryZoom": "Ingrandisci la foto"
     },
     "unit": {
         "guests": "Fino a {{count}} ospiti",
@@ -83,7 +84,9 @@
         "invalidEmail": "Indirizzo email non valido.",
         "invalidPhone": "Numero di telefono non valido.",
         "mustAccept": "Per proseguire devi accettare.",
-        "fixErrors": "Controlla i campi evidenziati."
+        "fixErrors": "Controlla i campi evidenziati.",
+        "proceedShort": "Prenota",
+        "proceedRequestShort": "Richiedi"
     },
     "lines": {
         "NIGHT": "Notte del {{date}}",
