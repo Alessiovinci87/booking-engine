@@ -30,7 +30,7 @@ Requisiti da rispettare, da 08 e 09:
 | `scheduler` | `php artisan schedule:work` | Una sola replica: i job usano già `withoutOverlapping` |
 | `postgres` | PostgreSQL 18 (immagine ufficiale o template Railway) con volume persistente | `btree_gist`; ruoli creati con gli stessi script di `docker/postgres/init` |
 | `redis` | Redis 8 con persistenza AOF | Code, cache, sessioni, limiti di frequenza |
-| `backup` (cron) | `pg_dump` cifrato ogni giorno | Vedi "Backup" |
+| `backup` (cron) | `pg_dump` cifrato ogni giorno verso lo storage europeo di un altro fornitore | Secondo livello, oltre al PITR di Railway (vedi "Backup") |
 
 - Migration nel passo di rilascio, con `app_migrator` (`php artisan migrate --database=pgsql_migrator --force`). L'applicazione si collega sempre come `app_runtime`, mai come superuser.
 - Collegamento tra servizi sulla rete privata di Railway; il database non è esposto su Internet.
@@ -39,11 +39,14 @@ Requisiti da rispettare, da 08 e 09:
 
 ### Backup
 
-1. **Backup di Railway** del volume Postgres (pianificati, con conservazione) come primo livello.
-2. **Ripristino a un istante (7 giorni, RPO ≤ 15 min)**: se Railway non lo offre in modo nativo, archiviazione continua del WAL (per esempio `wal-g` o `pgBackRest`) verso lo storage europeo del punto 3.
-3. **Dump giornaliero cifrato** (`pg_dump -Fc`, cifrato con `age` usando una chiave pubblica; la chiave privata resta fuori da Railway). Va su uno storage a oggetti europeo di un **altro fornitore** (per esempio Scaleway, OVHcloud o Hetzner), con conservazione di 30 giornalieri e 12 mensili e versioning.
-4. **Ripristino di prova mensile** automatizzato in un ambiente isolato (I10, AC12), con l'esito registrato.
-5. Foto: storage a oggetti europeo con versioning di 30 giorni (08).
+1. **Ripristino a un istante (PITR) di Railway**, attivato alla creazione del database di produzione (fonte: https://docs.railway.com/volumes/point-in-time-recovery).
+   - **Copertura**: Postgres single node e HA. Finestra di circa 4 settimane: le ultime 4 base backup più l'archivio WAL, gestiti da Railway con pgBackRest su un bucket Railway. Supera i 7 giorni di 08.
+   - **Costo**: nessun costo separato oltre a storage ed egress.
+   - **Attivazione manuale**: copre solo il periodo successivo. Si attiva quindi prima di caricare qualsiasi dato reale ed è un passo della checklist di creazione della produzione. Su staging si attiva per provare la procedura.
+   - **Ripristino**: crea un servizio Postgres nuovo accanto all'originale. Dopo le verifiche si spostano le variabili di connessione di `web`, `worker` e `scheduler` sul nuovo servizio; l'originale resta finché il ripristino non è confermato. Il tempo dell'intera procedura conta per l'RTO (≤ 4 h).
+2. **Dump giornaliero cifrato** (`pg_dump -Fc`, cifrato con `age` usando una chiave pubblica; la chiave privata resta fuori da Railway). Va su uno storage a oggetti europeo di un **altro fornitore** (per esempio Scaleway, OVHcloud o Hetzner), con conservazione di 30 giornalieri e 12 mensili e versioning.
+3. **Ripristino di prova mensile** in ambiente isolato (I10, AC12), con l'esito registrato. Si alternano un ripristino PITR (servizio nuovo, mai collegato all'applicazione di produzione) e un ripristino dal dump cifrato presso l'altro fornitore. Si misurano RPO e RTO.
+4. Foto: storage a oggetti europeo con versioning di 30 giorni (08).
 
 ### Log e monitoraggio
 
@@ -56,7 +59,7 @@ Requisiti da rispettare, da 08 e 09:
 2. Accesso con un ruolo che possa creare `app_migrator`, `app_runtime` (`NOBYPASSRLS`, non proprietario) e `app_admin_ops`, ed eseguire gli script di `docker/postgres/init`.
 3. Creazione delle funzioni `SECURITY DEFINER` di proprietà di `app_migrator` (lookup per slug, token dei feed e dei preventivi, accesso alla prenotazione, tenant dell'utente).
 4. RLS forzata davvero efficace per `app_runtime`: eseguire `Feature/Architecture/RlsCatalogTest`, `CompositeFkCatalogTest` e `CrossTenantInsertRejectedTest` contro il database di prova.
-5. Ripristino a un istante: disponibilità nativa, oppure archiviazione del WAL funzionante; un ripristino completo cronometrato (RTO).
+5. Piano Railway necessario per attivare il PITR.
 6. Comportamento del proxy con `X-Forwarded-*`, timeout delle richieste e dimensione massima del corpo (foto fino a 10 MB).
 7. IP in uscita del worker: l'import iCal passa da `SafeHttpFetcher`. 08 chiede l'egress dal solo worker di sync; verificare cosa permette Railway (IP statici o reti private).
 8. DPA di Railway (art. 28, clausole contrattuali standard), luogo di conservazione di log e backup, aggiornamento dell'elenco dei sub-responsabili (09).
