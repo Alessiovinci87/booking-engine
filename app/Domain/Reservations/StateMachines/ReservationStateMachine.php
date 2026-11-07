@@ -277,6 +277,11 @@ final class ReservationStateMachine
             $r->decision_deadline = $deadline;
             $this->inventory->setTemporaryReason($r, OccupancyTempReason::CAPTURE_FAILED, $deadline);
             $this->notify($r, 'reservation.capture_failed');
+            // Promemoria al gestore a 12 h dalla scadenza (03 "Note"): parte solo se la prenotazione è
+            // ancora CAPTURE_FAILED quando il messaggio diventa disponibile (SendReservationEmail).
+            $this->outbox->enqueue('reservation.capture_failed_reminder', 'reservation.capture_failed_reminder:'.$r->id, [
+                'reservation_id' => $r->id,
+            ], $deadline->subHours(12));
         });
     }
 
