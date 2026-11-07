@@ -50,6 +50,16 @@ M6 parte senza gli account esterni (hosting, dominio, Resend, Sentry): si fanno 
 23. **Da ripetere su staging**: tutti i passi di pagamento (checkout, autorizzazione, incasso, rimborso) con Stripe in modalità test e webhook firmati; l'import di un calendario da un URL https reale (in locale `SafeHttpFetcher` rifiuta, giustamente, gli indirizzi privati, e i calendari dimostrativi coprono solo la parte del pannello); AC7, AC14, AC15, AC19, AC10 e AC16, che richiedono il passare del tempo, l'iniezione di errori nel gateway o richieste a Stripe, restano coperti dai test Feature e `Stripe/*` finché non si scrivono gli scenari su staging; AC11 è coperto da `Feature/TenantIsolationApiTest` e dal catalogo RLS; AC12 è 6.4.
 24. **Supporto E2E**: le email si verificano nella casella `/dev/mail` dopo un giro del dispatcher dell'outbox (`schedule:test --name=outbox:dispatch`, `tests/E2E/support/artisan.ts`); il setup globale azzera il contatore del limite di frequenza della prenotazione pubblica per 127.0.0.1 nella cache con prefisso E2E, perché tutti gli spec arrivano dallo stesso indirizzo.
 
+### Revisione di sicurezza (6.7, parte sul codice)
+
+Rapporto: `docs/reports/M6-revisione-sicurezza.md`.
+
+25. **Export con dati personali tra le azioni sensibili**: l'export CSV delle prenotazioni (`GET /admin/exports/reservations.csv`) e l'export dei dati dell'ospite (`GET /admin/guests/{id}/export`) sono "export completo" di 08: password confermata negli ultimi 15 minuti, altrimenti `403 REAUTH_REQUIRED`. Il pannello scarica i file con fetch e, se serve, chiede la password e riprova (`ProtectedDownload`).
+26. **Scadenza del link dell'ospite**: `GET /public/reservations/{code}?token=` risponde `404 NOT_FOUND` dal 91° giorno dopo il check-out (08 "Token pubblici"), come per un token sbagliato.
+27. **HSTS**: `Strict-Transport-Security: max-age=31536000; includeSubDomains` su ogni risposta https (`SECURITY_HSTS_MAX_AGE`, 0 = disattivato).
+28. **Proxy fidati**: `TRUSTED_PROXIES` (indirizzi separati da virgole o `*`) decide da quali indirizzi valgono gli header `X-Forwarded-*`. È obbligatorio dietro un load balancer: senza, i limiti per IP diventerebbero un unico contatore e le richieste https risulterebbero http.
+29. **Dependabot**: aggiornamenti settimanali di composer, npm e GitHub Actions (`.github/dependabot.yml`), senza merge automatico.
+
 ## Alternative considerate
 
 | Alternativa | Perché scartata |
@@ -67,7 +77,7 @@ M6 parte senza gli account esterni (hosting, dominio, Resend, Sentry): si fanno 
 
 ## Impatto sui test
 
-- Test aggiunti: `Feature/Communications/TransactionalMailTest`, `Feature/Metrics/MetricsTest`, `Feature/AnonymizationCoverageTest` (I22), `Feature/Public/PlatformPrivacyLinksTest`, casi DPA in `Feature/PropertyPublishTest`, `Feature/Communications/OperationalAlertsTest`, `E2E/m6-acceptance.spec` (in locale).
+- Test aggiunti: `Feature/Communications/TransactionalMailTest`, `Feature/Metrics/MetricsTest`, `Feature/AnonymizationCoverageTest` (I22), `Feature/Public/PlatformPrivacyLinksTest`, casi DPA in `Feature/PropertyPublishTest`, `Feature/Communications/OperationalAlertsTest`, `E2E/m6-acceptance.spec` (in locale); per 6.7 casi nuovi in `Feature/SecurityHeadersTest` (HSTS, proxy fidati), `Feature/Public/PublicReservationApiTest` (scadenza del link), `Feature/Metrics/MetricsTest` e `Feature/AnonymizationCoverageTest` (`REAUTH_REQUIRED` sugli export).
 - Test modificati: `Feature/Reservations/ReservationTransitionsTest` (T3 genera anche `reservation.confirmed_manager`).
 - Invarianti toccati: I22 (ora coperto da `Feature/AnonymizationCoverageTest`).
 

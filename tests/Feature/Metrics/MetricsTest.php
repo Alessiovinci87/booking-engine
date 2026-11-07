@@ -33,7 +33,8 @@ beforeEach(function () {
     reservationIn($this->fx, ReservationStatus::EXPIRED, '[2027-07-25,2027-07-29)');
 
     $this->owner = panelUser($this->fx['tenant']);
-    actingAsPanelUser($this, $this->owner['user']);
+    // L'export CSV contiene dati personali: password confermata negli ultimi 15 minuti (08, 6.7).
+    actingAsPanelUser($this, $this->owner['user'], passwordConfirmed: true);
 });
 afterEach(fn () => Carbon::setTestNow());
 
@@ -90,9 +91,15 @@ it('periodo predefinito e validazione', function () {
     panelGet($this, '/api/v1/admin/exports/reservations.csv?from=bad')->assertStatus(400);
 });
 
+it('export CSV senza password confermata: 403 REAUTH_REQUIRED; le metriche no (6.7)', function () {
+    $this->withSession(['panel.password_confirmed_at' => 0]);
+    panelGet($this, '/api/v1/admin/metrics?from=2027-07-01&to=2027-07-31')->assertOk();
+    panelGet($this, '/api/v1/admin/exports/reservations.csv?from=2027-07-01&to=2027-07-31')->assertForbidden()->assertJsonPath('error.code', 'REAUTH_REQUIRED');
+});
+
 it('un altro tenant non vede metriche né righe del CSV', function () {
     $other = bookableTenant('INSTANT');
-    actingAsPanelUser($this, panelUser($other['tenant'])['user']);
+    actingAsPanelUser($this, panelUser($other['tenant'])['user'], passwordConfirmed: true);
     panelGet($this, '/api/v1/admin/metrics?from=2027-07-01&to=2027-07-31')->assertOk()->assertJsonPath('data.reservations', 0)->assertJsonPath('data.direct_revenue_cents', 0);
     expect(panelGet($this, '/api/v1/admin/exports/reservations.csv?from=2027-07-01&to=2027-07-31')->getContent())->not->toContain($this->direct->code);
 });

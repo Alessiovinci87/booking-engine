@@ -26,6 +26,7 @@ use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Contracts\Validation\UncompromisedVerifier;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Foundation\Console\ServeCommand;
+use Illuminate\Http\Middleware\TrustProxies;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -85,6 +86,8 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        self::trustProxies(config('security.trusted_proxies'));
+
         // Trasporti delle email transazionali (6.1, ADR-0014).
         Mail::extend('preview-log', fn (array $config): PreviewLogTransport => new PreviewLogTransport(
             Log::channel($config['channel'] ?? null),
@@ -134,5 +137,21 @@ class AppServiceProvider extends ServiceProvider
 
             return $limits;
         });
+    }
+
+    /**
+     * Proxy fidati (6.7, `security.trusted_proxies`): IP del client e schema https dagli header
+     * X-Forwarded-* solo se la richiesta arriva da uno di questi indirizzi. Vuoto = nessun proxy.
+     */
+    public static function trustProxies(mixed $configured): void
+    {
+        TrustProxies::flushState();
+        $proxies = is_string($configured) ? trim($configured) : '';
+
+        if ($proxies === '') {
+            return;
+        }
+
+        TrustProxies::at($proxies === '*' ? '*' : array_values(array_filter(array_map('trim', explode(',', $proxies)), fn (string $p): bool => $p !== '')));
     }
 }

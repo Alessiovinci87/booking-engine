@@ -150,8 +150,9 @@ Route::prefix('admin')->middleware(EnsureFrontendRequestsAreStateful::class)->gr
 
         // Metriche ed export CSV (6.2).
         Route::get('metrics', [MetricsController::class, 'metrics'])->name('admin.metrics');
-        Route::get('guests/{guest}/export', [GuestPrivacyController::class, 'export'])->name('admin.guests.export');
-        Route::get('exports/reservations.csv', [MetricsController::class, 'reservationsCsv'])->name('admin.exports.reservations');
+        // Export con dati personali (08 "export completo", 6.7): password confermata negli ultimi 15 minuti.
+        Route::get('guests/{guest}/export', [GuestPrivacyController::class, 'export'])->middleware('reauth')->name('admin.guests.export');
+        Route::get('exports/reservations.csv', [MetricsController::class, 'reservationsCsv'])->middleware('reauth')->name('admin.exports.reservations');
         Route::get('quotes/{quote}', [QuoteController::class, 'show'])->name('admin.quotes.show');
     });
 });

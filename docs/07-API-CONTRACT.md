@@ -209,12 +209,12 @@ Tutte richiedono utente autenticato con MFA verificata nella sessione e membersh
 | GET | `/stripe/account` (stato onboarding: `NOT_CONNECTED`, `ONBOARDING_INCOMPLETE`, `IN_REVIEW`, `ENABLED`; `?refresh=1` rilegge da Stripe al rientro dall'onboarding, ADR-0012) |
 | POST | `/stripe/onboarding-link` (ri-autenticazione, 08: collegamento o cambio dell'account Stripe) |
 | GET | `/metrics?from=&to=` (fatturato diretto, commissioni evitate, beneficio stimato, con percentuale usata; check-in nel periodo, predefinito il mese corrente, massimo 366 giorni; ADR-0014 punti 7–10) |
-| GET | `/exports/reservations.csv?from=&to=` (separatore `;`, BOM UTF-8, protezione dalle formule; registrato in audit; ADR-0014 punto 11) |
+| GET | `/exports/reservations.csv?from=&to=` (separatore `;`, BOM UTF-8, protezione dalle formule; registrato in audit; ADR-0014 punto 11; ri-autenticazione, `403 REAUTH_REQUIRED`, ADR-0014 punto 25) |
 
 ### Privacy (vedi 09)
 | Metodo | Percorso |
 |---|---|
-| GET | `/guests/{id}/export` (JSON scaricabile; versione stampabile nel pannello; ADR-0014 punto 13) |
+| GET | `/guests/{id}/export` (JSON scaricabile; versione stampabile nel pannello; ADR-0014 punto 13; ri-autenticazione, ADR-0014 punto 25) |
 | POST | `/guests/{id}/erase` (anonimizzazione, se non soggetta a conservazione obbligatoria; ri-autenticazione; `409 GUEST_HAS_ACTIVE_RESERVATION`; ADR-0014 punti 14–16) |
 | POST | `/tenant/export` (export completo per uscita cliente, asincrono) |
 | POST | `/tenant/offboarding/start` (feed `FROZEN`, vendite chiuse; ri-autenticazione) |

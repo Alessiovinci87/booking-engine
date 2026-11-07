@@ -4,7 +4,8 @@ import { useTranslation } from 'react-i18next';
 
 import { metricsApi } from '../api/metrics';
 import { useErrorMessage } from '../auth/session';
-import { Field, FormError, inputClass, Section, secondaryButton } from '../components/Form';
+import { Field, FormError, inputClass, Section } from '../components/Form';
+import { ProtectedDownload } from '../components/ProtectedDownload';
 import { today } from '../dates';
 import { formatMoney } from '../money';
 
@@ -43,9 +44,12 @@ export function MetricsPage() {
                 title={t('metrics.period')}
                 actions={
                     valid ? (
-                        <a className={secondaryButton} href={metricsApi.csvUrl(period.from, period.to)} data-testid="metrics-csv">
-                            {t('metrics.csv')}
-                        </a>
+                        <ProtectedDownload
+                            path={metricsApi.csvPath(period.from, period.to)}
+                            fallbackName={`prenotazioni-${period.from}-${period.to}.csv`}
+                            label={t('metrics.csv')}
+                            testId="metrics-csv"
+                        />
                     ) : undefined
                 }
             >

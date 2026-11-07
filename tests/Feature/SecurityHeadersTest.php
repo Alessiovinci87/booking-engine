@@ -1,8 +1,11 @@
 <?php
 
 use App\Domain\Tenancy\Models\Tenant;
+use App\Providers\AppServiceProvider;
+use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Testing\TestResponse;
 
 /*
@@ -104,4 +107,45 @@ it('API pubblica: Origin della stessa applicazione o registrato ammessi, altri 4
         ->postJson("{$url}/reservations", [])->assertForbidden();
 
     expect(inTenant($this->fx['tenant'], fn () => Tenant::query()->whereKey($this->fx['tenant'])->value('embed_allowed_origins')))->toBe(['https://www.casa-esempio.test']);
+});
+
+it('HSTS solo sulle risposte https; dietro un proxy fidato vale lo schema di X-Forwarded-Proto (6.7)', function () {
+    // URL espliciti: dopo una richiesta https il client di test riuserebbe lo schema.
+    $plain = $this->get('http://localhost/app');
+    expect($plain->headers->has('Strict-Transport-Security'))->toBeFalse();
+
+    $secure = $this->get('https://localhost/app');
+    expect($secure->headers->get('Strict-Transport-Security'))->toBe('max-age=31536000; includeSubDomains');
+
+    try {
+        AppServiceProvider::trustProxies('10.0.0.1, 10.0.0.2');
+        $forwarded = ['X-Forwarded-Proto' => 'https', 'X-Forwarded-For' => '203.0.113.9'];
+
+        $viaProxy = $this->withServerVariables(['REMOTE_ADDR' => '10.0.0.2'])->withHeaders($forwarded)->get('http://localhost/app');
+        expect($viaProxy->headers->has('Strict-Transport-Security'))->toBeTrue();
+
+        $spoofed = $this->withServerVariables(['REMOTE_ADDR' => '198.51.100.7'])->withHeaders($forwarded)->get('http://localhost/app');
+        expect($spoofed->headers->has('Strict-Transport-Security'))->toBeFalse();
+    } finally {
+        AppServiceProvider::trustProxies(null);
+    }
+});
+
+it('limiti per IP dietro un proxy fidato: conta l\'IP del client, non quello del proxy (6.7)', function () {
+    try {
+        AppServiceProvider::trustProxies('10.0.0.1');
+        $seen = [];
+        Route::get('/__ip-probe', function (Request $request) use (&$seen) {
+            $seen[] = $request->ip();
+
+            return 'ok';
+        });
+
+        $this->withServerVariables(['REMOTE_ADDR' => '10.0.0.1'])->withHeaders(['X-Forwarded-For' => '203.0.113.9'])->get('/__ip-probe')->assertOk();
+        $this->withServerVariables(['REMOTE_ADDR' => '198.51.100.7'])->withHeaders(['X-Forwarded-For' => '203.0.113.9'])->get('/__ip-probe')->assertOk();
+
+        expect($seen)->toBe(['203.0.113.9', '198.51.100.7']);
+    } finally {
+        AppServiceProvider::trustProxies(null);
+    }
 });

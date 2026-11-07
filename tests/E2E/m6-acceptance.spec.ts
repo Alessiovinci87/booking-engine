@@ -165,13 +165,18 @@ test.describe('M6 criteri di accettazione', () => {
             await snap(manager, 'm6-email-rifiuto');
         });
 
-        await test.step('I22: anonimizzazione dell\'ospite della richiesta rifiutata (con password)', async () => {
+        await test.step('I22: export (con password) e anonimizzazione dell\'ospite della richiesta rifiutata', async () => {
             await manager.goto('/app');
             await openReservation(manager, 'Rita Esempio');
-            await expect(manager.getByTestId('guest-export')).toBeVisible();
+            // Export dei dati (6.7): chiede la password, poi scarica il JSON.
+            const download = manager.waitForEvent('download');
+            await manager.getByTestId('guest-export').click();
+            await reauth(manager);
+            expect((await download).suggestedFilename()).toMatch(/^ospite-[0-9a-f-]+\.json$/);
+
+            // Password confermata da meno di 15 minuti: l'anonimizzazione non la richiede di nuovo.
             await manager.getByTestId('guest-erase').click();
             await manager.getByTestId('guest-erase-confirm').click();
-            await reauth(manager);
             await expect(manager.getByText('Dati dell\'ospite anonimizzati.')).toBeVisible();
             await expect(manager.getByText('Rita')).toHaveCount(0);
             await snap(manager, 'm6-ospite-anonimizzato');
@@ -307,7 +312,7 @@ test.describe('M6 criteri di accettazione', () => {
             await expect(page.getByRole('heading', { name: 'Metriche', level: 1 })).toBeVisible();
             await expect(page.getByTestId('metric-revenue')).toContainText('Fatturato diretto');
             const download = page.waitForEvent('download');
-            await page.getByRole('link', { name: 'Scarica CSV prenotazioni' }).click();
+            await page.getByTestId('metrics-csv').click(); // password già confermata per il rimborso (15 minuti)
             expect((await download).suggestedFilename()).toMatch(/\.csv$/);
             await snap(page, 'm6-metriche');
         });

@@ -165,7 +165,7 @@ it('I22: dopo erase nessuna copia contiene i valori originali; importi, paese e 
 });
 
 it('export JSON: dati personali, prenotazioni, pagamenti e rimborsi; registrato in audit senza dati personali', function () {
-    actingAsPanelUser($this, $this->owner['user']);
+    actingAsPanelUser($this, $this->owner['user'], passwordConfirmed: true);
     $response = panelGet($this, "/api/v1/admin/guests/{$this->guestId}/export")->assertOk()
         ->assertHeader('Content-Disposition', "attachment; filename=\"ospite-{$this->guestId}.json\"");
 
@@ -195,9 +195,11 @@ it('erase bloccato su una prenotazione attiva non conclusa; ammesso dopo il chec
     panelPost($this, "/api/v1/admin/guests/{$active->guest_id}/erase")->assertOk();
 });
 
-it('erase richiede la ri-autenticazione; un ospite di un altro tenant è 404', function () {
+it('erase ed export richiedono la ri-autenticazione; un ospite di un altro tenant è 404', function () {
     actingAsPanelUser($this, $this->owner['user']);
     panelPost($this, "/api/v1/admin/guests/{$this->guestId}/erase")->assertForbidden()->assertJsonPath('error.code', 'REAUTH_REQUIRED');
+    // Anche l'export dei dati (08 "export completo", 6.7).
+    panelGet($this, "/api/v1/admin/guests/{$this->guestId}/export")->assertForbidden()->assertJsonPath('error.code', 'REAUTH_REQUIRED');
     expect(inTenant($this->fx['tenant'], fn () => Guest::query()->findOrFail($this->guestId))->anonymized_at)->toBeNull();
 });
 

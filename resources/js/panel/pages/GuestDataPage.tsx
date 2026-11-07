@@ -5,6 +5,7 @@ import { useParams } from 'react-router';
 import { privacyApi } from '../api/privacy';
 import { useErrorMessage } from '../auth/session';
 import { FormError, primaryButton } from '../components/Form';
+import { ReauthPrompt, needsReauth } from '../components/Reauth';
 import { formatDate, formatDateTime } from '../dates';
 import { formatMoney } from '../money';
 
@@ -25,7 +26,11 @@ export function GuestDataPage() {
     if (exported.isError) {
         return (
             <main className="mx-auto max-w-3xl px-4 py-8">
-                <FormError message={errorMessage(exported.error)} />
+                {needsReauth(exported.error) ? (
+                    <ReauthPrompt onConfirmed={() => void exported.refetch()} onCancel={() => window.history.back()} />
+                ) : (
+                    <FormError message={errorMessage(exported.error)} />
+                )}
             </main>
         );
     }

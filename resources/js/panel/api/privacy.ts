@@ -39,6 +39,7 @@ export interface GuestExport {
 
 export const privacyApi = {
     exportGuest: (guestId: string) => apiRequest<{ data: GuestExport }>('GET', `/guests/${guestId}/export`),
-    exportUrl: (guestId: string) => `/api/v1/admin/guests/${guestId}/export`,
+    /** Percorso del download (ProtectedDownload): password confermata negli ultimi 15 minuti (08). */
+    exportPath: (guestId: string) => `/guests/${guestId}/export`,
     eraseGuest: (guestId: string) => apiRequest<{ data: { id: string; anonymized_at: string } }>('POST', `/guests/${guestId}/erase`),
 };

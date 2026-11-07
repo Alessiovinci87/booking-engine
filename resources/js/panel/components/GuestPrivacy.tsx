@@ -6,6 +6,7 @@ import { Link } from 'react-router';
 import { privacyApi } from '../api/privacy';
 import { useErrorMessage } from '../auth/session';
 import { dangerButton, FormError, Section, secondaryButton } from './Form';
+import { ProtectedDownload } from './ProtectedDownload';
 import { ReauthPrompt, needsReauth } from './Reauth';
 
 /**
@@ -34,10 +35,8 @@ export function GuestPrivacy({ guestId, reservationId, anonymized }: { guestId: 
                 ) : (
                     <>
                         <p className="text-slate-600">{t('privacy.hint')}</p>
-                        <div className="flex flex-wrap gap-3">
-                            <a className={secondaryButton} href={privacyApi.exportUrl(guestId)} data-testid="guest-export">
-                                {t('privacy.export')}
-                            </a>
+                        <div className="flex flex-wrap items-start gap-3">
+                            <ProtectedDownload path={privacyApi.exportPath(guestId)} fallbackName={`ospite-${guestId}.json`} label={t('privacy.export')} testId="guest-export" />
                             <Link className={secondaryButton} to={`/ospiti/${guestId}/dati`} data-testid="guest-print">
                                 {t('privacy.print')}
                             </Link>

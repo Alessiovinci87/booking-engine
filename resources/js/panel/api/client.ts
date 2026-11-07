@@ -108,6 +108,31 @@ async function send<T>(method: Method, path: string, body: unknown, options: Req
     return payload as T;
 }
 
+/**
+ * Download di un file dell'API (export CSV o JSON, 6.2 e 6.3) con il cookie di sessione: come
+ * apiRequest, ma restituisce il contenuto e il nome del file. Gli export chiedono la password
+ * confermata (08): l'errore REAUTH_REQUIRED arriva come ApiError.
+ */
+export async function apiDownload(path: string, fallbackName: string): Promise<{ blob: Blob; filename: string }> {
+    const response = await fetch(`/api/v1/admin${path}`, {
+        method: 'GET',
+        headers: { Accept: 'application/json, text/csv', 'X-Requested-With': 'XMLHttpRequest' },
+        credentials: 'same-origin',
+    });
+
+    if (!response.ok) {
+        const payload: unknown = await response.json().catch(() => null);
+        const error = (payload as { error?: { code?: string; details?: Record<string, unknown> } } | null)?.error;
+
+        throw new ApiError(response.status, error?.code ?? 'SERVER_ERROR', error?.details ?? {});
+    }
+
+    const disposition = response.headers.get('Content-Disposition') ?? '';
+    const filename = /filename="?([^";]+)"?/.exec(disposition)?.[1] ?? fallbackName;
+
+    return { blob: await response.blob(), filename };
+}
+
 export interface SessionState {
     mfa_enabled: boolean;
     mfa_verified: boolean;

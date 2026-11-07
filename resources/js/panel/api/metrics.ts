@@ -30,6 +30,6 @@ export interface Metrics {
 
 export const metricsApi = {
     get: (from: string, to: string) => apiRequest<{ data: Metrics }>('GET', `/metrics?from=${from}&to=${to}`),
-    /** Download diretto con il cookie di sessione (GET, nessun token CSRF necessario). */
-    csvUrl: (from: string, to: string) => `/api/v1/admin/exports/reservations.csv?from=${from}&to=${to}`,
+    /** Percorso del download (ProtectedDownload): password confermata negli ultimi 15 minuti (08). */
+    csvPath: (from: string, to: string) => `/exports/reservations.csv?from=${from}&to=${to}`,
 };
