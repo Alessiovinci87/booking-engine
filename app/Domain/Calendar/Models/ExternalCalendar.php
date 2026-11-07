@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * SafeHttpFetcher.
  *
  * @property string $id
+ * @property string $tenant_id
  * @property string $unit_id
  * @property ChannelSource $source
  * @property string $url_encrypted
@@ -25,6 +26,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int $consecutive_failures
  * @property ExternalCalendarStatus $status
  * @property CarbonImmutable|null $next_poll_at
+ * @property CarbonImmutable|null $url_changed_at
  */
 class ExternalCalendar extends TenantModel
 {
@@ -41,6 +43,7 @@ class ExternalCalendar extends TenantModel
             'consecutive_failures' => 'integer',
             'status' => ExternalCalendarStatus::class,
             'next_poll_at' => 'immutable_datetime',
+            'url_changed_at' => 'immutable_datetime',
         ];
     }
 

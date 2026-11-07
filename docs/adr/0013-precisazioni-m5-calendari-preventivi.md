@@ -57,6 +57,15 @@ L'implementazione di M5 (import ed export iCal, conflitti, preventivi) ha incont
 28. **Rotazione** (`POST /admin/ics-feeds/{id}/rotate`, solo da `ACTIVE`): il feed attuale diventa `FROZEN` con `frozen_at` e `rotated_at`, il nuovo nasce `ACTIVE` con lo stesso accoppiamento. Un dispatcher orario (app_admin_ops, solo ID) ritira i feed `FROZEN` da rotazione oltre i 7 giorni (`RetireRotatedFeedsJob` per tenant). `GET` riporta `retires_at` e `not_read_warning` (feed `ACTIVE` non letto da oltre 24 ore, o mai letto 24 ore dopo la creazione; 08).
 29. **Stati dei feed** solo in `IcsFeedStateMachine` (creazione `ACTIVE`, `freeze`, `retire`); `RETIRED` è definitivo. Il congelamento per offboarding e il ritiro su conferma del gestore usano gli stessi metodi; le API di offboarding restano a M7 (11).
 
+### Salute, calendari importati e checklist (5.6)
+
+30. **Salute.** Riferimento = `last_success_at`, o la creazione per un calendario mai sincronizzato; minuti interi trascorsi: < 60 `ACTIVE`, 60–180 `DEGRADED`, oltre 180 `UNHEALTHY`. Valutazione ogni 5 minuti (dispatcher con app_admin_ops, `EvaluateSyncHealthJob` per tenant) e dopo ogni sincronizzazione riuscita. Al passaggio a `UNHEALTHY` una sola email per episodio (`calendar.sync_unhealthy`, chiave con l'ultimo successo). L'unità prende lo stato peggiore dei calendari non disattivati (`UNHEALTHY`, `WARNING`, `HEALTHY`, `NONE`), scritto da `UnitService::setSyncHealth` senza cambiare la versione dell'unità.
+31. **Creazione di un calendario** (`POST /admin/units/{id}/external-calendars`, a passi): URL controllato con `SafeHttpFetcher::assertAllowed` (422 `INVALID_ICAL_URL`, `details.reason` = codice di `FetchError`); prima sincronizzazione nella richiesta: se finisce in errore, il calendario e la sua `SyncRun` si cancellano e la risposta è 422 `INVALID_ICAL_URL` con il codice dell'errore. Su un'unità `INSTANT` serve `switch_to_request: true`, altrimenti **409 `UNIT_IS_INSTANT`** (nuovo codice): il passaggio a `REQUEST` cambia il flusso dell'ospite e va confermato (I12).
+32. **Cambio di URL** (`PATCH` con `url`): nuova colonna `external_calendars.url_changed_at` (migration `2027_01_18_000300`); ETag e Last-Modified azzerati, sincronizzazione subito. Gli eventi visti l'ultima volta prima del cambio restano esclusi da rimozione in due passi e salvaguardia: restano finché il nuovo URL non li riporta o il gestore li rimuove con `POST /admin/external-events/{id}/remove` (06 "Rimozione").
+33. **Disattivazione e rimozione.** `PATCH` con `status` `DISABLED`/`ACTIVE` (la riattivazione su un'unità `INSTANT` → 409 `UNIT_IS_INSTANT`); un calendario disattivato non si sincronizza ma i suoi eventi restano bloccanti. `DELETE` è la rimozione esplicita del gestore: eventi `REMOVED` (date libere, conflitti aperti risolti in automatico), calendario `DISABLED` conservato per storico e conflitti.
+34. **Sincronizza ora**: 429 `RATE_LIMITED` se ripetuto entro 2 minuti per lo stesso calendario; stesso lock del job. Dell'URL l'API restituisce solo l'host (`url_host`).
+35. **Checklist di collegamento** (06): passi `{canale}.feed_created` e `{canale}.calendar_imported` (non per "altro") calcolati, `{canale}.feed_linked` e, con almeno due OTA, `direct_links_removed` confermati dal gestore (`POST .../calendar-checklist/confirm`, 422 `CHECKLIST_STEP_INVALID` per un passo non manuale o assente). Le conferme stanno in `units.calendar_checklist` (jsonb: passo → istante e utente), con audit `unit.calendar_checklist_confirmed`. Un indizio per `feed_linked` è l'ultima lettura del feed da parte dell'OTA.
+
 ## Alternative considerate
 
 | Alternativa | Perché scartata |
@@ -70,7 +79,7 @@ L'implementazione di M5 (import ed export iCal, conflitti, preventivi) ha incont
 
 ## Impatto sui test
 
-- Test aggiunti: `Unit/Calendar/SafeHttpFetcherTest`, `Unit/Calendar/IcsParserTest`, `Feature/Calendar/IcalImportTest`, `SyncErrorKeepsDatesTest`, `AntiWipeSafeguardTest`, `ConflictOnConfirmedTest`, `ConflictCloseKeepsDatesTest`, `EchoLoopTest`, `FeedMatrixTest`, `IcsUidStabilityTest`, `IcsFeedEndpointTest`, `FrozenFeedNeverEmptyTest`, `RetiredFeed410Test`.
+- Test aggiunti: `Unit/Calendar/SafeHttpFetcherTest`, `Unit/Calendar/IcsParserTest`, `Feature/Calendar/IcalImportTest`, `SyncErrorKeepsDatesTest`, `AntiWipeSafeguardTest`, `ConflictOnConfirmedTest`, `ConflictCloseKeepsDatesTest`, `EchoLoopTest`, `FeedMatrixTest`, `IcsUidStabilityTest`, `IcsFeedEndpointTest`, `FrozenFeedNeverEmptyTest`, `RetiredFeed410Test`, `SyncUnhealthyTest`, `ExternalCalendarApiTest`, `CalendarChecklistTest`.
 - Test modificati: `Arch/ExternalHttpTest` (eccezione per `CurlTransport`), `Database/IcsFeedUniquenessTest` (`frozen_at` obbligatorio per i feed FROZEN), `Architecture/RlsCatalogTest` (policy `definer_lookup` su `ics_feeds`).
 
 ## Aggiornamento della specifica

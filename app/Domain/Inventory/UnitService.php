@@ -5,6 +5,7 @@ namespace App\Domain\Inventory;
 use App\Domain\Calendar\Enums\ExternalCalendarStatus;
 use App\Domain\Calendar\Models\ExternalCalendar;
 use App\Domain\Inventory\Enums\BookingMode;
+use App\Domain\Inventory\Enums\SyncHealth;
 use App\Domain\Inventory\Enums\UnitStatus;
 use App\Domain\Inventory\Models\Property;
 use App\Domain\Inventory\Models\Unit;
@@ -108,6 +109,38 @@ final class UnitService
         }
 
         return $unit->refresh();
+    }
+
+    /**
+     * Salute della sincronizzazione dell'unità (06 "Salute"), calcolata da SyncHealthService dagli stati
+     * dei calendari importati. Non cambia la versione dell'unità: non è una modifica del gestore.
+     */
+    public function setSyncHealth(Unit $unit, SyncHealth $health): bool
+    {
+        if ($unit->sync_health === $health) {
+            return false;
+        }
+
+        $from = $unit->sync_health;
+        $unit->sync_health = $health;
+        $unit->saveQuietly();
+        $this->audit->record('unit.sync_health_changed', 'unit', $unit->id, ['from' => $from->value, 'to' => $health->value]);
+
+        return true;
+    }
+
+    /**
+     * Conferma esplicita di un passo della checklist di collegamento dei calendari (06).
+     */
+    public function confirmChecklistStep(Unit $unit, string $step, ?string $userId): Unit
+    {
+        $checklist = $unit->calendar_checklist;
+        $checklist[$step] = ['confirmed_at' => now()->toIso8601ZuluString(), 'confirmed_by' => $userId];
+        $unit->calendar_checklist = $checklist;
+        $unit->saveQuietly();
+        $this->audit->record('unit.calendar_checklist_confirmed', 'unit', $unit->id, ['step' => $step]);
+
+        return $unit;
     }
 
     /** I12 in applicazione: nessun calendario esterno attivo per un'unità INSTANT. */

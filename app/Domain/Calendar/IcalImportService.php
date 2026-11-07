@@ -58,6 +58,7 @@ class IcalImportService
         private readonly ExternalCalendarStateMachine $calendars,
         private readonly ConflictDetector $detector,
         private readonly ConflictService $conflicts,
+        private readonly SyncHealthService $health,
     ) {}
 
     /**
@@ -178,7 +179,10 @@ class IcalImportService
                 ->where('external_calendar_id', $calendar->id)
                 ->get()->keyBy('uid')->all();
 
-            $isLive = fn (ExternalCalendarEvent $e): bool => $e->status !== ExternalEventStatus::REMOVED && $e->stay->checkOut->greaterThan($today);
+            // Dopo un cambio di URL gli eventi visti solo con il vecchio URL restano finché il nuovo non li
+            // conferma o il gestore li rimuove (06 "Rimozione"): fuori da rimozione e salvaguardia.
+            $keptAfterUrlChange = fn (ExternalCalendarEvent $e): bool => $calendar->url_changed_at !== null && $e->last_seen_at->lessThan($calendar->url_changed_at);
+            $isLive = fn (ExternalCalendarEvent $e): bool => $e->status !== ExternalEventStatus::REMOVED && $e->stay->checkOut->greaterThan($today) && ! $keptAfterUrlChange($e);
             $liveBefore = array_filter($existing, $isLive);
 
             $incoming = [];
@@ -290,6 +294,7 @@ class IcalImportService
         $calendar->save();
 
         $this->calendars->setHealth($calendar, ExternalCalendarStatus::ACTIVE);
+        $this->health->refreshUnit($calendar->unit_id);
     }
 
     private function finish(SyncRun $run, CarbonImmutable $started, SyncRunOutcome $outcome, ?int $httpStatus, ?string $errorCode): SyncRun

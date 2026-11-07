@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\V1\Admin\BlockController;
 use App\Http\Controllers\Api\V1\Admin\CalendarController;
 use App\Http\Controllers\Api\V1\Admin\ConflictController;
 use App\Http\Controllers\Api\V1\Admin\DisputeController;
+use App\Http\Controllers\Api\V1\Admin\ExternalCalendarController;
 use App\Http\Controllers\Api\V1\Admin\IcsFeedController;
 use App\Http\Controllers\Api\V1\Admin\MeController;
 use App\Http\Controllers\Api\V1\Admin\PricePreviewController;
@@ -71,6 +72,13 @@ Route::prefix('admin')->middleware(EnsureFrontendRequestsAreStateful::class)->gr
         Route::post('reservations/{reservation}/recovery-link', [ReservationController::class, 'recoveryLink'])->name('admin.reservations.recovery-link');
     });
 
+    // Calendari importati (5.6): download con SafeHttpFetcher fuori transazione, il servizio apre i propri passi.
+    Route::middleware(['auth:sanctum', 'panel.fresh', 'mfa', 'throttle:admin', 'tenant:panel,steps'])->group(function (): void {
+        Route::post('units/{unit}/external-calendars', [ExternalCalendarController::class, 'store'])->name('admin.units.external-calendars.store');
+        Route::patch('external-calendars/{calendar}', [ExternalCalendarController::class, 'update'])->name('admin.external-calendars.update');
+        Route::post('external-calendars/{calendar}/sync-now', [ExternalCalendarController::class, 'syncNow'])->name('admin.external-calendars.sync-now');
+    });
+
     // Collegamento Stripe (4.1): letture e link di onboarding con chiamate a Stripe fuori transazione.
     Route::middleware(['auth:sanctum', 'panel.fresh', 'mfa', 'throttle:admin', 'tenant:panel,steps'])->group(function (): void {
         Route::get('stripe/account', [StripeAccountController::class, 'show'])->name('admin.stripe.account');
@@ -110,6 +118,13 @@ Route::prefix('admin')->middleware(EnsureFrontendRequestsAreStateful::class)->gr
         Route::patch('reservations/{reservation}', [ReservationController::class, 'update'])->name('admin.reservations.update');
         Route::get('refunds', [RefundController::class, 'index'])->name('admin.refunds.index');
         Route::get('disputes', [DisputeController::class, 'index'])->name('admin.disputes.index');
+
+        Route::get('units/{unit}/external-calendars', [ExternalCalendarController::class, 'index'])->name('admin.units.external-calendars.index');
+        Route::delete('external-calendars/{calendar}', [ExternalCalendarController::class, 'destroy'])->name('admin.external-calendars.destroy');
+        Route::get('external-calendars/{calendar}/runs', [ExternalCalendarController::class, 'runs'])->name('admin.external-calendars.runs');
+        Route::post('external-events/{event}/remove', [ExternalCalendarController::class, 'removeEvent'])->name('admin.external-events.remove');
+        Route::get('units/{unit}/calendar-checklist', [ExternalCalendarController::class, 'checklist'])->name('admin.units.calendar-checklist');
+        Route::post('units/{unit}/calendar-checklist/confirm', [ExternalCalendarController::class, 'confirmChecklist'])->name('admin.units.calendar-checklist.confirm');
 
         Route::get('units/{unit}/ics-feeds', [IcsFeedController::class, 'index'])->name('admin.units.ics-feeds.index');
         Route::post('units/{unit}/ics-feeds', [IcsFeedController::class, 'store'])->name('admin.units.ics-feeds.store');

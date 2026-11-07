@@ -2,6 +2,7 @@
 
 use App\Domain\Calendar\Jobs\DispatchCalendarSyncJob;
 use App\Domain\Calendar\Jobs\DispatchFeedRetirementJob;
+use App\Domain\Calendar\Jobs\DispatchSyncHealthJob;
 use App\Domain\Payments\Jobs\DispatchPaymentReconciliationJob;
 use App\Domain\Payments\Jobs\ReconcilePaymentsJob;
 use App\Domain\Reservations\Jobs\DispatchOccupancyReleaseJob;
@@ -31,3 +32,6 @@ Schedule::job(new DispatchCalendarSyncJob)->everyMinute()->withoutOverlapping()-
 
 // Ritiro dei feed iCal ruotati da oltre 7 giorni (06): dispatcher orario, un job per tenant.
 Schedule::job(new DispatchFeedRetirementJob)->hourly()->withoutOverlapping()->name('ical:retire-rotated');
+
+// Salute della sincronizzazione dei calendari importati (06): dispatcher ogni 5 minuti, un job per tenant.
+Schedule::job(new DispatchSyncHealthJob)->everyFiveMinutes()->withoutOverlapping()->name('calendars:health');
