@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\V1\Admin\DisputeController;
 use App\Http\Controllers\Api\V1\Admin\ExternalCalendarController;
 use App\Http\Controllers\Api\V1\Admin\IcsFeedController;
 use App\Http\Controllers\Api\V1\Admin\MeController;
+use App\Http\Controllers\Api\V1\Admin\MetricsController;
 use App\Http\Controllers\Api\V1\Admin\PricePreviewController;
 use App\Http\Controllers\Api\V1\Admin\PropertyController;
 use App\Http\Controllers\Api\V1\Admin\QuoteController;
@@ -143,6 +144,10 @@ Route::prefix('admin')->middleware(EnsureFrontendRequestsAreStateful::class)->gr
         Route::post('external-events/{event}/not-echo', [ConflictController::class, 'notAnEcho'])->name('admin.external-events.not-echo');
 
         Route::get('quotes', [QuoteController::class, 'index'])->name('admin.quotes.index');
+
+        // Metriche ed export CSV (6.2).
+        Route::get('metrics', [MetricsController::class, 'metrics'])->name('admin.metrics');
+        Route::get('exports/reservations.csv', [MetricsController::class, 'reservationsCsv'])->name('admin.exports.reservations');
         Route::get('quotes/{quote}', [QuoteController::class, 'show'])->name('admin.quotes.show');
     });
 });

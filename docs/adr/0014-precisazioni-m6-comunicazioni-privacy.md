@@ -20,6 +20,15 @@ M6 parte senza gli account esterni (hosting, dominio, Resend, Sentry): si fanno 
 5. **`reply_to`** delle email all'ospite = email di contatto della struttura: l'ospite risponde al titolare, non alla piattaforma.
 6. **Nuova email al gestore** `reservation.confirmed_manager` a ogni conferma online (T3, T12): 01 prevede email "a ospite e gestore" e il gestore non aveva avviso delle prenotazioni istantanee. Contiene il nome dell'ospite (il gestore è il titolare, come per `refund_reversed`).
 
+### Metriche ed export CSV (6.2)
+
+7. **Periodo delle metriche**: prenotazioni `CONFIRMED` con check-in tra `from` e `to` inclusi (predefinito: mese corrente; al massimo 366 giorni, altrimenti `400 VALIDATION_FAILED`). Tutte le prenotazioni del sistema sono dirette (pagina ospite, preventivo, manuale); le cancellate non contano.
+8. **Commissioni OTA evitate**: per prenotazione, importo contrattuale × `ota_commission_bps` della sua struttura, arrotondato al centesimo; la risposta riporta la percentuale usata per ogni struttura (01).
+9. **Commissioni di pagamento**: `payments.fee_cents` quando è registrato; altrimenti stima con la tariffa Stripe standard per carte SEE (1,5% + 0,25 €, `config/payments.php` `estimated_fee`) sui pagamenti online incassati, con `payment_fees_estimated = true` e una nota nel pannello. Oggi nessun flusso registra `fee_cents`: la lettura della commissione reale da Stripe (balance transaction) va fatta con le prove su Stripe vero.
+10. **Sconti diretti**: `discount_cents` dei preventivi da cui nasce una prenotazione confermata del periodo.
+11. **Export CSV** (`GET /admin/exports/reservations.csv`): prenotazioni con check-in nel periodo, esclusi i tentativi non conclusi (`AWAITING_PAYMENT`, `EXPIRED`, `PAYMENT_FAILED`, `REJECTED`); anagrafica dell'ospite; separatore `;`, BOM UTF-8, importi con la virgola; celle che iniziano con `=`, `+`, `-`, `@`, tab o a capo precedute da un apostrofo (formula injection). Generato e restituito nella stessa richiesta (nessun file salvato); registrato in `audit_log` come `export.reservations_csv` con periodo e numero di righe, senza dati personali. Senza ri-autenticazione: 08 la chiede per l'export completo del tenant.
+12. **Pannello**: pagina `/app/metriche` con i tre valori, il dettaglio del calcolo, la nota di attendibilità ("non è un risparmio netto"), la percentuale per struttura e il pulsante del CSV.
+
 ## Alternative considerate
 
 | Alternativa | Perché scartata |
@@ -35,7 +44,7 @@ M6 parte senza gli account esterni (hosting, dominio, Resend, Sentry): si fanno 
 
 ## Impatto sui test
 
-- Test aggiunti: `Feature/Communications/TransactionalMailTest`.
+- Test aggiunti: `Feature/Communications/TransactionalMailTest`, `Feature/Metrics/MetricsTest`.
 - Test modificati: `Feature/Reservations/ReservationTransitionsTest` (T3 genera anche `reservation.confirmed_manager`).
 - Invarianti toccati: nessuno.
 

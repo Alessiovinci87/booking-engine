@@ -17,6 +17,7 @@ Convenzioni dei test: `Unit/…` (Pest, senza database), `Feature/…` (Pest con
 | `PriceQuoteService` | dati salvati dell'unità → `PriceCalculator` (anteprima e pagina ospite) | 04, 07 |
 | `RatePlanService` | prezzo base e stagioni, avvisi di sovrapposizione a parità di priorità | 04, ADR-0010 |
 | `ReservationStateMachine` | transizioni T1–T18 | 03 |
+| `MetricsService` | fatturato diretto, commissioni OTA evitate, beneficio diretto stimato | 01, ADR-0014 |
 | `TransactionalMailer` | email transazionali dall'outbox: driver `log` con anteprima locale, adattatore Resend | 01, 09, ADR-0014 |
 | `CheckoutService` | sequenza in tre passi, recupero sessione | 05 |
 | `OccupancyReleaseJob` | rilascio con `expire` e verifica sessione | 05 |
@@ -188,5 +189,6 @@ Aggiornato a fine M4 (07/11/2026): pagamenti Stripe (Connect, checkout, webhook,
 | Pannello calendari (5.8) | `resources/js/panel/pages/{ConflictsPage, CalendarsPage}.tsx`, `resources/js/panel/api/calendars.ts` | `Feature/Frontend/SpaRoutesTest`, `npm run typecheck` |
 | Verifica di M5 | Link del preventivo casuale e cifrato (`quotes.public_token_encrypted`, `2027_01_18_000500`, `QuoteLinks::newToken`); calendari dimostrativi (`external_calendars.demo`, `2027_01_18_000600`, `Calendar\DemoCalendars`, esclusi da `DispatchCalendarSyncJob`, `DispatchSyncHealthJob` e `IcalImportService::sync`); dati di M5 nel `DemoSeeder` (ADR-0013 punti 36, 44, 45) | `Feature/Quotes/QuoteAcceptTest`, `Feature/DemoSeederTest`, `Feature/Calendar/IcalImportTest` |
 | Email transazionali (6.1) | `App\Domain\Communications\{TransactionalMailer, TransactionalEmail, MailPreviewBox, RecipientMask, Transport\PreviewLogTransport, Transport\ResendTransport}`, mailer `log` e `resend` in `config/mail.php`, `DevMailController` (`/dev/mail`, solo `APP_ENV=local`), outbox `reservation.confirmed_manager` (ADR-0014 punti 1–6) | `Feature/Communications/TransactionalMailTest`, `Feature/Reservations/ReservationTransitionsTest` |
+| Metriche ed export CSV (6.2) | `App\Domain\Reservations\Metrics\{MetricsService, MetricsReport, ReservationCsvExport}`, `Admin\MetricsController` (`GET /admin/metrics`, `GET /admin/exports/reservations.csv`), `config/payments.php` `estimated_fee`, pannello `MetricsPage.tsx` (`/app/metriche`) (ADR-0014 punti 7–12) | `Feature/Metrics/MetricsTest`, `Feature/Frontend/SpaRoutesTest` |
 | Struttura del codice (ADR-0006) | `app/Domain/<Area>`, `app/Http/Controllers/Api/V1/{Admin,Public}` | `Arch/DomainStructureTest` |
 | SPA pannello e ospite | `resources/js/panel/main.tsx` su `/app`, `resources/js/guest/main.tsx` su `/p/{t}/{p}` | `Feature/Frontend/SpaRoutesTest` |

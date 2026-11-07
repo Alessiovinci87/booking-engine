@@ -7,7 +7,7 @@ it('serve il pannello su /app e sui suoi sottopercorsi', function (string $path)
         ->assertOk()
         ->assertSee('<html lang="it">', escape: false)
         ->assertSee('<div id="app"></div>', escape: false);
-})->with(['/app', '/app/', '/app/prenotazioni/123', '/app/pagamenti', '/app/preventivi', '/app/conflitti', '/app/calendari']);
+})->with(['/app', '/app/', '/app/prenotazioni/123', '/app/pagamenti', '/app/preventivi', '/app/conflitti', '/app/calendari', '/app/metriche']);
 
 it('serve la pagina ospite su /p/{tenant}/{struttura} e sui suoi sottopercorsi', function (string $path) {
     $this->get($path)

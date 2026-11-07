@@ -53,7 +53,8 @@
         "payments": "Pagamenti",
         "quotes": "Preventivi",
         "conflicts": "Conflitti",
-        "calendars": "Calendari OTA"
+        "calendars": "Calendari OTA",
+        "metrics": "Metriche"
     },
     "notFound": {
         "title": "Pagina non trovata",
@@ -740,5 +741,32 @@
         "checklistComplete": "Collegamento completo.",
         "confirmStep": "Fatto",
         "demo": "Calendario dimostrativo: eventi di esempio, non viene scaricato dall’OTA."
+    },
+    "metrics": {
+        "title": "Metriche",
+        "period": "Periodo (data di arrivo)",
+        "from": "Dal",
+        "to": "Al",
+        "invalidPeriod": "Scegli un periodo valido: la data finale non può precedere quella iniziale.",
+        "csv": "Scarica CSV prenotazioni",
+        "csvHint": "Il CSV contiene le prenotazioni del periodo con l'anagrafica degli ospiti, per uso gestionale: non è un file per Alloggiati Web. Conservalo con cura: contiene dati personali.",
+        "directRevenue": "Fatturato diretto",
+        "reservationsCount_one": "{{count}} prenotazione confermata, {{nights}} notti",
+        "reservationsCount_other": "{{count}} prenotazioni confermate, {{nights}} notti",
+        "otaAvoided": "Commissioni OTA teoricamente evitate",
+        "otaAvoidedHint": "Fatturato diretto × percentuale OTA della struttura",
+        "benefit": "Beneficio diretto stimato",
+        "benefitHint": "Commissioni evitate − commissioni di pagamento − sconti diretti",
+        "breakdown": "Come si calcola il beneficio",
+        "paymentFees": "Commissioni di pagamento",
+        "estimated": "stimate",
+        "discounts": "Sconti diretti (preventivi)",
+        "reliability": "Attendibilità: è una stima. Assume che ogni prenotazione diretta sarebbe altrimenti arrivata da un'OTA con la percentuale indicata per la struttura. Non è un risparmio netto.",
+        "feesEstimatedNote": "Per alcuni pagamenti la commissione di Stripe non è ancora registrata: usiamo la tariffa standard per carte europee (1,5% + 0,25 €).",
+        "byProperty": "Per struttura",
+        "property": "Struttura",
+        "otaPercent": "Percentuale OTA usata",
+        "reservations": "Prenotazioni",
+        "otaPercentHint": "La percentuale OTA si cambia nelle impostazioni della struttura."
     }
 }

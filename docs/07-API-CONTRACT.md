@@ -208,8 +208,8 @@ Tutte richiedono utente autenticato con MFA verificata nella sessione e membersh
 |---|---|
 | GET | `/stripe/account` (stato onboarding: `NOT_CONNECTED`, `ONBOARDING_INCOMPLETE`, `IN_REVIEW`, `ENABLED`; `?refresh=1` rilegge da Stripe al rientro dall'onboarding, ADR-0012) |
 | POST | `/stripe/onboarding-link` (ri-autenticazione, 08: collegamento o cambio dell'account Stripe) |
-| GET | `/metrics?from=&to=` (fatturato diretto, commissioni evitate, beneficio stimato, con percentuale usata) |
-| GET | `/exports/reservations.csv?from=&to=` |
+| GET | `/metrics?from=&to=` (fatturato diretto, commissioni evitate, beneficio stimato, con percentuale usata; check-in nel periodo, predefinito il mese corrente, massimo 366 giorni; ADR-0014 punti 7–10) |
+| GET | `/exports/reservations.csv?from=&to=` (separatore `;`, BOM UTF-8, protezione dalle formule; registrato in audit; ADR-0014 punto 11) |
 
 ### Privacy (vedi 09)
 | Metodo | Percorso |
