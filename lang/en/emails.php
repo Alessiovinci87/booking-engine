@@ -68,6 +68,10 @@ return [
         'subject' => 'Refund failed :code',
         'lines' => ['The refund of :amount for booking :code failed after three automatic attempts.', 'From the panel you can retry it or mark it as refunded outside the platform (for example by bank transfer).'],
     ],
+    'refund_reversed' => [
+        'subject' => 'Urgent: refund not completed :code',
+        'lines' => ['The refund of :amount to :guest for booking :code did not go through: Stripe reported it after marking it as succeeded. Please contact the guest.', 'The guest has not received any automatic notice. From the panel you can retry the refund or mark it as refunded outside the platform (for example by bank transfer).'],
+    ],
     'capture_failed_reminder' => [
         'subject' => 'Reminder: payment capture failed :code',
         'lines' => ['The payment capture for booking :code is still unresolved. The dates will be released in 12 hours.', 'Send a payment link to the guest or release the dates.'],

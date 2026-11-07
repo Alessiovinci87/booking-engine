@@ -18,6 +18,7 @@ use App\Domain\Reservations\Models\Reservation;
 use App\Domain\Reservations\NewReservation;
 use App\Domain\Reservations\StateMachines\ReservationStateMachine;
 use App\Domain\Reservations\StayRange;
+use App\Domain\Tenancy\Auth\PanelSession;
 use App\Domain\Tenancy\Exceptions\BusinessRuleViolation;
 use App\Domain\Tenancy\Http\WithTenantContext;
 use App\Domain\Tenancy\TenantContext;
@@ -201,6 +202,11 @@ final class ReservationController extends Controller
         ]);
         $model = Reservation::query()->findOrFail($reservation);
         $refund = CancellationRefund::for($model, isset($validated['refund_cents']) ? (int) $validated['refund_cents'] : null);
+
+        // Rimborso > 0: ri-autenticazione (08; decisione dopo la verifica di M4, ADR-0012 punto 24).
+        if ($refund->amountCents > 0 && ! (new PanelSession($request->session()))->passwordConfirmedWithin((int) config('auth.password_timeout'))) {
+            throw BusinessRuleViolation::make(403, 'REAUTH_REQUIRED');
+        }
 
         return self::respond($this->machine->cancel($model, $refund, self::text($validated['reason'] ?? null), self::userId($request)));
     }

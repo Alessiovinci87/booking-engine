@@ -23,7 +23,7 @@ final class RefundStateMachine
     /** @var array<string, list<S>> stato di arrivo → stati di partenza ammessi */
     private const TRANSITIONS = [
         'SUCCEEDED' => [S::PENDING, S::FAILED],
-        'FAILED' => [S::PENDING],
+        'FAILED' => [S::PENDING, S::SUCCEEDED],
         'PENDING' => [S::FAILED],
         'CANCELLED' => [S::PENDING],
     ];
@@ -121,6 +121,26 @@ final class RefundStateMachine
 
         $payment = Payment::query()->findOrFail($refund->payment_id);
         $this->payments->applyRefund($payment, $this->refundedCents($payment));
+    }
+
+    /**
+     * SUCCEEDED → FAILED solo quando lo comunica Stripe (evento sul rimborso riletto via API, ADR-0012
+     * punto 23): il denaro non è arrivato all'ospite. Nessun tentativo automatico: il gestore contatta
+     * l'ospite e usa "Riprova" o "Segna come rimborsato fuori piattaforma". Il rimborsato del Payment
+     * si ricalcola, e con lui refund_status (derivato, 02).
+     */
+    public function markReversedByProvider(Refund $refund): void
+    {
+        if ($refund->status !== S::SUCCEEDED || $refund->method !== RefundMethod::STRIPE) {
+            throw IllegalTransition::of('refund', $refund->status->value, 'reversed_by_provider');
+        }
+
+        $refund->completed_at = null;
+        $refund->next_attempt_at = null;
+        $this->move($refund, S::FAILED, ['reported_by' => 'stripe', 'stripe_refund_id' => $refund->stripe_refund_id]);
+
+        $payment = Payment::query()->findOrFail($refund->payment_id);
+        $this->payments->revertRefund($payment, $this->refundedCents($payment));
     }
 
     /** Errore definitivo: nuovo tentativo automatico dopo 1 h, 6 h, 24 h, poi allerta (05). */

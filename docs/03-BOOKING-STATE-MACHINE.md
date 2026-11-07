@@ -1,6 +1,6 @@
 # 03 — Macchine a stati
 
-Versione: 1.1 · Data: 06/11/2026 · Modifiche: ADR-0002, ADR-0004, [CHANGELOG-v1.1](CHANGELOG-v1.1.md)
+Versione: 1.1 · Data: 06/11/2026 · Modifiche: ADR-0002, ADR-0004, [CHANGELOG-v1.1](CHANGELOG-v1.1.md); 1.2: ADR-0012 (finestra di approvazione per struttura, rimborso `SUCCEEDED → FAILED`, ri-autenticazione dei rimborsi)
 
 Cinque macchine distinte, ciascuna con il proprio campo `status`. Non vanno fuse in un unico enum.
 
@@ -112,6 +112,7 @@ Note:
 | `CAPTURE_PENDING` | errore definitivo | `CAPTURE_FAILED` |
 | `SUCCEEDED` | rimborso parziale riuscito | `PARTIALLY_REFUNDED` |
 | `SUCCEEDED`, `PARTIALLY_REFUNDED` | rimborsi a saldo zero | `REFUNDED` |
+| `PARTIALLY_REFUNDED`, `REFUNDED` | un rimborso riuscito dichiarato fallito da Stripe (ADR-0012 punto 23) | `SUCCEEDED`, `PARTIALLY_REFUNDED` o `REFUNDED` secondo il rimborsato rimasto |
 
 Un `Payment` `OFFLINE` nasce `SUCCEEDED`.
 
@@ -127,6 +128,9 @@ Un `Payment` `OFFLINE` nasce `SUCCEEDED`.
 | `FAILED` | `retry` (gestore) | `PENDING` | nuova chiamata, stessa idempotency key se Stripe non ha creato il rimborso, nuova altrimenti |
 | `FAILED` | `markOffline` (gestore) | `SUCCEEDED` | `method = OFFLINE`, nota obbligatoria (es. bonifico) |
 | `PENDING` | `refund.updated` canceled | `CANCELLED` | allerta al gestore |
+| `SUCCEEDED` | evento di Stripe sul rimborso (`refund.updated`, `refund.failed`) riletto via API con esito `failed` (ADR-0012 punto 23) | `FAILED` | ammesso **solo** su comunicazione di Stripe, mai per decisione locale; rimborsato del `Payment` e `refund_status` ricalcolati; allerta urgente ed email al gestore ("il rimborso a X non è andato a buon fine: contatta l'ospite"); **nessuna** email automatica all'ospite e nessun tentativo automatico; il gestore può usare `retry` o `markOffline` |
+
+Ogni rimborso dal pannello (cancellazione con rimborso > 0, `retry`, `markOffline`) richiede la ri-autenticazione (08, ADR-0012 punto 24).
 
 ---
 

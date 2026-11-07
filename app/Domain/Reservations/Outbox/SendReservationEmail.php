@@ -23,7 +23,7 @@ final class SendReservationEmail implements OutboxHandler
     /** Tipi destinati al gestore (email di contatto della struttura). */
     private const MANAGER_TYPES = [
         'reservation.approval_requested', 'reservation.approval_expired_manager', 'reservation.capture_failed',
-        'reservation.capture_failed_reminder', 'reservation.dispute_opened', 'reservation.refund_failed',
+        'reservation.capture_failed_reminder', 'reservation.dispute_opened', 'reservation.refund_failed', 'reservation.refund_reversed',
     ];
 
     public function handle(OutboxMessage $message): void
@@ -58,6 +58,8 @@ final class SendReservationEmail implements OutboxHandler
             'check_in' => $reservation->stay->checkIn->toDateString(),
             'check_out' => $reservation->stay->checkOut->toDateString(),
             'amount' => $this->amount($message, $reservation, $locale),
+            // Solo nelle email al gestore, titolare del trattamento (09).
+            'guest' => $toManager ? trim($guest->first_name.' '.$guest->last_name) : '',
         ];
 
         /** @var list<string> $lines */
@@ -75,7 +77,7 @@ final class SendReservationEmail implements OutboxHandler
     private function amount(OutboxMessage $message, Reservation $reservation, string $locale): string
     {
         $cents = match ($message->type) {
-            'reservation.refund_completed', 'reservation.refund_failed' => (int) Refund::query()->whereKey($message->payload['refund_id'] ?? null)->value('amount_cents'),
+            'reservation.refund_completed', 'reservation.refund_failed', 'reservation.refund_reversed' => (int) Refund::query()->whereKey($message->payload['refund_id'] ?? null)->value('amount_cents'),
             'reservation.cancelled' => (int) Refund::query()
                 ->whereIn('payment_id', Payment::query()->select('id')->where('reservation_id', $reservation->id))
                 ->sum('amount_cents'),
