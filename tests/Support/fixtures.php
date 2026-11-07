@@ -28,6 +28,9 @@ function createTenantRow(?string $slug = null, ?string $name = null): string
         'id' => $id,
         'name' => $name ?? 'Tenant di prova '.$slug,
         'slug' => $slug,
+        // DPA firmato (09 requisito 1): senza, la pubblicazione risponde 422 DPA_NOT_SIGNED.
+        'dpa_signed_at' => now(),
+        'dpa_version' => 'test-1',
         'created_at' => now(),
         'updated_at' => now(),
     ]));

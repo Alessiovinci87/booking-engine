@@ -1,6 +1,11 @@
 <?php
 
 return [
+    'dpa' => [
+        'invalid' => 'Tenant sconosciuto o versione del DPA non valida (massimo 50 caratteri).',
+        'invalid_date' => 'Data della firma non valida: usa AAAA-MM-GG, non nel futuro.',
+        'done' => 'DPA versione :version registrato, firmato il :date.',
+    ],
     'create' => [
         'password_prompt' => 'Password del proprietario (almeno 12 caratteri)',
         'password_confirm_prompt' => 'Ripeti la password',

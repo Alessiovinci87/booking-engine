@@ -101,7 +101,9 @@
         "INVALID_ICAL_URL": "L'indirizzo del calendario non è valido o non risponde.",
         "UNIT_IS_INSTANT": "L'unità è a prenotazione immediata: conferma il passaggio a richiesta per collegare un calendario esterno.",
         "CHECKLIST_STEP_INVALID": "Questo passo non si conferma manualmente.",
-        "QUOTE_CHECKOUT_IN_PROGRESS": "Il pagamento avviato in precedenza è in chiusura. Riprova tra qualche minuto."
+        "QUOTE_CHECKOUT_IN_PROGRESS": "Il pagamento avviato in precedenza è in chiusura. Riprova tra qualche minuto.",
+        "DPA_NOT_SIGNED": "Manca l'accordo sul trattamento dei dati (DPA) firmato con la piattaforma: contatta l'assistenza.",
+        "GUEST_HAS_ACTIVE_RESERVATION": "L'ospite ha una prenotazione attiva non ancora conclusa: non si può anonimizzare."
     },
     "properties": {
         "title": "Strutture",
@@ -768,5 +770,20 @@
         "otaPercent": "Percentuale OTA usata",
         "reservations": "Prenotazioni",
         "otaPercentHint": "La percentuale OTA si cambia nelle impostazioni della struttura."
+    },
+    "privacy": {
+        "title": "Privacy dell'ospite",
+        "hint": "L'ospite esercita i suoi diritti presso di te (titolare del trattamento). Da qui puoi esportare i suoi dati o anonimizzarlo.",
+        "export": "Scarica i dati (JSON)",
+        "print": "Versione stampabile (PDF)",
+        "erase": "Anonimizza l'ospite",
+        "eraseConfirm": "Nome, cognome, email, telefono, note e testi liberi verranno sostituiti in modo irreversibile. Importi e date restano per gli obblighi contabili. Continuare?",
+        "eraseDone": "Ospite anonimizzato.",
+        "anonymized": "Ospite anonimizzato: i dati personali non sono più disponibili.",
+        "printTitle": "Dati dell'ospite",
+        "printGenerated": "Generato il {{date}}",
+        "printCard": "I dati della carta sono solo presso Stripe, nel conto della struttura.",
+        "dpaMissing": "Accordo sul trattamento dei dati (DPA) non ancora registrato: non puoi pubblicare strutture finché la piattaforma non lo registra.",
+        "dpaSigned": "DPA versione {{version}} firmato il {{date}}."
     }
 }

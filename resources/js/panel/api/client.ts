@@ -115,7 +115,7 @@ export interface SessionState {
 
 export interface Me {
     user: { id: string; email: string; locale: string };
-    tenant: { id: string; name: string; slug: string };
+    tenant: { id: string; name: string; slug: string; dpa_signed_at: string | null; dpa_version: string | null };
     role: string;
 }
 

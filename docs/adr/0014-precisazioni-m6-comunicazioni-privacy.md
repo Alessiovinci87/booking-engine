@@ -29,12 +29,23 @@ M6 parte senza gli account esterni (hosting, dominio, Resend, Sentry): si fanno 
 11. **Export CSV** (`GET /admin/exports/reservations.csv`): prenotazioni con check-in nel periodo, esclusi i tentativi non conclusi (`AWAITING_PAYMENT`, `EXPIRED`, `PAYMENT_FAILED`, `REJECTED`); anagrafica dell'ospite; separatore `;`, BOM UTF-8, importi con la virgola; celle che iniziano con `=`, `+`, `-`, `@`, tab o a capo precedute da un apostrofo (formula injection). Generato e restituito nella stessa richiesta (nessun file salvato); registrato in `audit_log` come `export.reservations_csv` con periodo e numero di righe, senza dati personali. Senza ri-autenticazione: 08 la chiede per l'export completo del tenant.
 12. **Pannello**: pagina `/app/metriche` con i tre valori, il dettaglio del calcolo, la nota di attendibilità ("non è un risparmio netto"), la percentuale per struttura e il pulsante del CSV.
 
+### Privacy (6.3)
+
+13. **Export dell'ospite** (`GET /admin/guests/{id}/export`): JSON scaricabile con dati personali, prenotazioni, pagamenti, rimborsi e copia del preventivo; elenca anche gli altri record `guests` con la stessa email nel tenant (un record per prenotazione, 02), così il gestore tratta tutte le prenotazioni della persona. Registrato in audit (`guest.exported`, solo conteggi). **Scostamento da 09**: il PDF non si genera sul server (servirebbe una libreria, ADR-0006); il pannello ha una versione stampabile (`/app/ospiti/{id}/dati`) da salvare in PDF dal browser. Da confermare alla verifica.
+14. **Anonimizzazione** (`POST /admin/guests/{id}/erase`): copie trattate come da 09 — `guests` (nome, cognome, telefono `"[rimosso]"`, email `rimosso-{id}@anonimo.invalid`, note nulle, paese mantenuto, `anonymized_at`), `reservations.cancel_reason`, `reservation_changes.note`, `refunds.reason`, `inventory_conflicts.resolution_notes` dei conflitti sull'occupazione della prenotazione e `external_calendar_events.summary_redacted` degli eventi di quei conflitti (`"[rimosso]"`), preventivo d'origine (`guest_name` `"[rimosso]"`, `guest_email` nulla), payload dell'outbox che citano prenotazione, rimborsi o preventivo (svuotati subito, `payload_purged_at`). `inventory_occupancies.note` di una prenotazione è sempre nulla per vincolo (`occupancies_kind_consistent`: solo i blocchi hanno note), quindi non c'è nulla da togliere. Export: nessun file salvato (CSV e JSON si generano a richiesta), quindi nessun export attivo da cancellare. Idempotente; audit `guest.erased` con i soli conteggi.
+15. **Blocco**: `409 GUEST_HAS_ACTIVE_RESERVATION` se una prenotazione dell'ospite occupa ancora le date (`AWAITING_*`, `CAPTURING`, `CAPTURE_FAILED`, `CONFIRMED`) e il check-out non è passato.
+16. **Ri-autenticazione per l'anonimizzazione**: irreversibile, quindi rientra tra le azioni sensibili di 08 (password confermata negli ultimi 15 minuti).
+17. **DPA**: `tenants.dpa_signed_at` e `dpa_version` si registrano dalla piattaforma con `php artisan tenant:dpa {slug} {versione} [--signed-at=]` (audit `tenant.dpa_recorded`); il pannello li vede in `GET /admin/me` e mostra un avviso finché mancano. La pubblicazione di una struttura richiede il DPA (`422 DPA_NOT_SIGNED`, dopo `PRIVACY_POLICY_MISSING` e prima di `PAYMENTS_NOT_ENABLED`): 09 requisito 1 "prima dell'attivazione".
+18. **Informative**: l'informativa della struttura era già collegata nel checkout (`privacy_policy_url`, ADR-0011). Il piè di pagina della pagina ospite (anche preventivo ed embed) collega l'informativa della piattaforma e l'elenco dei sub-responsabili da `config/privacy.php` (`PLATFORM_PRIVACY_NOTICE_URL`, `PLATFORM_SUBPROCESSORS_URL`); senza configurazione il link non compare, e la checklist di rilascio lo richiede. I testi sono documenti legali da redigere con il professionista (09).
+
 ## Alternative considerate
 
 | Alternativa | Perché scartata |
 |---|---|
 | Trasporto `resend` di Laravel con `resend/resend-php` | nuova dipendenza (ADR-0006); l'API HTTP basta e si simula con `Http::fake` |
 | Trasporto `log` di Laravel così com'è | scrive nel log indirizzo e testo dell'ospite |
+| PDF generato sul server (dompdf o simili) | nuova libreria (ADR-0006); la stampa del browser produce lo stesso PDF |
+| Firma del DPA dal pannello del gestore | il DPA è un contratto firmato fuori piattaforma; la registrazione spetta alla piattaforma |
 | Mailpit o MailHog per l'anteprima | un servizio in più nel `docker-compose` per una funzione che bastano 100 righe a coprire |
 
 ## Conseguenze
@@ -44,9 +55,9 @@ M6 parte senza gli account esterni (hosting, dominio, Resend, Sentry): si fanno 
 
 ## Impatto sui test
 
-- Test aggiunti: `Feature/Communications/TransactionalMailTest`, `Feature/Metrics/MetricsTest`.
+- Test aggiunti: `Feature/Communications/TransactionalMailTest`, `Feature/Metrics/MetricsTest`, `Feature/AnonymizationCoverageTest` (I22), `Feature/Public/PlatformPrivacyLinksTest`, casi DPA in `Feature/PropertyPublishTest`.
 - Test modificati: `Feature/Reservations/ReservationTransitionsTest` (T3 genera anche `reservation.confirmed_manager`).
-- Invarianti toccati: nessuno.
+- Invarianti toccati: I22 (ora coperto da `Feature/AnonymizationCoverageTest`).
 
 ## Aggiornamento della specifica
 

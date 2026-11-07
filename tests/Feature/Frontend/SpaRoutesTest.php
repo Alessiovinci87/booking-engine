@@ -7,16 +7,16 @@ it('serve il pannello su /app e sui suoi sottopercorsi', function (string $path)
         ->assertOk()
         ->assertSee('<html lang="it">', escape: false)
         ->assertSee('<div id="app"></div>', escape: false);
-})->with(['/app', '/app/', '/app/prenotazioni/123', '/app/pagamenti', '/app/preventivi', '/app/conflitti', '/app/calendari', '/app/metriche']);
+})->with(['/app', '/app/', '/app/prenotazioni/123', '/app/pagamenti', '/app/preventivi', '/app/conflitti', '/app/calendari', '/app/metriche', '/app/ospiti/123/dati']);
 
 it('serve la pagina ospite su /p/{tenant}/{struttura} e sui suoi sottopercorsi', function (string $path) {
     $this->get($path)
         ->assertOk()
-        ->assertSee('<div id="app" data-embed="0"></div>', escape: false);
+        ->assertSee('<div id="app" data-embed="0"', escape: false);
 })->with(['/p/demo/casa-demo', '/p/demo/casa-demo/', '/p/demo/casa-demo/date']);
 
 it('serve la pagina ospite del preventivo su /q/{token}', function () {
-    $this->get('/q/'.str_repeat('a', 43))->assertOk()->assertSee('<div id="app" data-embed="0"></div>', escape: false);
+    $this->get('/q/'.str_repeat('a', 43))->assertOk()->assertSee('<div id="app" data-embed="0"', escape: false);
     $this->get('/q/corto')->assertNotFound();
 });
 

@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\V1\Admin\CalendarController;
 use App\Http\Controllers\Api\V1\Admin\ConflictController;
 use App\Http\Controllers\Api\V1\Admin\DisputeController;
 use App\Http\Controllers\Api\V1\Admin\ExternalCalendarController;
+use App\Http\Controllers\Api\V1\Admin\GuestPrivacyController;
 use App\Http\Controllers\Api\V1\Admin\IcsFeedController;
 use App\Http\Controllers\Api\V1\Admin\MeController;
 use App\Http\Controllers\Api\V1\Admin\MetricsController;
@@ -28,7 +29,7 @@ use Illuminate\Support\Facades\Route;
 use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful;
 
 // Identificativi UUID nei percorsi: un valore diverso non trova la rotta (404) e non arriva mai al database.
-foreach (['property', 'unit', 'photo', 'season', 'reservation', 'block', 'refund', 'quote'] as $parameter) {
+foreach (['property', 'unit', 'photo', 'season', 'reservation', 'block', 'refund', 'quote', 'guest'] as $parameter) {
     Route::pattern($parameter, '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}');
 }
 
@@ -68,6 +69,8 @@ Route::prefix('admin')->middleware(EnsureFrontendRequestsAreStateful::class)->gr
         Route::post('units/{unit}/blocks', [BlockController::class, 'store'])->name('admin.units.blocks.store');
         Route::post('refunds/{refund}/retry', [RefundController::class, 'retry'])->middleware('reauth')->name('admin.refunds.retry');
         Route::post('refunds/{refund}/mark-offline', [RefundController::class, 'markOffline'])->middleware('reauth')->name('admin.refunds.mark-offline');
+        // Anonimizzazione dell'ospite (09, 6.3): irreversibile, con ri-autenticazione (ADR-0014).
+        Route::post('guests/{guest}/erase', [GuestPrivacyController::class, 'erase'])->middleware('reauth')->name('admin.guests.erase');
         Route::post('quotes', [QuoteController::class, 'store'])->name('admin.quotes.store');
         Route::post('quotes/{quote}/send', [QuoteController::class, 'send'])->name('admin.quotes.send');
         Route::post('quotes/{quote}/revoke', [QuoteController::class, 'revoke'])->name('admin.quotes.revoke');
@@ -147,6 +150,7 @@ Route::prefix('admin')->middleware(EnsureFrontendRequestsAreStateful::class)->gr
 
         // Metriche ed export CSV (6.2).
         Route::get('metrics', [MetricsController::class, 'metrics'])->name('admin.metrics');
+        Route::get('guests/{guest}/export', [GuestPrivacyController::class, 'export'])->name('admin.guests.export');
         Route::get('exports/reservations.csv', [MetricsController::class, 'reservationsCsv'])->name('admin.exports.reservations');
         Route::get('quotes/{quote}', [QuoteController::class, 'show'])->name('admin.quotes.show');
     });

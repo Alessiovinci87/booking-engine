@@ -156,5 +156,9 @@
         "QUOTE_CHECKOUT_IN_PROGRESS": "Il pagamento avviato in precedenza è in chiusura. Riprova tra qualche minuto.",
         "DATES_UNAVAILABLE": "Le date di questo preventivo non sono più disponibili. Contatta la struttura.",
         "OCCUPANCY_EXCEEDED": "Il numero di ospiti del preventivo supera la capienza attuale dell'alloggio. Contatta la struttura."
+    },
+    "footer": {
+        "platformPrivacy": "Informativa privacy della piattaforma",
+        "subprocessors": "Sub-responsabili del trattamento"
     }
 }

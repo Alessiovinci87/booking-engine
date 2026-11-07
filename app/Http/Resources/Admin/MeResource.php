@@ -33,6 +33,9 @@ final class MeResource extends JsonResource
                 'id' => $this->tenant->id,
                 'name' => $this->tenant->name,
                 'slug' => $this->tenant->slug,
+                // DPA (09 requisito 1): visibile al gestore, registrato dalla piattaforma.
+                'dpa_signed_at' => $this->tenant->dpa_signed_at?->toIso8601ZuluString(),
+                'dpa_version' => $this->tenant->dpa_version,
             ],
             'role' => $this->member->role->value,
         ];

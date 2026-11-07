@@ -23,6 +23,7 @@ use App\Domain\Pricing\Calculator\PriceRequest;
 use App\Domain\Pricing\Models\RatePlan;
 use App\Domain\Pricing\Models\SeasonRule;
 use App\Domain\Pricing\PriceQuoteService;
+use App\Domain\Privacy\DpaService;
 use App\Domain\Quotes\QuoteLinks;
 use App\Domain\Quotes\QuoteService;
 use App\Domain\Reservations\CancellationRefund;
@@ -93,6 +94,8 @@ final class DemoSeeder extends Seeder
         $tenantId = $created['tenant']->id;
 
         $setup = $tenantContext->run($tenantId, function (): array {
+            // DPA firmato prima della pubblicazione (09 requisito 1, 6.3).
+            app(DpaService::class)->record('demo-1', CarbonImmutable::now()->startOfDay());
             $accountId = $this->stripeAccount();
             $property = $this->property();
 

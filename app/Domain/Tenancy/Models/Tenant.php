@@ -27,6 +27,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property string $timezone
  * @property list<string> $embed_allowed_origins
  * @property CarbonImmutable|null $dpa_signed_at
+ * @property string|null $dpa_version
  */
 class Tenant extends Model
 {

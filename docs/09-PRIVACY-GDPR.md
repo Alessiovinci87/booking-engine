@@ -1,6 +1,6 @@
 # 09 — Privacy e GDPR
 
-Versione: 1.2 · Data: 06/11/2026 · Modifiche: ADR-0003, [CHANGELOG-v1.1](CHANGELOG-v1.1.md); 1.2: ADR-0009
+Versione: 1.3 · Data: 07/11/2026 · Modifiche: ADR-0003, [CHANGELOG-v1.1](CHANGELOG-v1.1.md); 1.2: ADR-0009; 1.3: ADR-0014 (DPA prima della pubblicazione, export stampabile, ri-autenticazione dell'anonimizzazione, link della piattaforma)
 
 > Questo documento è una specifica tecnica e organizzativa, **non** un parere legale. DPA, informative, registro e condizioni di prenotazione vanno redatti o verificati da un professionista prima del pilota con ospiti reali.
 
@@ -19,8 +19,8 @@ La piattaforma **non** usa i dati degli ospiti per finalità proprie (marketing,
 
 | # | Requisito | Dove si implementa |
 |---|---|---|
-| 1 | DPA art. 28 firmato con ogni struttura prima dell'attivazione | onboarding; campo `Tenant.dpa_signed_at`, `dpa_version` |
-| 2 | Informativa della piattaforma (come responsabile) accessibile dal checkout | link fisso nel footer della pagina ospite |
+| 1 | DPA art. 28 firmato con ogni struttura prima dell'attivazione | onboarding; campo `Tenant.dpa_signed_at`, `dpa_version` (`php artisan tenant:dpa`; senza DPA la struttura non si pubblica, `422 DPA_NOT_SIGNED`, ADR-0014) |
+| 2 | Informativa della piattaforma (come responsabile) accessibile dal checkout | link fisso nel footer della pagina ospite (`PLATFORM_PRIVACY_NOTICE_URL`, ADR-0014) |
 | 3 | Informativa della struttura (come titolare) collegata nel checkout | `Property.privacy_policy_url` obbligatorio per pubblicare |
 | 4 | Registro dei trattamenti del responsabile | documento interno, revisionato a ogni nuovo sub-responsabile |
 | 5 | Elenco sub-responsabili pubblicato e comunicato | pagina pubblica + preavviso ai clienti per modifiche |
@@ -85,8 +85,8 @@ Test (I22): dopo `erase`, nessuna colonna marcata `#[PersonalData]`, nessun payl
 
 Gli ospiti esercitano i diritti presso la struttura (titolare). La piattaforma assiste la struttura (art. 28):
 
-- **Accesso / portabilità**: `GET /admin/guests/{id}/export` → JSON e PDF con dati personali, prenotazioni e pagamenti dell'ospite.
-- **Cancellazione**: `POST /admin/guests/{id}/erase` → anonimizzazione immediata, salvo dati soggetti a conservazione obbligatoria (gli importi restano, i dati identificativi dove possibile no). Bloccata su prenotazioni future attive.
+- **Accesso / portabilità**: `GET /admin/guests/{id}/export` → JSON e PDF con dati personali, prenotazioni e pagamenti dell'ospite (il PDF dalla versione stampabile del pannello, ADR-0014 punto 13).
+- **Cancellazione**: `POST /admin/guests/{id}/erase` → anonimizzazione immediata, salvo dati soggetti a conservazione obbligatoria (gli importi restano, i dati identificativi dove possibile no). Bloccata su prenotazioni future attive. Con ri-autenticazione (ADR-0014 punti 14–16).
 - **Rettifica**: modifica dal pannello, tracciata in `AuditLog`.
 - Se un ospite scrive direttamente alla piattaforma: inoltro alla struttura entro 2 giorni lavorativi, senza rispondere nel merito.
 

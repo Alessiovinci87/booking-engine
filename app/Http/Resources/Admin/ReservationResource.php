@@ -110,6 +110,7 @@ final class ReservationResource
         return [
             ...self::summary($r),
             'guest' => [
+                'id' => $r->guest_id,
                 'first_name' => $r->guest->first_name,
                 'last_name' => $r->guest->last_name,
                 'email' => $r->guest->email,

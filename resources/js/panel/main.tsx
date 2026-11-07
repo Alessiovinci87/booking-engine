@@ -16,6 +16,7 @@ import { ConflictsPage } from './pages/ConflictsPage';
 import { LoginPage } from './pages/LoginPage';
 import { MfaSetupPage } from './pages/MfaSetupPage';
 import { MfaVerifyPage } from './pages/MfaVerifyPage';
+import { GuestDataPage } from './pages/GuestDataPage';
 import { MetricsPage } from './pages/MetricsPage';
 import { NewReservationPage } from './pages/NewReservationPage';
 import { NotFoundPage } from './pages/NotFoundPage';
@@ -102,6 +103,7 @@ createRoot(container).render(
                             <Route path="conflitti" element={<ConflictsPage />} />
                             <Route path="calendari" element={<CalendarsPage />} />
                             <Route path="metriche" element={<MetricsPage />} />
+                            <Route path="ospiti/:guestId/dati" element={<GuestDataPage />} />
                             <Route path="*" element={<NotFoundPage />} />
                         </Route>
                     </Routes>

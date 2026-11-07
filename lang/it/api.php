@@ -32,6 +32,8 @@ return [
         'IDEMPOTENCY_KEY_REUSED' => 'Richiesta già inviata con dati diversi. Ricarica la pagina e riprova.',
         'CONFLICT_OPEN' => 'Ci sono conflitti aperti sulle date: risolvili prima di approvare.',
         'PRIVACY_POLICY_MISSING' => 'Manca il link all\'informativa privacy della struttura.',
+        'DPA_NOT_SIGNED' => 'Manca l\'accordo sul trattamento dei dati (DPA) firmato con la piattaforma.',
+        'GUEST_HAS_ACTIVE_RESERVATION' => 'L\'ospite ha una prenotazione attiva non ancora conclusa: non si può anonimizzare.',
         'PAYMENT_PROVIDER_UNAVAILABLE' => 'Il servizio di pagamento non risponde. Riprova tra poco.',
         'IDEMPOTENCY_KEY_IN_USE' => 'La stessa richiesta è ancora in corso. Attendi qualche secondo e riprova.',
         'ICS_FEED_EXISTS' => 'Esiste già un feed attivo per questa destinazione.',

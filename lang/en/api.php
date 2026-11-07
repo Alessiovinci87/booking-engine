@@ -32,6 +32,8 @@ return [
         'IDEMPOTENCY_KEY_REUSED' => 'This request was already sent with different data. Reload the page and try again.',
         'CONFLICT_OPEN' => 'There are open conflicts on these dates: resolve them before approving.',
         'PRIVACY_POLICY_MISSING' => 'The link to the property\'s privacy policy is missing.',
+        'DPA_NOT_SIGNED' => 'The data processing agreement (DPA) with the platform has not been signed.',
+        'GUEST_HAS_ACTIVE_RESERVATION' => 'The guest has an active booking that has not ended yet: it cannot be anonymised.',
         'PAYMENT_PROVIDER_UNAVAILABLE' => 'The payment service is not responding. Please try again shortly.',
         'IDEMPOTENCY_KEY_IN_USE' => 'The same request is still in progress. Wait a few seconds and try again.',
         'ICS_FEED_EXISTS' => 'An active feed for this destination already exists.',
