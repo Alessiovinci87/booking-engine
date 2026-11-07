@@ -27,7 +27,7 @@
     },
     "mfaSetup": {
         "title": "Configura la verifica in due passaggi",
-        "step1": "Installa un'app di autenticazione sul telefono (ad esempio un'app TOTP).",
+        "step1": "Installa sul telefono un'app di autenticazione (ad esempio Google Authenticator o Microsoft Authenticator).",
         "step2": "Inquadra il codice QR, oppure inserisci a mano la chiave indicata sotto.",
         "step3": "Scrivi il codice a 6 cifre mostrato dall'app.",
         "qrAlt": "Codice QR per l'app di autenticazione",
@@ -101,21 +101,21 @@
         "QUOTE_EXHAUSTED": "Il preventivo ha esaurito i tentativi di pagamento.",
         "QUOTE_EMAIL_MISSING": "Il preventivo non ha un indirizzo email dell'ospite.",
         "QUOTE_ALREADY_ACCEPTED": "Il preventivo è già stato accettato o ha un pagamento in corso.",
-        "ICS_FEED_EXISTS": "Esiste già un feed attivo per questa destinazione.",
+        "ICS_FEED_EXISTS": "Esiste già un calendario esportato attivo per questa OTA.",
         "INVALID_ICAL_URL": "L'indirizzo del calendario non è valido o non risponde.",
         "UNIT_IS_INSTANT": "L'unità è a prenotazione immediata: conferma il passaggio a richiesta per collegare un calendario esterno.",
         "CHECKLIST_STEP_INVALID": "Questo passo non si conferma manualmente.",
         "QUOTE_CHECKOUT_IN_PROGRESS": "Il pagamento avviato in precedenza è in chiusura. Riprova tra qualche minuto.",
         "DPA_NOT_SIGNED": "Manca l'accordo sul trattamento dei dati (DPA) firmato con la piattaforma: contatta l'assistenza.",
         "GUEST_HAS_ACTIVE_RESERVATION": "L'ospite ha una prenotazione attiva non ancora conclusa: non si può anonimizzare.",
-        "TENANT_OFFBOARDING": "L'uscita dalla piattaforma è in corso: il pannello è in sola lettura, salvo cancellazioni, rimborsi ed export.",
+        "TENANT_OFFBOARDING": "L'uscita dalla piattaforma è in corso: il pannello è in sola lettura, salvo cancellazioni, rimborsi ed esportazione dei dati.",
         "TENANT_NOT_OFFBOARDING": "L'uscita dalla piattaforma non è stata avviata.",
         "TENANT_CLOSED": "L'account è chiuso.",
         "SUPPORT_READ_ONLY": "Accesso di supporto: il pannello è in sola lettura.",
         "SUPPORT_ACCESS_INACTIVE": "L'accesso di supporto è scaduto o è stato revocato.",
         "SUPPORT_ACCESS_NOT_ACTIVE": "Questo accesso di supporto è già chiuso.",
         "OFFBOARDING_NOT_READY": "Non è ancora possibile cancellare i dati.",
-        "EXPORT_EXPIRED": "L'export è scaduto o non è più disponibile. Richiedine uno nuovo.",
+        "EXPORT_EXPIRED": "L'esportazione è scaduta o non è più disponibile. Richiedine una nuova.",
         "CHECKOUT_EXPIRED": "La sessione di pagamento è scaduta.",
         "PAYMENT_PROVIDER_REJECTED": "Stripe ha rifiutato la richiesta. Controlla i dati dell'account Stripe e riprova.",
         "FEED_RETIRED": "Questo calendario non è più pubblicato."
@@ -136,7 +136,7 @@
         "details": "Dati della struttura",
         "name": "Nome interno",
         "slug": "Indirizzo della pagina (slug)",
-        "slugHint": "Lettere minuscole, cifre e trattini: compare nell'indirizzo della pagina ospite.",
+        "slugHint": "Lettere minuscole, cifre e trattini: compare nell'indirizzo della pagina di prenotazione.",
         "address_line1": "Indirizzo",
         "address_line2": "Indirizzo (seconda riga)",
         "postal_code": "CAP",
@@ -158,7 +158,7 @@
         "noPolicy": "Nessuna",
         "legalUrlHint": "Se aggiorni il documento, cambia anche il link (per esempio aggiungendo ?v=2): così agli ospiti verrà chiesto di accettare la nuova versione.",
         "approvalWindow": "Ore per approvare le richieste",
-        "approvalWindowHint": "Da 1 a 48 ore (predefinite 12). Se l’autorizzazione della carta scade prima, la scadenza si anticipa a 6 ore prima di quel limite; alla scadenza la richiesta è rifiutata e l’autorizzazione annullata."
+        "approvalWindowHint": "Da 1 a 48 ore (predefinite 12). Se l'autorizzazione della carta scade prima, la scadenza si anticipa a 6 ore prima di quel limite; alla scadenza la richiesta è rifiutata e l'autorizzazione annullata."
     },
     "policies": {
         "FLEXIBLE_7D": "Flessibile (7 giorni)",
@@ -197,7 +197,7 @@
         "baseOccupancyHint": "Oltre questo numero si applica il supplemento per ospite.",
         "max_occupancy": "Ospiti massimi",
         "min_nights": "Notti minime",
-        "cleaning_fee": "Pulizie finali (€)",
+        "cleaning_fee": "Pulizia finale (€)",
         "extra_guest_fee": "Supplemento per ospite in più (€ a notte)",
         "extraGuestHint": "Bambini compresi: ogni ospite oltre quelli inclusi.",
         "booking_mode": "Modalità di prenotazione",
@@ -217,7 +217,7 @@
         "resumeSales": "Riapri le vendite",
         "deactivate": "Disattiva l'unità",
         "activate": "Riattiva l'unità",
-        "lastActiveWarning": "È l'ultima unità attiva di una struttura pubblicata: dopo la disattivazione la pagina ospite mostrerà \"Nessuna disponibilità al momento\".",
+        "lastActiveWarning": "È l'ultima unità attiva di una struttura pubblicata: dopo la disattivazione la pagina di prenotazione mostrerà \"Nessuna disponibilità al momento\".",
         "deactivateAnyway": "Disattiva comunque"
     },
     "photos": {
@@ -274,7 +274,7 @@
         "kinds": {
             "NIGHT": "Notte",
             "EXTRA_GUEST": "Ospiti in più",
-            "CLEANING": "Pulizie finali",
+            "CLEANING": "Pulizia finale",
             "DISCOUNT": "Sconto"
         }
     },
@@ -301,17 +301,17 @@
         "NONE": "Nessun rimborso",
         "PENDING": "Rimborso in corso",
         "SUCCEEDED": "Rimborso completato",
-        "PARTIALLY_FAILED": "Rimborso fallito in parte",
-        "FAILED": "Rimborso fallito"
+        "PARTIALLY_FAILED": "Rimborso non riuscito in parte",
+        "FAILED": "Rimborso non riuscito"
     },
     "refundRowStatus": {
         "PENDING": "In corso",
         "SUCCEEDED": "Completato",
-        "FAILED": "Fallito",
+        "FAILED": "Non riuscito",
         "CANCELLED": "Annullato"
     },
     "channel": {
-        "DIRECT_WEB": "Pagina ospite",
+        "DIRECT_WEB": "Pagina di prenotazione",
         "QUOTE": "Preventivo",
         "MANUAL": "Inserita dal gestore"
     },
@@ -347,7 +347,7 @@
     "priceLines": {
         "NIGHT": "Notte",
         "EXTRA_GUEST": "Ospiti in più",
-        "CLEANING": "Pulizie finali",
+        "CLEANING": "Pulizia finale",
         "DISCOUNT": "Sconto"
     },
     "reservationActions": {
@@ -366,7 +366,7 @@
         "ANONYMOUS": "ospite"
     },
     "history": {
-        "reservation_start_checkout": "Prenotazione avviata dalla pagina ospite",
+        "reservation_start_checkout": "Prenotazione avviata dalla pagina di prenotazione",
         "reservation_create_manual": "Prenotazione manuale creata",
         "reservation_payment_succeeded": "Pagamento riuscito: confermata",
         "reservation_authorization_succeeded": "Importo autorizzato: in attesa di approvazione",
@@ -488,7 +488,7 @@
         "history": "Storico",
         "actions": "Azioni",
         "confirm": "Conferma",
-        "approveHint": "Prima di approvare verifica Booking e Airbnb: le date potrebbero essere già occupate lì. L'importo autorizzato viene incassato; la prenotazione diventa confermata quando arriva l'esito.",
+        "approveHint": "Prima di approvare controlla Booking.com e Airbnb: le date potrebbero essere già occupate lì. Approvando incassi l'importo autorizzato; la prenotazione diventa confermata quando arriva l'esito.",
         "releaseHint": "Le date tornano disponibili e la prenotazione passa a \"Pagamento non riuscito\".",
         "rejectHint": "L'autorizzazione sulla carta dell'ospite viene annullata e le date si liberano.",
         "reasonLabel": "Motivo (facoltativo, solo per il pannello)",
@@ -563,7 +563,7 @@
         },
         "approvals": {
             "title": "Richieste da approvare",
-            "reminder": "Verifica Booking e Airbnb prima di approvare: approvando incassi l'importo autorizzato.",
+            "reminder": "Controlla Booking.com e Airbnb prima di approvare: approvando incassi l'importo autorizzato.",
             "empty": "Nessuna richiesta in attesa."
         },
         "recovery": {
@@ -601,15 +601,15 @@
     },
     "quotes": {
         "title": "Preventivi",
-        "intro": "Il prezzo si calcola alla creazione e resta quello anche se cambi le tariffe. L’ospite prenota dal link entro la scadenza (48 ore se non indicata).",
+        "intro": "Il prezzo si calcola alla creazione e resta quello anche se cambi le tariffe. L'ospite prenota dal link entro la scadenza (48 ore se non indicata).",
         "new": "Nuovo preventivo",
         "list": "Preventivi",
         "filter": "Filtra per stato",
         "filterOpen": "Aperti",
         "filterAll": "Tutti",
         "empty": "Nessun preventivo.",
-        "guestName": "Nome dell’ospite",
-        "emailHint": "Facoltativa: serve per l’invio per email.",
+        "guestName": "Nome dell'ospite",
+        "emailHint": "Facoltativa: serve per l'invio per email.",
         "discountHint": "Sconto in euro sul totale calcolato.",
         "frozenNote": "Per cambiare il prezzo di un preventivo già creato, ritiralo ed emettine uno nuovo.",
         "create": "Crea preventivo",
@@ -627,7 +627,7 @@
         "revokeConfirm": "Ritirare il preventivo? Il link smetterà di funzionare; un pagamento già avviato può concludersi.",
         "linkCopied": "Link copiato negli appunti.",
         "linkReady": "Copia il link qui sotto.",
-        "emailQueued": "Email in invio all’ospite."
+        "emailQueued": "Email in invio all'ospite."
     },
     "channelSource": {
         "BOOKING": "Booking.com",
@@ -641,10 +641,10 @@
         "IGNORED": "Ignorato"
     },
     "conflictResolution": {
-        "CANCELLED_DIRECT": "Annullata la prenotazione diretta",
-        "CANCELLED_EXTERNAL": "Annullata la prenotazione sull’OTA",
+        "CANCELLED_DIRECT": "Cancellata la prenotazione diretta",
+        "CANCELLED_EXTERNAL": "Cancellata la prenotazione sull'OTA",
         "FALSE_POSITIVE": "Falso allarme",
-        "RELOCATED": "Ospite spostato su un altro alloggio",
+        "RELOCATED": "Ospite spostato su un'altra unità",
         "OTHER": "Altro"
     },
     "calendarHealth": {
@@ -656,7 +656,7 @@
     "feedStatus": {
         "ACTIVE": "Attivo",
         "FROZEN": "Congelato",
-        "RETIRED": "Ritirato"
+        "RETIRED": "Disattivato"
     },
     "syncOutcome": {
         "SUCCESS": "Riuscita",
@@ -677,10 +677,10 @@
         "TLS_ERROR": "Certificato del server non valido."
     },
     "checklistStep": {
-        "feed_created": "{{channel}}: feed dedicato creato",
-        "feed_linked": "{{channel}}: feed dedicato collegato sull’OTA (non un feed generico)",
-        "calendar_imported": "{{channel}}: calendario dell’OTA importato e sincronizzato",
-        "direct_links_removed": "Collegamenti iCal diretti tra le OTA rimossi"
+        "feed_created": "{{channel}}: calendario esportato creato",
+        "feed_linked": "{{channel}}: calendario esportato collegato sull'OTA (quello dedicato, non uno generico)",
+        "calendar_imported": "{{channel}}: calendario dell'OTA importato e sincronizzato",
+        "direct_links_removed": "Collegamenti diretti tra i calendari delle OTA rimossi"
     },
     "conflicts": {
         "title": "Conflitti di calendario",
@@ -694,41 +694,41 @@
         "externalEvent": "{{source}}: dal {{checkIn}} al {{checkOut}}",
         "reservation": "Prenotazione {{code}}",
         "manualBlock": "Blocco manuale",
-        "suspectedEcho": "Possibile eco di una nostra data esportata: se è una prenotazione vera, segnala \"Non è un’eco\".",
+        "suspectedEcho": "Possibile eco di una nostra data esportata: se è una prenotazione vera, segnala \"Non è un'eco\".",
         "detectedAt": "Rilevato il {{date}}",
         "closedAt": "chiuso il {{date}}",
         "investigate": "Prendi in carico",
         "resolve": "Risolvi",
         "ignore": "Ignora",
-        "notEcho": "Non è un’eco",
+        "notEcho": "Non è un'eco",
         "resolution": "Esito",
         "notes": "Note (facoltative)",
         "ignoreNotes": "Motivo (obbligatorio)",
-        "notesHint": "Non inserire dati personali dell’ospite.",
-        "noCancellation": "La chiusura toglie solo il blocco del conflitto: annulla la prenotazione da gestire nel suo canale.",
+        "notesHint": "Non inserire dati personali dell'ospite.",
+        "noCancellation": "La chiusura toglie solo il blocco del conflitto: la prenotazione da annullare va cancellata nel suo canale.",
         "confirmResolve": "Chiudi come risolto",
         "confirmIgnore": "Chiudi come ignorato"
     },
     "calendars": {
         "title": "Calendari OTA",
-        "intro": "Collega ogni OTA con due calendari: il suo calendario importato qui e un nostro feed dedicato importato da lei. Niente collegamenti diretti tra le OTA.",
+        "intro": "Collega ogni OTA (Booking.com, Airbnb…) con due calendari: il suo calendario, importato qui, e un nostro calendario esportato dedicato, da importare nell'OTA. Niente collegamenti diretti tra le OTA.",
         "imported": "Calendari importati",
-        "importedIntro": "Il calendario di export di ogni OTA, letto ogni 10 minuti circa. Se la lettura fallisce, le date già importate restano bloccate.",
+        "importedIntro": "Il calendario di ogni OTA, letto ogni 10 minuti circa. Se la lettura non riesce, le date già importate restano bloccate.",
         "noImported": "Nessun calendario importato.",
         "source": "Canale",
         "url": "Indirizzo del calendario (iCal)",
-        "urlHint": "Lo trovi nelle impostazioni del calendario dell’OTA; resta riservato.",
-        "switchToRequest": "L’unità è a prenotazione immediata: con un calendario esterno deve passare a \"su richiesta\". Conferma per continuare.",
+        "urlHint": "Lo trovi nelle impostazioni del calendario dell'OTA; resta riservato.",
+        "switchToRequest": "L'unità è a prenotazione immediata: con un calendario esterno deve passare a \"su richiesta\". Conferma per continuare.",
         "add": "Aggiungi e sincronizza",
         "syncing": "Sincronizzazione…",
         "lastSuccess": "Ultima sincronizzazione riuscita: {{date}}",
         "neverSynced": "Mai sincronizzato",
         "events_one": "{{count}} evento",
         "events_other": "{{count}} eventi",
-        "failures_one": "{{count}} tentativo fallito di seguito",
-        "failures_other": "{{count}} tentativi falliti di seguito",
+        "failures_one": "{{count}} tentativo non riuscito di seguito",
+        "failures_other": "{{count}} tentativi non riusciti di seguito",
         "unhealthyHint": "Nessuna lettura riuscita da oltre 3 ore: controlla il collegamento. Le date importate restano bloccate.",
-        "degradedHint": "Nessuna lettura riuscita da oltre un’ora.",
+        "degradedHint": "Nessuna lettura riuscita da oltre un'ora.",
         "syncNow": "Sincronizza ora",
         "changeUrl": "Cambia indirizzo",
         "newUrl": "Nuovo indirizzo",
@@ -743,24 +743,24 @@
         "runOutcome": "Esito",
         "runEvents": "Eventi",
         "runCounts": "{{seen}} letti, {{added}} nuovi, {{removed}} rimossi",
-        "exported": "Feed esportati",
-        "exportedIntro": "Un feed per ogni destinazione: il feed per Airbnb non contiene le date che arrivano da Airbnb (niente eco).",
-        "createFeed": "Crea il feed per {{destination}}",
-        "feedFor": "Feed per {{destination}}",
-        "lastRead": "ultima lettura dell’OTA: {{date}}",
-        "neverRead": "mai letto dall’OTA",
-        "notReadWarning": "L’OTA non legge questo feed da oltre 24 ore: controlla che sia collegato.",
+        "exported": "Calendari esportati",
+        "exportedIntro": "Un calendario esportato per ogni OTA: quello per Airbnb non contiene le date che arrivano da Airbnb (niente eco).",
+        "createFeed": "Crea il calendario per {{destination}}",
+        "feedFor": "Calendario per {{destination}}",
+        "lastRead": "ultima lettura dell'OTA: {{date}}",
+        "neverRead": "mai letto dall'OTA",
+        "notReadWarning": "L'OTA non legge questo calendario da oltre 24 ore: controlla che sia collegato.",
         "retiresAt": "Smette di funzionare il {{date}}",
         "copyFeed": "Copia indirizzo",
         "copied": "Copiato",
         "rotate": "Rigenera indirizzo",
-        "rotateConfirm": "Rigenerare l’indirizzo? Il vecchio resta congelato per 7 giorni: aggiorna l’OTA con quello nuovo.",
+        "rotateConfirm": "Rigenerare l'indirizzo? Il vecchio resta congelato per 7 giorni: aggiorna l'OTA con quello nuovo.",
         "checklist": "Checklist di collegamento",
-        "checklistIntro": "I passi automatici si spuntano da soli; gli altri confermali tu dopo averli fatti sull’OTA.",
-        "checklistEmpty": "Aggiungi un calendario o crea un feed per vedere i passi.",
+        "checklistIntro": "I passi automatici si spuntano da soli; gli altri confermali tu dopo averli fatti sull'OTA.",
+        "checklistEmpty": "Aggiungi un calendario importato o crea un calendario esportato per vedere i passi.",
         "checklistComplete": "Collegamento completo.",
         "confirmStep": "Fatto",
-        "demo": "Calendario dimostrativo: eventi di esempio, non viene scaricato dall’OTA."
+        "demo": "Calendario dimostrativo: eventi di esempio, non viene scaricato dall'OTA."
     },
     "metrics": {
         "title": "Metriche",
@@ -838,30 +838,30 @@
         "status": {
             "ACTIVE": "Account attivo: la pagina di prenotazione è online.",
             "SUSPENDED": "Account sospeso: la pagina di prenotazione è offline.",
-            "OFFBOARDING": "Uscita in corso: la pagina di prenotazione è offline e il pannello è in sola lettura (restano possibili cancellazioni, rimborsi ed export).",
+            "OFFBOARDING": "Uscita in corso: la pagina di prenotazione è offline e il pannello è in sola lettura (restano possibili cancellazioni, rimborsi ed esportazione dei dati).",
             "CLOSED": "Account chiuso: i dati sono stati cancellati."
         },
         "autoRetire": "Dal {{date}} i calendari che le OTA non leggono più da 7 giorni verranno disattivati automaticamente.",
         "feedsDisabled": "Tutti i calendari sono disattivati dal {{date}}.",
         "start": "Avvia l'uscita",
         "startConfirm": "La pagina di prenotazione verrà disattivata e non potrai ricevere nuove prenotazioni né modificare i dati. I calendari per le OTA restano attivi con le prenotazioni esistenti finché non confermi di averli tolti. Vuoi continuare?",
-        "exportTitle": "Export completo",
+        "exportTitle": "Esportazione completa dei dati",
         "exportHint": "Un archivio ZIP con un file CSV per ogni tipo di dato e un file JSON. Le prenotazioni con partenza futura sono anche in un file a parte. Il download resta disponibile per 30 giorni.",
-        "exportRequest": "Richiedi l'export",
-        "noExports": "Nessun export richiesto.",
+        "exportRequest": "Richiedi l'esportazione",
+        "noExports": "Nessuna esportazione richiesta.",
         "exportStatus": {
             "PENDING": "In preparazione…",
-            "READY": "Pronto",
-            "FAILED": "Non riuscito: richiedine uno nuovo",
-            "EXPIRED": "Scaduto"
+            "READY": "Pronta",
+            "FAILED": "Non riuscita: richiedine una nuova",
+            "EXPIRED": "Scaduta"
         },
-        "exportRequestedAt": "Richiesto il {{date}}",
+        "exportRequestedAt": "Richiesta il {{date}}",
         "exportExpiresAt": "scaricabile fino al {{date}}",
         "exportFuture_one": "{{count}} prenotazione futura",
         "exportFuture_other": "{{count}} prenotazioni future",
         "exportDownload": "Scarica",
         "feedsTitle": "Calendari esportati verso le OTA",
-        "feedsHint": "Togli ogni calendario dalle impostazioni della OTA (Booking.com, Airbnb…) e poi conferma qui. Finché non confermi, il calendario continua a mostrare le date già occupate, per non lasciare date libere per errore.",
+        "feedsHint": "Togli ogni calendario dalle impostazioni dell'OTA (Booking.com, Airbnb…) e poi conferma qui. Finché non confermi, il calendario continua a mostrare le date già occupate, per non lasciare date libere per errore.",
         "noFeeds": "Nessun calendario esportato.",
         "feedUnit": "Unità",
         "feedDestination": "OTA",
@@ -875,7 +875,7 @@
         },
         "readRecently": "letto negli ultimi 7 giorni",
         "confirmRemoved": "Ho tolto il calendario",
-        "confirmRemovedQuestion": "Hai tolto questo calendario dalle impostazioni della OTA? Dopo la conferma il link smette di funzionare.",
+        "confirmRemovedQuestion": "Hai tolto questo calendario dalle impostazioni dell'OTA? Dopo la conferma il link smette di funzionare.",
         "confirmRemovedYes": "Sì, disattiva",
         "banner": "Uscita dalla piattaforma in corso: il pannello è in sola lettura.",
         "bannerClosed": "Account chiuso.",
