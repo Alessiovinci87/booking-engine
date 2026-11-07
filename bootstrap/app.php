@@ -1,6 +1,7 @@
 <?php
 
 use App\Domain\Tenancy\Exceptions\BusinessRuleViolation;
+use App\Domain\Tenancy\Http\EnforceSupportAccess;
 use App\Domain\Tenancy\Http\EnsureTenantAcceptsChanges;
 use App\Domain\Tenancy\Http\WithTenantContext;
 use App\Http\Api\ApiError;
@@ -39,6 +40,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'tenant' => WithTenantContext::class,
             // Pannello in sola lettura durante l'uscita del cliente (7.1).
             'tenant.writable' => EnsureTenantAcceptsChanges::class,
+            'support' => EnforceSupportAccess::class,
             'panel.fresh' => EnsurePanelSessionIsFresh::class,
             'mfa' => EnsureMfaVerified::class,
             'reauth' => RequirePasswordConfirmation::class,

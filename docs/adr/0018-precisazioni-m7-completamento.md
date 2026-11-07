@@ -3,7 +3,7 @@
 - **Stato**: Proposta
 - **Data**: 2026-11-07
 - **Autori**: Claude Code
-- **Documenti di specifica toccati**: 06-CALENDAR-SYNC ("Ciclo di vita dei feed e uscita del cliente"), 07-API-CONTRACT ("Privacy", "Formato errori"), 08-SECURITY-OPERATIONS ("Livello database (RLS)"), 09-PRIVACY-GDPR ("Uscita del cliente", "Conservazione"), 10-TRACEABILITY, 11-MILESTONES (M7)
+- **Documenti di specifica toccati**: 06-CALENDAR-SYNC ("Ciclo di vita dei feed e uscita del cliente"), 07-API-CONTRACT ("Privacy", "Formato errori", "Accessi di supporto"), 08-SECURITY-OPERATIONS ("Livello database (RLS)", "Autenticazione"), 09-PRIVACY-GDPR ("Uscita del cliente", "Conservazione"), 10-TRACEABILITY, 11-MILESTONES (M7)
 
 Il numero 0017 è riservato all'ADR della milestone M8 "Qualità del frontend", chiesta insieme a M7.
 
@@ -96,6 +96,16 @@ M7 completa le parti di 06 e 09 rimaste fuori dalla 1.0 del pilota: uscita del c
 
     Nessun cambio di comportamento.
 
+### 7.5 Accesso di supporto in sola lettura
+
+19. **Operatore di piattaforma**: utente con `users.is_platform_operator` (comando `support:operator {email} [--remove]`), senza membership: il comando rifiuta un utente che appartiene a un tenant (`SUPPORT_OPERATOR_HAS_TENANT`). Accede dal normale login del pannello, con la MFA obbligatoria come ogni utente; `support:open` rifiuta un operatore senza MFA attiva.
+20. **Autorizzazione a tempo**: `support:open {tenant} --operator= --reason= --hours=` crea una riga di `support_access_grants` (tenant-scoped, RLS forzata). Durata da 1 a 2 ore, controllata anche da un vincolo `CHECK` nel database; motivazione obbligatoria con le regole di `MfaReset::reasonIsValid` (10–200 caratteri, niente email né numeri di telefono), quindi registrabile nell'audit. Una nuova autorizzazione chiude la precedente dello stesso operatore. Un tenant `CLOSED` non riceve accessi. `support:close {tenant}` chiude dalla piattaforma gli accessi attivi.
+21. **Ruolo del database: deviazione da 08.** 08 dice "solo con ruolo `app_admin_ops`". L'operatore usa invece `app_runtime` con `app.tenant_id` impostato al tenant dell'autorizzazione, come un gestore: RLS gli mostra solo quel tenant. `app_admin_ops` ha `BYPASSRLS` e un errore nel codice esporrebbe tutti i tenant; con `app_runtime` l'isolamento resta garantito dal database. L'autorizzazione attiva si trova con la funzione `SECURITY DEFINER` `app_support_grant_for(user_id, now)` (stesso schema di `app_user_tenants`, policy `definer_lookup` per `app_migrator`); l'istante arriva dall'applicazione.
+22. **Sola lettura decisa dal server**: il middleware `support` (`EnforceSupportAccess`), prima di `tenant` in tutti i gruppi del pannello, risponde `403 SUPPORT_READ_ONLY` a ogni metodo diverso da `GET`/`HEAD`/`OPTIONS` e alle rotte con ri-autenticazione o link firmato (export dei dati di un ospite, CSV delle prenotazioni, download dell'export completo), che contengono dati personali in blocco. Senza autorizzazione attiva risponde `403 SUPPORT_ACCESS_INACTIVE`. `MembershipTenantResolver` per un operatore usa solo l'autorizzazione, mai le membership.
+23. **Trasparenza per il gestore**: `GET /admin/me` restituisce `support` (`id`, `reason`, `expires_at`) e `role: null`; il pannello mostra il banner "Accesso di supporto" con scadenza e motivo. La pagina "Accessi di supporto" (`/app/accessi-supporto`, collegata da "Account") elenca le autorizzazioni con email dell'operatore, motivo, apertura, scadenza, prima e ultima lettura e stato. Audit nel tenant: `support.opened` (con motivo e durata), `support.first_use`, `support.revoked`, `support.closed`.
+24. **Revoca**: `POST /admin/support-access/{id}/revoke` con la ri-autenticazione, ammessa anche durante l'uscita del cliente; `409 SUPPORT_ACCESS_NOT_ACTIVE` se l'accesso è già chiuso. L'operatore perde l'accesso alla richiesta successiva.
+25. **Uscita del cliente**: `support_access_grants` è in `TenantDataPurger::PURGE_ORDER` e ha `SELECT, DELETE` per `app_retention`; l'audit resta (`KEPT`).
+
 ## Alternative considerate
 
 | Alternativa | Perché scartata |
@@ -107,6 +117,9 @@ M7 completa le parti di 06 e 09 rimaste fuori dalla 1.0 del pilota: uscita del c
 | Link di download dell'export nell'email | Un link valido 30 giorni in una casella di posta è un rischio; il pannello chiede la password. |
 | Feed ancora letto ritirato comunque dopo 30 giorni | Contraddice 06 punto 5 e I19: un'OTA vedrebbe date libere già vendute. |
 | Job di conservazione spento finché le categorie non sono validate | Nessun riscontro prima della validazione; la simulazione mostra al professionista e alla piattaforma cosa succederà. |
+| Accesso di supporto con `app_admin_ops`, come scritto in 08 | `BYPASSRLS`: l'isolamento dipenderebbe solo dal codice applicativo. Con `app_runtime` e il tenant dell'autorizzazione lo garantisce RLS (punto 21). |
+| Operatore che "impersona" il gestore | L'audit attribuirebbe le letture al gestore e la sessione erediterebbe i permessi di scrittura. |
+| Sola lettura solo nell'interfaccia | Va rifiutata dal server: un client modificato potrebbe comunque scrivere. |
 | Anonimizzazione B/D con `app_retention` e `UPDATE` | `app_retention` deve solo leggere e cancellare; `GuestPrivacyService` tratta già tutte le copie (I22). |
 
 ## Conseguenze
@@ -114,6 +127,7 @@ M7 completa le parti di 06 e 09 rimaste fuori dalla 1.0 del pilota: uscita del c
 - Nuova tabella `tenant_exports` con RLS forzata, nuove colonne `ics_feeds.removal_confirmed_at`, `tenants.data_purged_at`. I quattro vincoli dei due cicli sono ora `DEFERRABLE`.
 - In produzione serve la variabile `DB_RETENTION_PASSWORD` (Railway) e il ruolo creato prima della migration.
 - Il pannello mostra un banner e la pagina `/app/uscita` (collegata da "Account").
+- 7.5: nuova colonna `users.is_platform_operator`, nuova tabella `support_access_grants` con RLS forzata, funzione `app_support_grant_for`; middleware `support` in tutti i gruppi del pannello; pagina `/app/accessi-supporto` e banner.
 - Rischio: la cancellazione è irreversibile. È disponibile solo da comando di piattaforma, con conferma esplicita e condizioni verificate nel servizio.
 
 ## Impatto sui test
@@ -131,8 +145,9 @@ M7 completa le parti di 06 e 09 rimaste fuori dalla 1.0 del pilota: uscita del c
   - I22 (export completi cancellati all'anonimizzazione).
 
 - 7.4: nessun test nuovo; `composer analyse` in CI è il controllo.
+- 7.5: `Feature/Tenancy/SupportAccessTest` (lettura, rifiuto lato server dei metodi diversi da `GET` e degli export, scadenza, revoca, isolamento tra tenant, comandi, vincolo delle 2 ore, audit); `RlsCatalogTest` (`support_access_grants.definer_lookup`), `SchemaTest`, `SpaRoutesTest` e `TenantPurgeTest` (catalogo) aggiornati.
 
 ## Aggiornamento della specifica
 
-- [x] 07 "Privacy" e "Formato errori", 09 "Uscita del cliente", 10 con riferimento a questa ADR
+- [x] 07 "Privacy", "Formato errori" e "Accessi di supporto", 08 "Autenticazione", 09 "Uscita del cliente", 10 con riferimento a questa ADR
 - [ ] Versione della specifica incrementata alla verifica di M7

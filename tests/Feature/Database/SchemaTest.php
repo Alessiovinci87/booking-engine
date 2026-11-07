@@ -46,6 +46,7 @@ const TENANT_SCOPED_TABLES = [
     'inventory_occupancies', 'inventory_conflicts', 'reservations', 'reservation_price_lines',
     'reservation_changes', 'quotes', 'payments', 'payment_events', 'refunds', 'ics_feeds',
     'external_calendars', 'external_calendar_events', 'sync_runs', 'outbox_messages', 'tenant_exports',
+    'support_access_grants',
 ];
 
 const GLOBAL_TABLES = ['tenants', 'users', 'user_recovery_codes', 'user_password_resets', 'webhook_events', 'retention_policies', 'audit_log'];

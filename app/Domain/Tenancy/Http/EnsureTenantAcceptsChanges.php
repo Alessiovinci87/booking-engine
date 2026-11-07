@@ -30,6 +30,8 @@ final class EnsureTenantAcceptsChanges
         'admin.guests.erase',
         'admin.tenant.export',
         'admin.tenant.offboarding.confirm-removed',
+        // Revoca di un accesso di supporto (7.5): sempre possibile.
+        'admin.support-access.revoke',
     ];
 
     /**

@@ -33,6 +33,16 @@ return [
         'aborted' => 'Nessuna modifica.',
         'done' => 'MFA azzerata per l\'utente :id: sessioni chiuse, al prossimo accesso dovrà configurarla di nuovo.',
     ],
+    'support' => [
+        'unknown_tenant' => 'Tenant sconosciuto.',
+        'unknown_operator' => 'Nessun utente con questa email.',
+        'refused' => 'Operazione rifiutata: :code',
+        'opened' => 'Accesso di supporto :id aperto fino a :expires (UTC), in sola lettura.',
+        'closed' => 'Accessi di supporto chiusi: :count.',
+        'operator_added' => 'Utente :id segnato come operatore di piattaforma.',
+        'operator_removed' => 'Utente :id non è più operatore di piattaforma.',
+        'mfa_notice' => 'L\'operatore non ha ancora la MFA attiva: support:open rifiuterà finché non la configura.',
+    ],
     'offboarding' => [
         'unknown_tenant' => 'Tenant sconosciuto.',
         'invalid_action' => 'Azione non valida: usa status, start, export, retire-check o purge.',

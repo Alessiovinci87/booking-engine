@@ -59,6 +59,14 @@ export function PanelLayout() {
                     </div>
                 </div>
             </header>
+            {me.data?.support && (
+                <p className="border-b border-violet-300 bg-violet-50 px-4 py-2 text-center text-sm font-medium text-violet-900" role="status" data-testid="support-banner">
+                    {t('support.banner', {
+                        time: new Date(me.data.support.expires_at).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }),
+                        reason: me.data.support.reason,
+                    })}
+                </p>
+            )}
             {me.data !== undefined && me.data.tenant.dpa_signed_at === null && (
                 <p className="border-b border-amber-200 bg-amber-50 px-4 py-2 text-center text-sm text-amber-900" data-testid="dpa-missing">
                     {t('privacy.dpaMissing')}

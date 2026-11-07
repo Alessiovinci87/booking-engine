@@ -109,6 +109,9 @@
         "TENANT_OFFBOARDING": "L'uscita dalla piattaforma è in corso: il pannello è in sola lettura, salvo cancellazioni, rimborsi ed export.",
         "TENANT_NOT_OFFBOARDING": "L'uscita dalla piattaforma non è stata avviata.",
         "TENANT_CLOSED": "L'account è chiuso.",
+        "SUPPORT_READ_ONLY": "Accesso di supporto: il pannello è in sola lettura.",
+        "SUPPORT_ACCESS_INACTIVE": "L'accesso di supporto è scaduto o è stato revocato.",
+        "SUPPORT_ACCESS_NOT_ACTIVE": "Questo accesso di supporto è già chiuso.",
         "OFFBOARDING_NOT_READY": "Non è ancora possibile cancellare i dati.",
         "EXPORT_EXPIRED": "L'export è scaduto o non è più disponibile. Richiedine uno nuovo."
     },
@@ -871,5 +874,28 @@
         "banner": "Uscita dalla piattaforma in corso: il pannello è in sola lettura.",
         "bannerClosed": "Account chiuso.",
         "bannerLink": "Vai all'uscita"
+    },
+    "support": {
+        "banner": "Accesso di supporto in sola lettura fino alle {{time}}. Motivo: {{reason}}",
+        "title": "Accessi di supporto",
+        "intro": "Qui vedi quando il supporto della piattaforma ha aperto il tuo pannello, per quale motivo e per quanto tempo. L'accesso è sempre in sola lettura e dura al massimo 2 ore. Puoi chiuderlo in qualsiasi momento.",
+        "empty": "Il supporto non ha mai avuto accesso al tuo pannello.",
+        "loading": "Caricamento degli accessi di supporto…",
+        "error": "Impossibile caricare gli accessi di supporto.",
+        "operator": "Operatore",
+        "reason": "Motivo",
+        "opened": "Aperto",
+        "expires": "Scade",
+        "used": "Prima e ultima lettura",
+        "never_used": "Mai usato",
+        "status": "Stato",
+        "active": "Attivo",
+        "revoked_by_member": "Chiuso da te",
+        "revoked": "Chiuso dalla piattaforma",
+        "expired": "Scaduto",
+        "revoke": "Chiudi l'accesso",
+        "revoke_confirm": "Chiudere subito l'accesso di supporto? L'operatore non potrà più vedere il pannello.",
+        "revoked_done": "Accesso di supporto chiuso.",
+        "link": "Accessi di supporto"
     }
 }

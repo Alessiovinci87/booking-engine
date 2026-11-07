@@ -52,6 +52,9 @@ return [
         'TENANT_CLOSED' => 'The account is closed.',
         'OFFBOARDING_NOT_READY' => 'The data cannot be deleted yet.',
         'EXPORT_EXPIRED' => 'The export has expired or is no longer available. Request a new one.',
+        'SUPPORT_READ_ONLY' => 'Support access: the panel is read-only.',
+        'SUPPORT_ACCESS_INACTIVE' => 'The support access has expired or has been revoked.',
+        'SUPPORT_ACCESS_NOT_ACTIVE' => 'This support access is already closed.',
     ],
     'idempotency' => [
         'key_required' => 'Missing or invalid Idempotency-Key header (UUID).',

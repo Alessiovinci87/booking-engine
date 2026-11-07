@@ -42,9 +42,9 @@ L'API pubblica non usa cookie di sessione e quindi non usa il token CSRF (ADR-00
 |---|---|
 | 400 | `VALIDATION_FAILED` (`details.fields`: errori per campo) |
 | 401 | `UNAUTHENTICATED`, `MFA_REQUIRED`, `MFA_SETUP_REQUIRED`, `INVALID_CREDENTIALS`, `INVALID_MFA_CODE` |
-| 403 | `FORBIDDEN` (anche per l'API pubblica chiamata da un'origine non ammessa, ADR-0011), `REAUTH_REQUIRED` |
+| 403 | `FORBIDDEN` (anche per l'API pubblica chiamata da un'origine non ammessa, ADR-0011), `REAUTH_REQUIRED`, `SUPPORT_READ_ONLY`, `SUPPORT_ACCESS_INACTIVE` (accesso di supporto, ADR-0018 punto 22) |
 | 404 | `NOT_FOUND` (anche per risorse di altri tenant: mai `403`) |
-| 409 | `IDEMPOTENCY_KEY_IN_USE` (ADR-0011), `DATES_UNAVAILABLE`, `CHECKOUT_EXPIRED`, `CONFLICT_OPEN`, `ILLEGAL_TRANSITION`, `PRICE_CHANGED`, `MFA_ALREADY_ENABLED`, `EXTERNAL_CALENDARS_ACTIVE`, `UNIT_NOT_BOOKABLE`, `ICS_FEED_EXISTS`, `UNIT_IS_INSTANT`, `QUOTE_ALREADY_ACCEPTED`, `QUOTE_CHECKOUT_IN_PROGRESS` (ADR-0013), `GUEST_HAS_ACTIVE_RESERVATION` (ADR-0014), `TENANT_OFFBOARDING`, `TENANT_NOT_OFFBOARDING`, `TENANT_CLOSED`, `OFFBOARDING_NOT_READY` (`details.missing`: `feeds_retired` o `export_wait`) (ADR-0018) |
+| 409 | `IDEMPOTENCY_KEY_IN_USE` (ADR-0011), `DATES_UNAVAILABLE`, `CHECKOUT_EXPIRED`, `CONFLICT_OPEN`, `ILLEGAL_TRANSITION`, `PRICE_CHANGED`, `MFA_ALREADY_ENABLED`, `EXTERNAL_CALENDARS_ACTIVE`, `UNIT_NOT_BOOKABLE`, `ICS_FEED_EXISTS`, `UNIT_IS_INSTANT`, `QUOTE_ALREADY_ACCEPTED`, `QUOTE_CHECKOUT_IN_PROGRESS` (ADR-0013), `GUEST_HAS_ACTIVE_RESERVATION` (ADR-0014), `TENANT_OFFBOARDING`, `TENANT_NOT_OFFBOARDING`, `TENANT_CLOSED`, `OFFBOARDING_NOT_READY` (`details.missing`: `feeds_retired` o `export_wait`) (ADR-0018), `SUPPORT_ACCESS_NOT_ACTIVE` (ADR-0018 punto 24) |
 | 419 | `CSRF_TOKEN_EXPIRED` (la SPA richiede un nuovo cookie CSRF e ripete una volta) |
 | 410 | `QUOTE_EXPIRED`, `QUOTE_REVOKED`, `QUOTE_EXHAUSTED`, `FEED_RETIRED`, `EXPORT_EXPIRED` (ADR-0018) |
 | 412 | `VERSION_MISMATCH` |
@@ -227,6 +227,14 @@ Tutte richiedono utente autenticato con MFA verificata nella sessione e membersh
 | POST | `/tenant/offboarding/channels/{feedId}/confirm-removed` (ri-autenticazione; `409 TENANT_NOT_OFFBOARDING`) |
 
 Con il tenant `OFFBOARDING` o `CLOSED` ogni richiesta del pannello che modifica dati risponde `409 TENANT_OFFBOARDING`, salvo cancellazione e rifiuto delle prenotazioni, rimborsi, anonimizzazione dell'ospite, export e conferme dei feed (ADR-0018 punto 5).
+
+### Accessi di supporto (vedi 08, ADR-0018 punti 19–25)
+| Metodo | Percorso |
+|---|---|
+| GET | `/support-access` (ultime 100 autorizzazioni: email dell'operatore, motivo, apertura, scadenza, revoca, prima e ultima lettura, `active`) |
+| POST | `/support-access/{id}/revoke` (ri-autenticazione; `409 SUPPORT_ACCESS_NOT_ACTIVE`; ammessa anche con il tenant `OFFBOARDING`) |
+
+Per un operatore di piattaforma con un'autorizzazione attiva ogni rotta del pannello è in sola lettura: i metodi diversi da `GET` e le rotte con ri-autenticazione rispondono `403 SUPPORT_READ_ONLY`; senza autorizzazione `403 SUPPORT_ACCESS_INACTIVE`. `GET /me` riporta `support` (`id`, `reason`, `expires_at`) e `role: null`.
 
 ---
 

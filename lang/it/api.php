@@ -52,6 +52,9 @@ return [
         'TENANT_CLOSED' => 'L’account è chiuso.',
         'OFFBOARDING_NOT_READY' => 'Non è ancora possibile cancellare i dati.',
         'EXPORT_EXPIRED' => 'L’export è scaduto o non è più disponibile. Richiedine uno nuovo.',
+        'SUPPORT_READ_ONLY' => 'Accesso di supporto: il pannello è in sola lettura.',
+        'SUPPORT_ACCESS_INACTIVE' => 'L’accesso di supporto è scaduto o è stato revocato.',
+        'SUPPORT_ACCESS_NOT_ACTIVE' => 'Questo accesso di supporto è già chiuso.',
     ],
     'idempotency' => [
         'key_required' => 'Header Idempotency-Key mancante o non valido (UUID).',

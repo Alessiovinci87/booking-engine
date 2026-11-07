@@ -33,7 +33,7 @@ final class TenantDataPurger
         'external_calendar_events', 'external_calendars', 'reservation_price_lines', 'reservation_changes',
         'payment_events', 'refunds', 'payments', 'quotes', 'reservations', 'guests', 'unit_photos',
         'unit_translations', 'season_rules', 'rate_plans', 'units', 'property_translations', 'properties',
-        'cancellation_policies', 'stripe_accounts', 'tenant_exports', 'tenant_members',
+        'cancellation_policies', 'stripe_accounts', 'tenant_exports', 'support_access_grants', 'tenant_members',
     ];
 
     /** Tabelle con tenant_id che restano dopo la cancellazione. */

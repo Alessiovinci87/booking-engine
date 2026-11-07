@@ -89,7 +89,7 @@ it('nessuna policy permissiva aggiuntiva apre le tabelle tenant-scoped ad app_ru
 
     $violations = array_values(array_filter(
         array_map(fn ($row) => "{$row->table_name}.{$row->polname} {$row->roles}", $extra),
-        fn (string $line) => ! preg_match('/^(tenants|tenant_members|reservations|stripe_accounts|ics_feeds|quotes)\.definer_lookup \{app_migrator\}$/', $line)
+        fn (string $line) => ! preg_match('/^(tenants|tenant_members|reservations|stripe_accounts|ics_feeds|quotes|support_access_grants)\.definer_lookup \{app_migrator\}$/', $line)
             && ! preg_match('/^audit_log\.retention_platform_(select|delete) \{app_retention\}$/', $line),
     ));
 

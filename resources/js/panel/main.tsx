@@ -30,6 +30,7 @@ import { QuotesPage } from './pages/QuotesPage';
 import { ReservationDetailPage } from './pages/ReservationDetailPage';
 import { ReservationsPage } from './pages/ReservationsPage';
 import { ResetPasswordPage } from './pages/ResetPasswordPage';
+import { SupportAccessPage } from './pages/SupportAccessPage';
 import { UnitPage } from './pages/UnitPage';
 
 const queryClient: QueryClient = new QueryClient({
@@ -120,6 +121,7 @@ createRoot(container).render(
                             <Route path="ospiti/:guestId/dati" element={<GuestDataPage />} />
                             <Route path="account" element={<AccountPage />} />
                             <Route path="uscita" element={<OffboardingPage />} />
+                            <Route path="accessi-supporto" element={<SupportAccessPage />} />
                             <Route path="*" element={<NotFoundPage />} />
                         </Route>
                     </Routes>

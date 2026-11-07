@@ -108,6 +108,13 @@ export function AccountPage() {
                     {t('offboarding.open')}
                 </Link>
             </section>
+            <section className="mt-6 max-w-md rounded-lg border border-slate-200 bg-white p-6">
+                <h2 className="font-semibold text-slate-900">{t('support.title')}</h2>
+                <p className="mt-1 text-sm text-slate-600">{t('support.intro')}</p>
+                <Link to="/accessi-supporto" className="mt-3 inline-block text-sm font-medium text-blue-700 hover:underline" data-testid="account-support-link">
+                    {t('support.link')}
+                </Link>
+            </section>
         </main>
     );
 }
