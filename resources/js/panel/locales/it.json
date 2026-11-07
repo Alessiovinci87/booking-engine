@@ -115,7 +115,10 @@
         "SUPPORT_ACCESS_INACTIVE": "L'accesso di supporto è scaduto o è stato revocato.",
         "SUPPORT_ACCESS_NOT_ACTIVE": "Questo accesso di supporto è già chiuso.",
         "OFFBOARDING_NOT_READY": "Non è ancora possibile cancellare i dati.",
-        "EXPORT_EXPIRED": "L'export è scaduto o non è più disponibile. Richiedine uno nuovo."
+        "EXPORT_EXPIRED": "L'export è scaduto o non è più disponibile. Richiedine uno nuovo.",
+        "CHECKOUT_EXPIRED": "La sessione di pagamento è scaduta.",
+        "PAYMENT_PROVIDER_REJECTED": "Stripe ha rifiutato la richiesta. Controlla i dati dell'account Stripe e riprova.",
+        "FEED_RETIRED": "Questo calendario non è più pubblicato."
     },
     "properties": {
         "title": "Strutture",
@@ -417,7 +420,8 @@
         "createBlock": "Blocca le date",
         "blockCreated": "Date bloccate.",
         "conflicts": "Conflitti aperti",
-        "conflictLine": "Dal {{from}} al {{to}}"
+        "conflictLine": "Dal {{from}} al {{to}}",
+        "removeBlockConfirm": "Rimuovere il blocco? Le date tornano prenotabili."
     },
     "reservations": {
         "title": "Prenotazioni",

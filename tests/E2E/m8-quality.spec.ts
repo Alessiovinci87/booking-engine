@@ -263,6 +263,16 @@ test.describe('M8 qualità del frontend', () => {
         await expect(quote.getByRole('heading', { level: 1 })).toBeVisible();
         await snap(quote, 'm8-ospite-preventivo');
         await guest.close();
+
+        // 8.5: le azioni irreversibili chiedono conferma nel dialogo condiviso; Annulla non cambia nulla.
+        await row.getByRole('button', { name: 'Ritira' }).click();
+        const dialog = page.getByTestId('confirm-dialog');
+        await expect(dialog).toBeVisible();
+        await expect(dialog.getByRole('button', { name: 'Annulla' })).toBeFocused();
+        await snap(page, 'm8-pannello-conferma');
+        await page.keyboard.press('Escape');
+        await expect(dialog).toBeHidden();
+        await expect(row.getByRole('button', { name: 'Ritira' })).toBeVisible();
         await context.close();
     });
 

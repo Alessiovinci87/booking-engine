@@ -6,7 +6,7 @@ import { Link, useSearchParams } from 'react-router';
 import { type RefundRow, paymentsApi } from '../api/payments';
 import { reservationsApi, type ReservationSummary } from '../api/reservations';
 import { useErrorMessage } from '../auth/session';
-import { FormError, Section, dangerButton, inputClass, primaryButton, secondaryButton } from '../components/Form';
+import { dangerButton, EmptyState, FormError, inputClass, Loading, primaryButton, secondaryButton, Section } from '../components/Form';
 import { ReauthPrompt, needsReauth } from '../components/Reauth';
 import { formatDateTime } from '../dates';
 import { formatMoney } from '../money';
@@ -48,7 +48,7 @@ function StripeAccountSection() {
         <Section title={t('payments.stripe.title')}>
             {account.isError && <FormError message={errorMessage(account.error)} />}
             {info === undefined ? (
-                !account.isError && <p className="text-muted">{t('common.loading')}</p>
+                !account.isError && <Loading />
             ) : (
                 <div className="space-y-3 text-sm" data-testid="stripe-account" data-status={info.status}>
                     <p className="font-medium text-ink">{t(`payments.stripe.status.${info.status}`)}</p>
@@ -130,7 +130,7 @@ function ApprovalRequestsSection() {
             </p>
             {list.isError && <FormError message={errorMessage(list.error)} />}
             {rows.length === 0 ? (
-                <p className="text-sm text-muted">{list.isPending ? t('common.loading') : t('payments.approvals.empty')}</p>
+                list.isPending ? <Loading /> : <EmptyState title={t('payments.approvals.empty')} />
             ) : (
                 <ul className="divide-y divide-slate-100" data-testid="approval-requests">
                     {rows.map((r) => (
@@ -173,7 +173,7 @@ function RefundsSection() {
         <Section title={t('payments.refunds.title')}>
             {list.isError && <FormError message={errorMessage(list.error)} />}
             {rows.length === 0 ? (
-                <p className="text-sm text-muted">{list.isPending ? t('common.loading') : t('payments.refunds.empty')}</p>
+                list.isPending ? <Loading /> : <EmptyState title={t('payments.refunds.empty')} />
             ) : (
                 <ul className="divide-y divide-slate-100" data-testid="refunds">
                     {rows.map((refund) => (

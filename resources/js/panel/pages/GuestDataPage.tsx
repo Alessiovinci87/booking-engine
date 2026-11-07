@@ -4,7 +4,7 @@ import { useParams } from 'react-router';
 
 import { privacyApi } from '../api/privacy';
 import { useErrorMessage } from '../auth/session';
-import { FormError, primaryButton } from '../components/Form';
+import { FormError, Loading, primaryButton } from '../components/Form';
 import { ReauthPrompt, needsReauth } from '../components/Reauth';
 import { formatDate, formatDateTime } from '../dates';
 import { formatMoney } from '../money';
@@ -20,7 +20,7 @@ export function GuestDataPage() {
     const exported = useQuery({ queryKey: ['guest-export', guestId], queryFn: () => privacyApi.exportGuest(guestId), staleTime: Infinity });
 
     if (exported.isPending) {
-        return <p className="mx-auto max-w-3xl px-4 py-8 text-muted">{t('common.loading')}</p>;
+        return <Loading page />;
     }
 
     if (exported.isError) {

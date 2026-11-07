@@ -8,17 +8,19 @@ import { ApiError, fieldErrors } from '../api/client';
 import { useErrorMessage } from '../auth/session';
 import {
     ConflictNotice,
+    EmptyState,
     Field,
     FormError,
     inputClass,
+    Loading,
     primaryButton,
     SavedNotice,
-    type SaveNotice,
     Section,
     TextInput,
-    TranslationFields,
     translationDraft,
+    TranslationFields,
     translationPayload,
+    type SaveNotice,
 } from '../components/Form';
 import { parseEuroToCents } from '../money';
 import { NotFoundPage } from './NotFoundPage';
@@ -38,7 +40,7 @@ export function PropertyPage() {
     const [notice, setNotice] = useState<SaveNotice>(null);
 
     if (property.isPending) {
-        return <p className="mx-auto max-w-5xl px-4 py-8 text-muted">{t('common.loading')}</p>;
+        return <Loading page />;
     }
 
     if (property.isError) {
@@ -289,7 +291,7 @@ function UnitsSection({ property }: { property: Property }) {
     return (
         <Section title={t('units.title')}>
             {units.isError && <FormError message={errorMessage(units.error)} />}
-            {units.data?.data.length === 0 && <p className="text-muted">{t('units.empty')}</p>}
+            {units.data?.data.length === 0 && <EmptyState title={t('units.empty')} />}
             <ul className="divide-y divide-line-soft">
                 {units.data?.data.map((unit) => (
                     <li key={unit.id} className="flex items-center justify-between py-3">

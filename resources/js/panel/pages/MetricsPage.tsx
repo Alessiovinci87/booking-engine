@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 
 import { metricsApi } from '../api/metrics';
 import { useErrorMessage } from '../auth/session';
-import { Field, FormError, inputClass, Section } from '../components/Form';
+import { Field, FormError, inputClass, Loading, Section } from '../components/Form';
 import { ProtectedDownload } from '../components/ProtectedDownload';
 import { today } from '../dates';
 import { formatMoney } from '../money';
@@ -66,7 +66,7 @@ export function MetricsPage() {
             </Section>
 
             {metrics.isError && <FormError message={errorMessage(metrics.error)} />}
-            {valid && data === undefined && !metrics.isError && <p className="text-muted">{t('common.loading')}</p>}
+            {valid && data === undefined && !metrics.isError && <Loading />}
 
             {data !== undefined && (
                 <>

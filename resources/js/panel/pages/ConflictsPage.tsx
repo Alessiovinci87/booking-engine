@@ -6,7 +6,17 @@ import { Link } from 'react-router';
 import { calendarsApi, type Conflict, type ConflictEvent, CONFLICT_RESOLUTIONS, type ConflictResolution, type ConflictStatus } from '../api/calendars';
 import { fieldErrors } from '../api/client';
 import { useErrorMessage } from '../auth/session';
-import { dangerButton, Field, FormError, inputClass, primaryButton, secondaryButton, Section } from '../components/Form';
+import {
+    dangerButton,
+    EmptyState,
+    Field,
+    FormError,
+    inputClass,
+    Loading,
+    primaryButton,
+    secondaryButton,
+    Section,
+} from '../components/Form';
 import { formatDate, formatDateTime } from '../dates';
 
 const OPEN: ConflictStatus[] = ['OPEN', 'INVESTIGATING'];
@@ -35,9 +45,9 @@ export function ConflictsPage() {
                     </button>
                 }
             >
-                {conflicts.isPending && <p className="text-sm text-muted">{t('common.loading')}</p>}
+                {conflicts.isPending && <Loading />}
                 {conflicts.isError && <FormError message={errorMessage(conflicts.error)} />}
-                {conflicts.data?.length === 0 && <p className="text-sm text-muted">{showClosed ? t('conflicts.noneClosed') : t('conflicts.none')}</p>}
+                {conflicts.data?.length === 0 && <EmptyState title={showClosed ? t('conflicts.noneClosed') : t('conflicts.none')} />}
                 <ul className="divide-y divide-line-soft" data-testid="conflict-list">
                     {conflicts.data?.map((conflict) => <ConflictRow key={conflict.id} conflict={conflict} />)}
                 </ul>

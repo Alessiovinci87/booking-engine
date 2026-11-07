@@ -7,7 +7,7 @@ import { adminApi } from '../api/admin';
 import { fieldErrors } from '../api/client';
 import { OFFLINE_METHODS, type OfflineMethod, reservationsApi } from '../api/reservations';
 import { useErrorMessage } from '../auth/session';
-import { Field, FormError, inputClass, primaryButton, Section, TextInput } from '../components/Form';
+import { Field, FormError, inputClass, Loading, primaryButton, Section, TextInput } from '../components/Form';
 import { UnitSelect, useAllUnits } from '../components/Reservations';
 import { addDays, today } from '../dates';
 import { formatMoney, parseEuroToCents } from '../money';
@@ -101,7 +101,7 @@ export function NewReservationPage() {
     const setGuestField = (field: keyof typeof guest) => (value: string) => setGuest((g) => ({ ...g, [field]: value }));
 
     if (isPending) {
-        return <p className="mx-auto max-w-5xl px-4 py-8 text-muted">{t('common.loading')}</p>;
+        return <Loading page />;
     }
 
     return (
@@ -135,7 +135,7 @@ export function NewReservationPage() {
                         {!validStay ? (
                             <p className="text-muted">{t('newReservation.chooseDates')}</p>
                         ) : preview.isFetching ? (
-                            <p className="text-muted">{t('common.loading')}</p>
+                            <Loading />
                         ) : preview.isError ? (
                             <p className="text-danger">{errorMessage(preview.error)}</p>
                         ) : preview.data !== undefined ? (

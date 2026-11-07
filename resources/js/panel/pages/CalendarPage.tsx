@@ -6,7 +6,19 @@ import { Link, useSearchParams } from 'react-router';
 import { fieldErrors } from '../api/client';
 import { type CalendarData, type CalendarOccupancy, reservationsApi } from '../api/reservations';
 import { useErrorMessage } from '../auth/session';
-import { dangerButton, Field, FormError, inputClass, primaryButton, secondaryButton, Section, TextInput } from '../components/Form';
+import {
+    dangerButton,
+    EmptyState,
+    Field,
+    FormError,
+    inputClass,
+    Loading,
+    primaryButton,
+    secondaryButton,
+    Section,
+    TextInput,
+    useConfirm,
+} from '../components/Form';
 import { statusColors, UnitSelect, useAllUnits } from '../components/Reservations';
 import { addDays, coversNight, formatDate, formatMonth, fromIsoDate, monthStart, today, weekdayNames } from '../dates';
 
@@ -53,13 +65,13 @@ export function CalendarPage() {
     }, [month]);
 
     if (isPending) {
-        return <p className="mx-auto max-w-5xl px-4 py-8 text-muted">{t('common.loading')}</p>;
+        return <Loading page />;
     }
 
     if (options.length === 0) {
         return (
             <main className="mx-auto max-w-5xl px-4 py-8">
-                <p className="text-muted">{t('calendar.noUnits')}</p>
+                <EmptyState title={t('calendar.noUnits')} />
             </main>
         );
     }
@@ -251,6 +263,7 @@ function Legend() {
 
 function BlockDetails({ unitId, block, onDone }: { unitId: string; block: CalendarOccupancy; onDone: () => void }) {
     const { t } = useTranslation();
+    const confirmation = useConfirm();
     const errorMessage = useErrorMessage();
     const queryClient = useQueryClient();
     const remove = useMutation({
@@ -266,9 +279,16 @@ function BlockDetails({ unitId, block, onDone }: { unitId: string; block: Calend
             <p className="text-sm text-ink">{t('calendar.blockRange', { from: formatDate(block.check_in), to: formatDate(block.check_out) })}</p>
             {block.note !== null && <p className="mt-1 text-sm text-muted">{block.note}</p>}
             <div className="mt-3 flex gap-2">
-                <button type="button" className={dangerButton} onClick={() => remove.mutate()} disabled={remove.isPending} data-testid="remove-block">
+                <button
+                    type="button"
+                    className={dangerButton}
+                    onClick={() => confirmation.ask({ title: t('calendar.removeBlockConfirm'), confirmLabel: t('calendar.removeBlock'), action: () => remove.mutate() })}
+                    disabled={remove.isPending}
+                    data-testid="remove-block"
+                >
                     {t('calendar.removeBlock')}
                 </button>
+                {confirmation.dialog}
                 <button type="button" className={secondaryButton} onClick={onDone}>
                     {t('common.close')}
                 </button>

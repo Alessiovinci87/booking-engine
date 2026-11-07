@@ -141,7 +141,20 @@
         "VALIDATION_FAILED": "Please check the details you entered.",
         "NOT_FOUND": "Not found.",
         "FORBIDDEN": "This action is not allowed from this page.",
-        "SERVER_ERROR": "Something went wrong. Please try again later."
+        "SERVER_ERROR": "Something went wrong. Please try again later.",
+        "CSRF_TOKEN_EXPIRED": "This page has been open for a long time. Reload it and try again.",
+        "ILLEGAL_TRANSITION": "Your booking has changed in the meantime. Reload the page to see its current status.",
+        "VERSION_MISMATCH": "The details changed in the meantime. Reload the page and try again.",
+        "CHECKOUT_EXPIRED": "The time to pay has run out and the dates have been released. You can book again.",
+        "UNAUTHENTICATED": "This page is not available. Use the link you received by email.",
+        "QUOTE_EXPIRED": "This quote has expired. Contact the property to receive a new one.",
+        "QUOTE_REVOKED": "This quote has been withdrawn by the property.",
+        "QUOTE_EXHAUSTED": "Too many payment attempts have been made for this quote. Please contact the property.",
+        "QUOTE_ALREADY_ACCEPTED": "This quote has already been accepted.",
+        "QUOTE_CHECKOUT_IN_PROGRESS": "The payment started earlier is being closed. Please try again in a few minutes.",
+        "QUOTE_EMAIL_MISSING": "This quote is incomplete. Please contact the property.",
+        "TENANT_OFFBOARDING": "This property no longer accepts online bookings. Please contact it directly.",
+        "TENANT_CLOSED": "This property no longer accepts online bookings."
     },
     "quote": {
         "title": "Your quote",

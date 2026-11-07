@@ -60,6 +60,53 @@ it('il pannello traduce ogni codice di errore dell\'API', function () {
         ->and(array_keys($panel['errors']))->toEqualCanonicalizing($codes);
 });
 
+it('ogni codice di errore di 07 ha un messaggio IT/EN nell\'API, IT nel pannello e IT/EN per l\'ospite (8.5)', function () {
+    $doc = (string) file_get_contents(base_path('docs/07-API-CONTRACT.md'));
+    $start = strpos($doc, '| HTTP | Codici |');
+    expect($start)->not->toBeFalse();
+    $table = substr($doc, (int) $start, strpos($doc, "\n\n", (int) $start) - (int) $start);
+    preg_match_all('/`([A-Z][A-Z_]{3,})`/', $table, $m);
+    $codes = array_values(array_unique($m[1]));
+
+    // Codici che arrivano solo al pannello o ai client di calendario: l'ospite non li riceve mai.
+    $panelOnly = [
+        'MFA_REQUIRED', 'MFA_SETUP_REQUIRED', 'MFA_ALREADY_ENABLED', 'INVALID_CREDENTIALS', 'INVALID_MFA_CODE',
+        'PASSWORD_RESET_INVALID', 'REAUTH_REQUIRED', 'EXTERNAL_CALENDARS_ACTIVE', 'NO_ACTIVE_UNITS',
+        'TRANSLATION_IT_MISSING', 'CANCELLATION_POLICY_MISSING', 'CONFLICT_OPEN', 'PRIVACY_POLICY_MISSING',
+        'DPA_NOT_SIGNED', 'GUEST_HAS_ACTIVE_RESERVATION', 'ICS_FEED_EXISTS', 'INVALID_ICAL_URL', 'UNIT_IS_INSTANT',
+        'CHECKLIST_STEP_INVALID', 'TENANT_NOT_OFFBOARDING', 'OFFBOARDING_NOT_READY', 'EXPORT_EXPIRED',
+        'SUPPORT_READ_ONLY', 'SUPPORT_ACCESS_INACTIVE', 'SUPPORT_ACCESS_NOT_ACTIVE', 'PAYMENT_PROVIDER_REJECTED',
+        'FEED_RETIRED',
+    ];
+    $json = fn (string $path): array => json_decode((string) file_get_contents(resource_path($path)), true, flags: JSON_THROW_ON_ERROR);
+    $panel = $json('js/panel/locales/it.json')['errors'];
+    $guestIt = $json('js/guest/locales/it.json')['errors'];
+    $guestEn = $json('js/guest/locales/en.json')['errors'];
+    $apiIt = (require lang_path('it/api.php'))['errors'];
+    $apiEn = (require lang_path('en/api.php'))['errors'];
+    $missing = [];
+
+    foreach ($codes as $code) {
+        foreach (['api it' => $apiIt, 'api en' => $apiEn, 'pannello' => $panel] as $where => $messages) {
+            if (! isset($messages[$code])) {
+                $missing[] = "{$code} ({$where})";
+            }
+        }
+
+        if (! in_array($code, $panelOnly, true)) {
+            foreach (['ospite it' => $guestIt, 'ospite en' => $guestEn] as $where => $messages) {
+                if (! isset($messages[$code])) {
+                    $missing[] = "{$code} ({$where})";
+                }
+            }
+        }
+    }
+
+    expect(count($codes))->toBeGreaterThan(40)
+        ->and($missing)->toBe([])
+        ->and(array_keys($guestIt))->toEqualCanonicalizing(array_keys($guestEn));
+});
+
 it('i testi del pannello e della pagina ospite passano dalle chiavi di traduzione', function (string $app) {
     // Nessun testo scritto direttamente nel markup JSX: solo {t('...')}.
     $offenders = [];

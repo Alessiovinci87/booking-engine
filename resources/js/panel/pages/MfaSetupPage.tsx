@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { api } from '../api/client';
 import { sessionQueryKey, useErrorMessage } from '../auth/session';
 import { AuthCard, buttonClass, FormError, inputClass } from '../components/AuthCard';
+import { Loading } from '../components/Form';
 
 /** QR generato dal server (SVG locale): mostrato come immagine, mai inserito come HTML. */
 function svgDataUri(svg: string): string {
@@ -82,9 +83,7 @@ export function MfaSetupPage() {
             </ol>
 
             {setup.isPending && (
-                <p className="mt-6 text-center text-muted" role="status">
-                    {t('common.loading')}
-                </p>
+                <Loading />
             )}
             {setup.isError && (
                 <div className="mt-6">

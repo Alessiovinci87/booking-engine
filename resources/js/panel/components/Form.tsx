@@ -1,11 +1,51 @@
-import { cloneElement, isValidElement, useId, type ReactNode } from 'react';
+import { cloneElement, isValidElement, useId, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import type { LocaleCode, TranslationTexts, Translations } from '../api/admin';
-import { buttonClass, Card } from '../../shared/ui';
+import { buttonClass, Card, ConfirmDialog, Skeleton } from '../../shared/ui';
 import { inputClass } from './AuthCard';
 
 export { FormError, inputClass } from './AuthCard';
+export { EmptyState } from '../../shared/ui';
+
+/** Caricamento di una sezione o di una pagina intera del pannello (8.5): annunciato agli screen reader. */
+export function Loading({ page = false, lines = 3 }: { page?: boolean; lines?: number }) {
+    const { t } = useTranslation();
+    const skeleton = <Skeleton label={t('common.loading')} lines={lines} />;
+
+    return page ? <div className="mx-auto max-w-5xl px-4 py-8">{skeleton}</div> : skeleton;
+}
+
+interface PendingConfirmation {
+    title: string;
+    confirmLabel: string;
+    action: () => void;
+}
+
+/**
+ * Conferma prima di un'azione irreversibile (8.5) con il dialogo condiviso, al posto di window.confirm:
+ * `ask` apre il dialogo, `dialog` va messo nel markup vicino al pulsante.
+ */
+export function useConfirm(): { ask: (confirmation: PendingConfirmation) => void; dialog: ReactNode } {
+    const { t } = useTranslation();
+    const [pending, setPending] = useState<PendingConfirmation | null>(null);
+    const dialog = (
+        <ConfirmDialog
+            open={pending !== null}
+            title={pending?.title ?? ''}
+            confirmLabel={pending?.confirmLabel ?? ''}
+            cancelLabel={t('common.cancel')}
+            onConfirm={() => {
+                pending?.action();
+                setPending(null);
+            }}
+            onCancel={() => setPending(null)}
+            testId="confirm-dialog"
+        />
+    );
+
+    return { ask: setPending, dialog };
+}
 
 export const primaryButton = buttonClass('primary');
 

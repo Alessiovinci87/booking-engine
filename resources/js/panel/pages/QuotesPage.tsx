@@ -6,7 +6,19 @@ import { Link } from 'react-router';
 import { fieldErrors } from '../api/client';
 import { QUOTE_STATUSES, type Quote, type QuoteStatus, quotesApi, type SentQuote } from '../api/quotes';
 import { useErrorMessage } from '../auth/session';
-import { dangerButton, Field, FormError, inputClass, primaryButton, secondaryButton, Section, TextInput } from '../components/Form';
+import {
+    dangerButton,
+    EmptyState,
+    Field,
+    FormError,
+    inputClass,
+    Loading,
+    primaryButton,
+    secondaryButton,
+    Section,
+    TextInput,
+    useConfirm,
+} from '../components/Form';
 import { UnitSelect, useAllUnits } from '../components/Reservations';
 import { addDays, formatDate, formatDateTime, today } from '../dates';
 import { formatMoney, parseEuroToCents } from '../money';
@@ -61,9 +73,9 @@ export function QuotesPage() {
                     </select>
                 }
             >
-                {quotes.isPending && <p className="text-sm text-muted">{t('common.loading')}</p>}
+                {quotes.isPending && <Loading />}
                 {quotes.isError && <FormError message={errorMessage(quotes.error)} />}
-                {quotes.data?.length === 0 && <p className="text-sm text-muted">{t('quotes.empty')}</p>}
+                {quotes.data?.length === 0 && <EmptyState title={t('quotes.empty')} />}
                 <ul className="divide-y divide-line-soft" data-testid="quote-list">
                     {quotes.data?.map((quote) => <QuoteRow key={quote.id} quote={quote} />)}
                 </ul>
@@ -125,7 +137,7 @@ function NewQuoteForm() {
     };
 
     if (isPending) {
-        return <p className="text-sm text-muted">{t('common.loading')}</p>;
+        return <Loading />;
     }
 
     return (
@@ -179,6 +191,7 @@ function NewQuoteForm() {
 
 function QuoteRow({ quote }: { quote: Quote }) {
     const { t } = useTranslation();
+    const confirmation = useConfirm();
     const queryClient = useQueryClient();
     const errorMessage = useErrorMessage();
     const [notice, setNotice] = useState<string | null>(null);
@@ -278,14 +291,11 @@ function QuoteRow({ quote }: { quote: Quote }) {
                         type="button"
                         className={dangerButton}
                         disabled={revoke.isPending}
-                        onClick={() => {
-                            if (window.confirm(t('quotes.revokeConfirm'))) {
-                                revoke.mutate();
-                            }
-                        }}
+                        onClick={() => confirmation.ask({ title: t('quotes.revokeConfirm'), confirmLabel: t('quotes.revoke'), action: () => revoke.mutate() })}
                     >
                         {t('quotes.revoke')}
                     </button>
+                    {confirmation.dialog}
                 </div>
             )}
             {link !== null && usable && (

@@ -5,7 +5,17 @@ import { useTranslation } from 'react-i18next';
 import { adminApi, type RatePlan, type Season, type SeasonWarning } from '../../api/admin';
 import { ApiError, fieldErrors } from '../../api/client';
 import { useErrorMessage } from '../../auth/session';
-import { dangerButton, Field, FormError, primaryButton, SavedNotice, secondaryButton, Section, TextInput } from '../../components/Form';
+import {
+    dangerButton,
+    Field,
+    FormError,
+    primaryButton,
+    SavedNotice,
+    secondaryButton,
+    Section,
+    TextInput,
+    useConfirm,
+} from '../../components/Form';
 import { centsToEuroInput, formatMoney, parseEuroToCents } from '../../money';
 
 /**
@@ -134,6 +144,7 @@ function Warnings({ warnings }: { warnings: SeasonWarning[] }) {
 
 function SeasonForm({ unitId, season, onDone }: { unitId: string; season: Season | null; onDone: () => void }) {
     const { t } = useTranslation();
+    const confirmation = useConfirm();
     const queryClient = useQueryClient();
     const errorMessage = useErrorMessage();
     const [name, setName] = useState(season?.name ?? '');
@@ -219,15 +230,12 @@ function SeasonForm({ unitId, season, onDone }: { unitId: string; season: Season
                         className={dangerButton}
                         type="button"
                         disabled={remove.isPending}
-                        onClick={() => {
-                            if (window.confirm(t('seasons.confirmRemove'))) {
-                                remove.mutate();
-                            }
-                        }}
+                        onClick={() => confirmation.ask({ title: t('seasons.confirmRemove'), confirmLabel: t('seasons.remove'), action: () => remove.mutate() })}
                     >
                         {t('seasons.remove')}
                     </button>
                 )}
+                {confirmation.dialog}
             </div>
         </form>
     );

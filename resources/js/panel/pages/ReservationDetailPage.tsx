@@ -15,7 +15,18 @@ import {
     type StayPrice,
 } from '../api/reservations';
 import { useErrorMessage } from '../auth/session';
-import { dangerButton, Field, FormError, inputClass, primaryButton, secondaryButton, Section, TextInput } from '../components/Form';
+import {
+    dangerButton,
+    EmptyState,
+    Field,
+    FormError,
+    inputClass,
+    Loading,
+    primaryButton,
+    secondaryButton,
+    Section,
+    TextInput,
+} from '../components/Form';
 import { GuestPrivacy } from '../components/GuestPrivacy';
 import { ReauthPrompt, needsReauth } from '../components/Reauth';
 import { StatusBadge } from '../components/Reservations';
@@ -38,7 +49,7 @@ export function ReservationDetailPage() {
     const reservation = useQuery({ queryKey: ['reservation', reservationId], queryFn: () => reservationsApi.get(reservationId) });
 
     if (reservation.isPending) {
-        return <p className="mx-auto max-w-5xl px-4 py-8 text-muted">{t('common.loading')}</p>;
+        return <Loading page />;
     }
 
     if (reservation.isError) {
@@ -138,7 +149,7 @@ export function ReservationDetailPage() {
 
             <Section title={t('reservation.payments')}>
                 {r.payments.length === 0 ? (
-                    <p className="text-sm text-muted">{t('reservation.noPayments')}</p>
+                    <EmptyState title={t('reservation.noPayments')} />
                 ) : (
                     <ul className="space-y-3" data-testid="payments">
                         {r.payments.map((p) => (

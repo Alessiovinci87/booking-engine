@@ -11,15 +11,16 @@ import {
     Field,
     FormError,
     inputClass,
+    Loading,
     primaryButton,
     SavedNotice,
-    type SaveNotice,
     secondaryButton,
     Section,
     TextInput,
-    TranslationFields,
     translationDraft,
+    TranslationFields,
     translationPayload,
+    type SaveNotice,
 } from '../components/Form';
 import { centsToEuroInput, parseEuroToCents } from '../money';
 import { NotFoundPage } from './NotFoundPage';
@@ -36,7 +37,7 @@ export function UnitPage() {
     const [notice, setNotice] = useState<SaveNotice>(null);
 
     if (unit.isPending) {
-        return <p className="mx-auto max-w-5xl px-4 py-8 text-muted">{t('common.loading')}</p>;
+        return <Loading page />;
     }
 
     if (unit.isError) {

@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { adminApi, type UnitPhoto } from '../../api/admin';
 import { fieldErrors } from '../../api/client';
 import { useErrorMessage } from '../../auth/session';
-import { dangerButton, FormError, secondaryButton, Section } from '../../components/Form';
+import { dangerButton, EmptyState, FormError, secondaryButton, Section, useConfirm } from '../../components/Form';
 
 /**
  * Foto dell'unità (11, attività 2.2): caricamento (il server toglie EXIF e GPS), ordine e
@@ -13,6 +13,7 @@ import { dangerButton, FormError, secondaryButton, Section } from '../../compone
  */
 export function UnitPhotosSection({ unitId }: { unitId: string }) {
     const { t } = useTranslation();
+    const confirmation = useConfirm();
     const queryClient = useQueryClient();
     const errorMessage = useErrorMessage();
     const input = useRef<HTMLInputElement>(null);
@@ -72,7 +73,7 @@ export function UnitPhotosSection({ unitId }: { unitId: string }) {
             ) : (
                 error !== null && <FormError message={errorMessage(error)} />
             )}
-            {photos.isSuccess && list.length === 0 && <p className="text-muted">{t('photos.empty')}</p>}
+            {photos.isSuccess && list.length === 0 && <EmptyState title={t('photos.empty')} />}
             <ul className="mt-3 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
                 {list.map((photo, index) => (
                     <li key={photo.id} className="rounded-control border border-line-soft p-2">
@@ -97,11 +98,7 @@ export function UnitPhotosSection({ unitId }: { unitId: string }) {
                                     type="button"
                                     aria-label={t('photos.remove')}
                                     disabled={remove.isPending}
-                                    onClick={() => {
-                                        if (window.confirm(t('photos.confirmRemove'))) {
-                                            remove.mutate(photo.id);
-                                        }
-                                    }}
+                                    onClick={() => confirmation.ask({ title: t('photos.confirmRemove'), confirmLabel: t('photos.remove'), action: () => remove.mutate(photo.id) })}
                                 >
                                     ×
                                 </button>
@@ -110,6 +107,7 @@ export function UnitPhotosSection({ unitId }: { unitId: string }) {
                     </li>
                 ))}
             </ul>
+            {confirmation.dialog}
         </Section>
     );
 }

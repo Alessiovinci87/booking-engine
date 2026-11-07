@@ -5,7 +5,7 @@ import { Link, useSearchParams } from 'react-router';
 
 import { RESERVATION_STATUSES, type ReservationFilters, type ReservationStatus, reservationsApi } from '../api/reservations';
 import { useErrorMessage } from '../auth/session';
-import { FormError, inputClass, primaryButton, secondaryButton } from '../components/Form';
+import { EmptyState, FormError, inputClass, Loading, primaryButton, secondaryButton } from '../components/Form';
 import { StatusBadge, UnitSelect, useAllUnits } from '../components/Reservations';
 import { formatDate } from '../dates';
 import { formatMoney } from '../money';
@@ -44,11 +44,9 @@ export function ReservationsPage() {
 
             {list.isError && <FormError message={errorMessage(list.error)} />}
             {list.isPending ? (
-                <p className="text-muted">{t('common.loading')}</p>
+                <Loading />
             ) : rows.length === 0 ? (
-                <p className="text-muted" data-testid="reservations-empty">
-                    {t('reservations.empty')}
-                </p>
+                <EmptyState title={t('reservations.empty')} testId="reservations-empty" />
             ) : (
                 <div className="overflow-x-auto rounded-card border border-line-soft bg-surface shadow-card">
                     <table className="min-w-full divide-y divide-line-soft text-sm" data-testid="reservations-table">

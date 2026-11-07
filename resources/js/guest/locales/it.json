@@ -141,7 +141,20 @@
         "VALIDATION_FAILED": "Controlla i dati inseriti.",
         "NOT_FOUND": "Non trovato.",
         "FORBIDDEN": "Operazione non consentita da questa pagina.",
-        "SERVER_ERROR": "Si è verificato un errore. Riprova più tardi."
+        "SERVER_ERROR": "Si è verificato un errore. Riprova più tardi.",
+        "CSRF_TOKEN_EXPIRED": "La pagina è rimasta aperta a lungo. Ricaricala e riprova.",
+        "ILLEGAL_TRANSITION": "La prenotazione è cambiata nel frattempo. Ricarica la pagina per vedere lo stato aggiornato.",
+        "VERSION_MISMATCH": "I dati sono cambiati nel frattempo. Ricarica la pagina e riprova.",
+        "CHECKOUT_EXPIRED": "Il tempo per il pagamento è scaduto e le date sono state liberate. Puoi ripetere la prenotazione.",
+        "UNAUTHENTICATED": "Questa pagina non è disponibile. Usa il link che hai ricevuto per email.",
+        "QUOTE_EXPIRED": "Questo preventivo è scaduto. Contatta la struttura per riceverne uno nuovo.",
+        "QUOTE_REVOKED": "Questo preventivo è stato ritirato dalla struttura.",
+        "QUOTE_EXHAUSTED": "Sono stati fatti troppi tentativi di pagamento per questo preventivo. Contatta la struttura.",
+        "QUOTE_ALREADY_ACCEPTED": "Questo preventivo è già stato accettato.",
+        "QUOTE_CHECKOUT_IN_PROGRESS": "Il pagamento avviato in precedenza è in chiusura. Riprova tra qualche minuto.",
+        "QUOTE_EMAIL_MISSING": "Questo preventivo non è completo. Contatta la struttura.",
+        "TENANT_OFFBOARDING": "Questa struttura non accetta più prenotazioni online. Contattala direttamente.",
+        "TENANT_CLOSED": "Questa struttura non accetta più prenotazioni online."
     },
     "quote": {
         "title": "Il tuo preventivo",

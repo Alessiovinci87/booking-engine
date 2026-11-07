@@ -6,7 +6,7 @@ import { Link, useNavigate } from 'react-router';
 import { adminApi } from '../api/admin';
 import { fieldErrors } from '../api/client';
 import { useErrorMessage } from '../auth/session';
-import { Field, FormError, primaryButton, Section, TextInput } from '../components/Form';
+import { EmptyState, Field, FormError, Loading, primaryButton, Section, TextInput } from '../components/Form';
 
 /** Home del pannello: strutture del tenant e creazione di una nuova struttura (01, AC1). */
 export function PropertiesPage() {
@@ -37,9 +37,9 @@ export function PropertiesPage() {
             <h1 className="text-2xl font-semibold text-ink">{t('properties.title')}</h1>
 
             <Section title={t('properties.list')}>
-                {properties.isPending && <p className="text-muted">{t('common.loading')}</p>}
+                {properties.isPending && <Loading />}
                 {properties.isError && <FormError message={errorMessage(properties.error)} />}
-                {properties.data?.data.length === 0 && <p className="text-muted">{t('properties.empty')}</p>}
+                {properties.data?.data.length === 0 && <EmptyState title={t('properties.empty')} />}
                 <ul className="divide-y divide-line-soft">
                     {properties.data?.data.map((property) => (
                         <li key={property.id} className="flex items-center justify-between py-3">

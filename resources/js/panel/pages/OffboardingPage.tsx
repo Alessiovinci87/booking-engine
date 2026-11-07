@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 
 import { offboardingApi, type OffboardingFeed, type TenantExport } from '../api/offboarding';
 import { useErrorMessage } from '../auth/session';
-import { dangerButton, FormError, primaryButton, Section, secondaryButton } from '../components/Form';
+import { dangerButton, EmptyState, FormError, Loading, primaryButton, secondaryButton, Section } from '../components/Form';
 import { ProtectedDownload } from '../components/ProtectedDownload';
 import { ReauthPrompt, needsReauth } from '../components/Reauth';
 
@@ -40,9 +40,7 @@ export function OffboardingPage() {
 
     if (overview.isPending) {
         return (
-            <main className="mx-auto max-w-5xl px-4 py-6 text-sm text-muted" role="status">
-                {t('common.loading')}
-            </main>
+            <Loading page />
         );
     }
 
@@ -120,7 +118,7 @@ export function OffboardingPage() {
                             <FormError message={errorMessage(requestExport.error)} />
                         ))}
                     {exports.length === 0 ? (
-                        <p className="text-muted">{t('offboarding.noExports')}</p>
+                        <EmptyState title={t('offboarding.noExports')} />
                     ) : (
                         <ul className="divide-y divide-line-soft rounded-control border border-line-soft" data-testid="offboarding-exports">
                             {exports.map((item) => (
@@ -135,7 +133,7 @@ export function OffboardingPage() {
                 <div className="space-y-3 text-sm">
                     <p className="text-muted">{t('offboarding.feedsHint')}</p>
                     {data.feeds.length === 0 ? (
-                        <p className="text-muted">{t('offboarding.noFeeds')}</p>
+                        <EmptyState title={t('offboarding.noFeeds')} />
                     ) : (
                         <div className="overflow-x-auto">
                             <table className="min-w-full text-left" data-testid="offboarding-feeds">

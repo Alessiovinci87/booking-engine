@@ -6,7 +6,19 @@ import { useSearchParams } from 'react-router';
 import { calendarsApi, CHANNEL_SOURCES, type ChannelSource, type ExternalCalendar, type IcsFeed } from '../api/calendars';
 import { ApiError, fieldErrors } from '../api/client';
 import { useErrorMessage } from '../auth/session';
-import { dangerButton, Field, FormError, inputClass, primaryButton, secondaryButton, Section, TextInput } from '../components/Form';
+import {
+    dangerButton,
+    EmptyState,
+    Field,
+    FormError,
+    inputClass,
+    Loading,
+    primaryButton,
+    secondaryButton,
+    Section,
+    TextInput,
+    useConfirm,
+} from '../components/Form';
 import { UnitSelect, useAllUnits } from '../components/Reservations';
 import { formatDateTime } from '../dates';
 
@@ -29,7 +41,7 @@ export function CalendarsPage() {
     const unit = params.get('unit') ?? options[0]?.unit.id ?? '';
 
     if (isPending) {
-        return <p className="mx-auto max-w-5xl px-4 py-8 text-muted">{t('common.loading')}</p>;
+        return <Loading page />;
     }
 
     return (
@@ -84,9 +96,9 @@ function ImportedCalendars({ unitId }: { unitId: string }) {
     return (
         <Section title={t('calendars.imported')}>
             <p className="mb-4 text-sm text-muted">{t('calendars.importedIntro')}</p>
-            {calendars.isPending && <p className="text-sm text-muted">{t('common.loading')}</p>}
+            {calendars.isPending && <Loading />}
             {calendars.isError && <FormError message={errorMessage(calendars.error)} />}
-            {calendars.data?.length === 0 && <p className="text-sm text-muted">{t('calendars.noImported')}</p>}
+            {calendars.data?.length === 0 && <EmptyState title={t('calendars.noImported')} />}
             <ul className="divide-y divide-line-soft" data-testid="external-calendar-list">
                 {calendars.data?.map((calendar) => <CalendarRow key={calendar.id} calendar={calendar} onChange={refresh} />)}
             </ul>
@@ -129,6 +141,7 @@ function ImportedCalendars({ unitId }: { unitId: string }) {
 
 function CalendarRow({ calendar, onChange }: { calendar: ExternalCalendar; onChange: () => void }) {
     const { t } = useTranslation();
+    const confirmation = useConfirm();
     const errorMessage = useErrorMessage();
     const [showRuns, setShowRuns] = useState(false);
     const [newUrl, setNewUrl] = useState<string | null>(null);
@@ -190,14 +203,11 @@ function CalendarRow({ calendar, onChange }: { calendar: ExternalCalendar; onCha
                     type="button"
                     className={dangerButton}
                     disabled={remove.isPending}
-                    onClick={() => {
-                        if (window.confirm(t('calendars.removeConfirm'))) {
-                            remove.mutate();
-                        }
-                    }}
+                    onClick={() => confirmation.ask({ title: t('calendars.removeConfirm'), confirmLabel: t('calendars.remove'), action: () => remove.mutate() })}
                 >
                     {t('calendars.remove')}
                 </button>
+                {confirmation.dialog}
             </div>
             {newUrl !== null && (
                 <div className="mt-3 flex flex-wrap items-end gap-2">
@@ -213,7 +223,7 @@ function CalendarRow({ calendar, onChange }: { calendar: ExternalCalendar; onCha
             )}
             {showRuns && (
                 <div className="mt-3 overflow-x-auto">
-                    {runs.isPending && <p className="text-sm text-muted">{t('common.loading')}</p>}
+                    {runs.isPending && <Loading />}
                     {runs.data !== undefined && (
                         <table className="min-w-full text-left text-xs" data-testid="sync-runs">
                             <thead className="text-muted">
@@ -262,7 +272,7 @@ function ExportedFeeds({ unitId }: { unitId: string }) {
     return (
         <Section title={t('calendars.exported')}>
             <p className="mb-4 text-sm text-muted">{t('calendars.exportedIntro')}</p>
-            {feeds.isPending && <p className="text-sm text-muted">{t('common.loading')}</p>}
+            {feeds.isPending && <Loading />}
             {feeds.isError && <FormError message={errorMessage(feeds.error)} />}
             <ul className="divide-y divide-line-soft" data-testid="feed-list">
                 {feeds.data?.map((feed) => <FeedRow key={feed.id} feed={feed} onChange={refresh} />)}
@@ -283,6 +293,7 @@ function ExportedFeeds({ unitId }: { unitId: string }) {
 
 function FeedRow({ feed, onChange }: { feed: IcsFeed; onChange: () => void }) {
     const { t } = useTranslation();
+    const confirmation = useConfirm();
     const errorMessage = useErrorMessage();
     const [copied, setCopied] = useState(false);
     const rotate = useMutation({ mutationFn: () => calendarsApi.rotateFeed(feed.id), onSuccess: onChange });
@@ -323,14 +334,11 @@ function FeedRow({ feed, onChange }: { feed: IcsFeed; onChange: () => void }) {
                         type="button"
                         className={dangerButton}
                         disabled={rotate.isPending}
-                        onClick={() => {
-                            if (window.confirm(t('calendars.rotateConfirm'))) {
-                                rotate.mutate();
-                            }
-                        }}
+                        onClick={() => confirmation.ask({ title: t('calendars.rotateConfirm'), confirmLabel: t('calendars.rotate'), action: () => rotate.mutate() })}
                     >
                         {t('calendars.rotate')}
                     </button>
+                    {confirmation.dialog}
                 </div>
             )}
             {rotate.isError && <FormError message={errorMessage(rotate.error)} />}
@@ -351,8 +359,8 @@ function ChecklistSection({ unitId }: { unitId: string }) {
     return (
         <Section title={t('calendars.checklist')}>
             <p className="mb-4 text-sm text-muted">{t('calendars.checklistIntro')}</p>
-            {checklist.isPending && <p className="text-sm text-muted">{t('common.loading')}</p>}
-            {checklist.data?.steps.length === 0 && <p className="text-sm text-muted">{t('calendars.checklistEmpty')}</p>}
+            {checklist.isPending && <Loading />}
+            {checklist.data?.steps.length === 0 && <EmptyState title={t('calendars.checklistEmpty')} />}
             {checklist.data?.complete === true && <p className="mb-3 text-sm font-medium text-emerald-800">{t('calendars.checklistComplete')}</p>}
             <ul className="space-y-2" data-testid="checklist">
                 {checklist.data?.steps.map((step) => {

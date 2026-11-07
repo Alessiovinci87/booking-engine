@@ -55,6 +55,9 @@ return [
         'SUPPORT_READ_ONLY' => 'Accesso di supporto: il pannello è in sola lettura.',
         'SUPPORT_ACCESS_INACTIVE' => 'L’accesso di supporto è scaduto o è stato revocato.',
         'SUPPORT_ACCESS_NOT_ACTIVE' => 'Questo accesso di supporto è già chiuso.',
+        'CHECKOUT_EXPIRED' => 'La sessione di pagamento è scaduta. Riprova la prenotazione.',
+        'PAYMENT_PROVIDER_REJECTED' => 'Stripe ha rifiutato la richiesta. Controlla i dati dell\'account Stripe e riprova.',
+        'FEED_RETIRED' => 'Questo calendario non è più pubblicato.',
     ],
     'idempotency' => [
         'key_required' => 'Header Idempotency-Key mancante o non valido (UUID).',
