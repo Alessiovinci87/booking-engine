@@ -447,7 +447,7 @@ function BookingForm({ property, unit, embed }: { property: PublicProperty; unit
     );
 }
 
-function PriceDetails({ quote, requestMode }: { quote: PriceQuote; requestMode: boolean }) {
+export function PriceDetails({ quote, requestMode }: { quote: PriceQuote; requestMode: boolean }) {
     const { t, i18n } = useTranslation();
     const money = (value: PriceQuote['total']) => formatMoney(value, i18n.language);
 
@@ -495,7 +495,7 @@ function PriceDetails({ quote, requestMode }: { quote: PriceQuote; requestMode: 
     );
 }
 
-function Section({ title, children }: { title: string; children: ReactNode }) {
+export function Section({ title, children }: { title: string; children: ReactNode }) {
     return (
         <section className="space-y-3">
             <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
@@ -504,7 +504,7 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
     );
 }
 
-function Field({ label, error, children }: { label: string; error?: string; children: ReactNode }) {
+export function Field({ label, error, children }: { label: string; error?: string; children: ReactNode }) {
     return (
         <label className="block text-sm font-medium text-slate-800">
             {label}
@@ -514,7 +514,7 @@ function Field({ label, error, children }: { label: string; error?: string; chil
     );
 }
 
-function Checkbox({ checked, onChange, error, name, children }: { checked: boolean; onChange: (value: boolean) => void; error?: string; name: string; children: ReactNode }) {
+export function Checkbox({ checked, onChange, error, name, children }: { checked: boolean; onChange: (value: boolean) => void; error?: string; name: string; children: ReactNode }) {
     return (
         <div>
             <label className="flex items-start gap-3 text-sm text-slate-800">

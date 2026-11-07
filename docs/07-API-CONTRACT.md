@@ -1,6 +1,6 @@
 # 07 — Contratto API
 
-Versione: 1.3 · Data: 06/11/2026 · Modifiche: [CHANGELOG-v1.1](CHANGELOG-v1.1.md); 1.2: ADR-0008, ADR-0009; 1.3: ADR-0010 (codici, rotte, avvisi e guardia dei pagamenti dopo M2; API pubblica senza CSRF, `UNIT_NOT_BOOKABLE`)
+Versione: 1.3 · Data: 06/11/2026 · Modifiche: [CHANGELOG-v1.1](CHANGELOG-v1.1.md); 1.2: ADR-0008, ADR-0009; 1.3: ADR-0010 (codici, rotte, avvisi e guardia dei pagamenti dopo M2; API pubblica senza CSRF, `UNIT_NOT_BOOKABLE`); 1.4: ADR-0013 (calendari, feed, conflitti e preventivi dopo M5)
 
 REST JSON, prefisso `/api/v1`. Tre superfici con autenticazione diversa:
 
@@ -44,11 +44,11 @@ L'API pubblica non usa cookie di sessione e quindi non usa il token CSRF (ADR-00
 | 401 | `UNAUTHENTICATED`, `MFA_REQUIRED`, `MFA_SETUP_REQUIRED`, `INVALID_CREDENTIALS`, `INVALID_MFA_CODE` |
 | 403 | `FORBIDDEN` (anche per l'API pubblica chiamata da un'origine non ammessa, ADR-0011), `REAUTH_REQUIRED` |
 | 404 | `NOT_FOUND` (anche per risorse di altri tenant: mai `403`) |
-| 409 | `IDEMPOTENCY_KEY_IN_USE` (ADR-0011), `DATES_UNAVAILABLE`, `CHECKOUT_EXPIRED`, `CONFLICT_OPEN`, `ILLEGAL_TRANSITION`, `PRICE_CHANGED`, `MFA_ALREADY_ENABLED`, `EXTERNAL_CALENDARS_ACTIVE`, `UNIT_NOT_BOOKABLE` |
+| 409 | `IDEMPOTENCY_KEY_IN_USE` (ADR-0011), `DATES_UNAVAILABLE`, `CHECKOUT_EXPIRED`, `CONFLICT_OPEN`, `ILLEGAL_TRANSITION`, `PRICE_CHANGED`, `MFA_ALREADY_ENABLED`, `EXTERNAL_CALENDARS_ACTIVE`, `UNIT_NOT_BOOKABLE`, `ICS_FEED_EXISTS`, `UNIT_IS_INSTANT`, `QUOTE_ALREADY_ACCEPTED`, `QUOTE_CHECKOUT_IN_PROGRESS` (ADR-0013) |
 | 419 | `CSRF_TOKEN_EXPIRED` (la SPA richiede un nuovo cookie CSRF e ripete una volta) |
 | 410 | `QUOTE_EXPIRED`, `QUOTE_REVOKED`, `QUOTE_EXHAUSTED`, `FEED_RETIRED` |
 | 412 | `VERSION_MISMATCH` |
-| 422 | `MIN_NIGHTS_NOT_MET`, `OCCUPANCY_EXCEEDED`, `AMOUNT_BELOW_MINIMUM`, `PAYMENTS_NOT_ENABLED`, `IDEMPOTENCY_KEY_REUSED`, `INVALID_ICAL_URL`, `CANCELLATION_POLICY_MISSING`, `PRIVACY_POLICY_MISSING`, `NO_ACTIVE_UNITS`, `TRANSLATION_IT_MISSING` |
+| 422 | `MIN_NIGHTS_NOT_MET`, `OCCUPANCY_EXCEEDED`, `AMOUNT_BELOW_MINIMUM`, `PAYMENTS_NOT_ENABLED`, `IDEMPOTENCY_KEY_REUSED`, `INVALID_ICAL_URL`, `CANCELLATION_POLICY_MISSING`, `PRIVACY_POLICY_MISSING`, `NO_ACTIVE_UNITS`, `TRANSLATION_IT_MISSING`, `QUOTE_EMAIL_MISSING`, `CHECKLIST_STEP_INVALID` (ADR-0013) |
 | 429 | `RATE_LIMITED` |
 | 502 | `PAYMENT_PROVIDER_REJECTED` (richiesta rifiutata da Stripe; codice di Stripe in `details.provider_code`, ADR-0012) |
 | 503 | `PAYMENT_PROVIDER_UNAVAILABLE` (Stripe non risponde) |
@@ -109,7 +109,7 @@ Preventivo: unità, date, ospiti, righe, sconto, totale, scadenza, `booking_mode
 ### `POST /public/quotes/{token}/accept` · Idempotency-Key
 Body: dati ospite (precompilati), versioni di termini e privacy accettati. Blocca la riga del preventivo, controlla scadenza, tentativi e disponibilità; **non** ricalcola il prezzo (congelato). Risposta come `POST /reservations`.
 
-Se esiste già un tentativo attivo (`IN_CHECKOUT`) ancora valido, restituisce `200` con **lo stesso** `reservation_code` e `checkout_url`, senza creare nulla (I21). Tentativi esauriti → `410 QUOTE_EXHAUSTED`.
+Se esiste già un tentativo attivo (`IN_CHECKOUT`) ancora valido, restituisce `200` con **lo stesso** `reservation_code` e `checkout_url`, senza creare nulla (I21). Tentativi esauriti → `410 QUOTE_EXHAUSTED`. Il secondo accept risponde con `access_token: null`; un tentativo in corso non più recuperabile → `409 QUOTE_CHECKOUT_IN_PROGRESS`; preventivo già accettato → `409 QUOTE_ALREADY_ACCEPTED` (ADR-0013 punti 39–41).
 
 ---
 
@@ -144,9 +144,9 @@ Tutte richiedono utente autenticato con MFA verificata nella sessione e membersh
 | PUT | `/units/{id}/photos/order` | corpo `photo_ids`; la prima foto è la copertina (ADR-0010) |
 | DELETE | `/units/{id}/photos/{photoId}` | (ADR-0010) |
 | GET/POST | `/units/{id}/ics-feeds` | un feed per destinazione (`BOOKING`, `AIRBNB`, `OTHER`), accoppiato al calendario importato dallo stesso canale; restituisce URL e ultima lettura |
-| POST | `/ics-feeds/{id}/rotate` | nuovo token; il vecchio resta `FROZEN` 7 giorni |
-| GET | `/units/{id}/channel-checklist` | stato dei passi di collegamento a stella (06) |
-| POST | `/units/{id}/channel-checklist/{step}/confirm` | conferma del gestore |
+| POST | `/ics-feeds/{id}/rotate` | nuovo token; il vecchio resta `FROZEN` 7 giorni. Creazione di un feed già esistente per la destinazione → `409 ICS_FEED_EXISTS` (ADR-0013 punti 24–29) |
+| GET | `/units/{id}/calendar-checklist` | stato dei passi di collegamento a stella (06; ADR-0013 punto 35) |
+| POST | `/units/{id}/calendar-checklist/confirm` | conferma del gestore di un passo manuale (`step` nel body; `422 CHECKLIST_STEP_INVALID`) |
 | PATCH | `/units/{id}/sales` | sospende o riattiva le vendite dell'unità |
 
 ### Tariffe
@@ -161,7 +161,7 @@ Tutte richiedono utente autenticato con MFA verificata nella sessione e membersh
 |---|---|---|
 | GET | `/calendar?unit_id=&from=&to=` | occupazioni (prenotazioni in ogni stato occupante e blocchi manuali), eventi esterni con classificazione eco, conflitti, con origine |
 | POST/DELETE | `/units/{id}/blocks[/{blockId}]` | blocchi manuali |
-| GET/POST | `/units/{id}/external-calendars` | validazione URL (06) |
+| GET/POST | `/units/{id}/external-calendars` | validazione URL (06): `422 INVALID_ICAL_URL` con `details.reason`; unità `INSTANT` → `409 UNIT_IS_INSTANT` salvo conferma del passaggio a `REQUEST` (ADR-0013 punti 31–34) |
 | PATCH/DELETE | `/external-calendars/{id}` | disattiva/rimuove |
 | POST | `/external-calendars/{id}/sync-now` | max 1 ogni 2 min |
 | GET | `/external-calendars/{id}/runs` | storico SyncRun |
@@ -191,16 +191,17 @@ Tutte richiedono utente autenticato con MFA verificata nella sessione e membersh
 |---|---|
 | GET/POST | `/quotes` (POST con Idempotency-Key) |
 | GET | `/quotes/{id}` |
-| POST | `/quotes/{id}/send` (email all'ospite; restituisce anche link e testo per WhatsApp) |
+| POST | `/quotes/{id}/send` (`channel` = `email` o `link`; restituisce `link`, `whatsapp_text`, `whatsapp_url`; `422 QUOTE_EMAIL_MISSING`, `410` se scaduto; ADR-0013 punti 36–37) |
 | POST | `/quotes/{id}/revoke` |
 
 ### Conflitti
 | Metodo | Percorso |
 |---|---|
-| GET | `/conflicts?status=OPEN` |
+| GET | `/conflicts?status[]=OPEN` (ADR-0013 punto 20) |
 | POST | `/conflicts/{id}/investigate` |
 | POST | `/conflicts/{id}/resolve` (`resolution`, `notes`) |
 | POST | `/conflicts/{id}/ignore` (`notes` obbligatorie) |
+| POST | `/external-events/{id}/not-echo` (riclassifica un'eco sospetta come prenotazione vera; `409 ILLEGAL_TRANSITION` altrimenti; ADR-0013 punto 20) |
 
 ### Pagamenti e account
 | Metodo | Percorso |

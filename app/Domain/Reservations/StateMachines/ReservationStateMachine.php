@@ -21,6 +21,7 @@ use App\Domain\Payments\StateMachines\PaymentStateMachine;
 use App\Domain\Payments\StateMachines\RefundStateMachine;
 use App\Domain\Pricing\Calculator\PriceLine;
 use App\Domain\Pricing\Calculator\PriceQuote;
+use App\Domain\Quotes\StateMachines\QuoteStateMachine;
 use App\Domain\Reservations\CancellationRefund;
 use App\Domain\Reservations\CreatedReservation;
 use App\Domain\Reservations\Enums\ConfirmationKind;
@@ -68,6 +69,7 @@ final class ReservationStateMachine
         private readonly AuditLogger $audit,
         private readonly Outbox $outbox,
         private readonly ReservationSnapshots $snapshots,
+        private readonly QuoteStateMachine $quotes,
     ) {}
 
     // ------------------------------------------------------------------ creazione
@@ -463,8 +465,8 @@ final class ReservationStateMachine
                 $r->adults = $data->adults;
                 $r->children = $data->children;
                 $r->status = $transition['to'];
-                $r->booking_mode_snapshot = $data->unit->booking_mode;
-                $r->payment_mode_snapshot = $data->unit->payment_mode;
+                $r->booking_mode_snapshot = $data->bookingMode ?? $data->unit->booking_mode;
+                $r->payment_mode_snapshot = $data->paymentMode ?? $data->unit->payment_mode;
                 $r->cancellation_policy_snapshot = $this->snapshots->cancellationPolicy($data->unit);
                 $r->currency = $data->price->currency;
                 $r->guest_locale = $data->guest->locale;
@@ -523,6 +525,9 @@ final class ReservationStateMachine
                 $locked->version++;
                 $locked->save();
             }
+
+            // Preventivo del tentativo (03, sezione 4): ACCEPTED, di nuovo SENT, EXPIRED o EXHAUSTED.
+            $this->quotes->reservationChanged($locked);
 
             $this->audit->record('reservation.'.$event->value, 'reservation', $locked->id, [
                 'transition' => $transition['id'], 'status' => ['from' => $from->value, 'to' => $locked->status->value],

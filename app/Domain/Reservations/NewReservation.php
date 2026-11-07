@@ -2,6 +2,8 @@
 
 namespace App\Domain\Reservations;
 
+use App\Domain\Inventory\Enums\BookingMode;
+use App\Domain\Inventory\Enums\PaymentMode;
 use App\Domain\Inventory\Models\Unit;
 use App\Domain\Pricing\Calculator\PriceQuote;
 use App\Domain\Reservations\Enums\ReservationChannel;
@@ -21,5 +23,8 @@ final readonly class NewReservation
         public ReservationChannel $channel,
         public PriceQuote $price,
         public ?string $quoteId = null,
+        // Da un preventivo: modalità congelate nel preventivo (03, sezione 4), altrimenti quelle dell'unità.
+        public ?BookingMode $bookingMode = null,
+        public ?PaymentMode $paymentMode = null,
     ) {}
 }

@@ -32,6 +32,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int $cleaning_fee_cents
  * @property int $extra_guest_fee_cents
  * @property SyncHealth $sync_health
+ * @property array<string, array{confirmed_at: string, confirmed_by: string|null}> $calendar_checklist
  * @property bool $sales_suspended
  * @property UnitStatus $status
  * @property string|null $cancellation_policy_id facoltativa: senza, vale quella della struttura (ADR-0009)
@@ -51,6 +52,7 @@ class Unit extends TenantModel
             'cleaning_fee_cents' => 'integer',
             'extra_guest_fee_cents' => 'integer',
             'sync_health' => SyncHealth::class,
+            'calendar_checklist' => 'array',
             'sales_suspended' => 'boolean',
             'status' => UnitStatus::class,
         ];

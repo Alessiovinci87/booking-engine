@@ -2,6 +2,7 @@
 
 use App\Domain\Payments\Gateway\Fake\FakePaymentGateway;
 use App\Http\Controllers\GuestPageController;
+use App\Http\Controllers\IcalFeedController;
 use App\Http\Controllers\SimulatedCheckoutController;
 use App\Http\Controllers\StripeWebhookController;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
@@ -32,12 +33,28 @@ Route::get('/e/{tenantSlug}/{propertySlug}/{any?}', [GuestPageController::class,
     ->middleware('security:embed')
     ->name('guest.embed');
 
+// Pagina ospite del preventivo (5.7): stessa SPA dell'ospite, senza sessione; il token resta nel
+// percorso e la pagina non è incorporabile.
+Route::get('/q/{token}', [GuestPageController::class, 'page'])
+    ->where('token', '[A-Za-z0-9_-]{43}')
+    ->withoutMiddleware($withoutSession)
+    ->middleware('security:page')
+    ->name('guest.quote');
+
 // Webhook di Stripe per gli eventi degli account connessi (05, 4.3): firma verificata, niente
 // sessione, cookie o CSRF.
 Route::post('/webhooks/stripe', StripeWebhookController::class)
     ->withoutMiddleware($withoutSession)
     ->middleware('security:api')
     ->name('webhooks.stripe');
+
+// Feed iCal esportati (06, 5.5): token nel percorso, niente sessione, cookie o CSRF; 60 richieste
+// all'ora per token.
+Route::get('/ical/{token}.ics', IcalFeedController::class)
+    ->where('token', '[A-Za-z0-9_-]{43}')
+    ->withoutMiddleware($withoutSession)
+    ->middleware(['security:api', 'throttle:ical'])
+    ->name('ical.feed');
 
 // Checkout simulato (3.3): solo con PAYMENT_GATEWAY=fake e APP_ENV local o testing. In ogni altro
 // ambiente le rotte non esistono (e il gateway finto rifiuta comunque di partire).

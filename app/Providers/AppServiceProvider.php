@@ -2,6 +2,10 @@
 
 namespace App\Providers;
 
+use App\Domain\Calendar\Http\CurlTransport;
+use App\Domain\Calendar\Http\HostResolver;
+use App\Domain\Calendar\Http\HttpTransport;
+use App\Domain\Calendar\Http\SystemHostResolver;
 use App\Domain\Payments\Gateway\ConnectedAccounts;
 use App\Domain\Payments\Gateway\Fake\FakeConnectedAccounts;
 use App\Domain\Payments\Gateway\Fake\FakePaymentGateway;
@@ -37,6 +41,9 @@ class AppServiceProvider extends ServiceProvider
 
         // Dispatcher dell'outbox: lettura cross-tenant degli ID con app_admin_ops (08).
         $this->app->bind(PendingOutboxMessages::class, AdminOpsPendingOutboxMessages::class);
+        // SafeHttpFetcher (5.1): DNS e trasporto sostituibili nei test.
+        $this->app->bind(HostResolver::class, SystemHostResolver::class);
+        $this->app->bind(HttpTransport::class, CurlTransport::class);
 
         // Fornitore di pagamento (05), scelto con PAYMENT_GATEWAY: "stripe" (Stripe Connect) oppure
         // "fake" (checkout simulato, che rifiuta di partire fuori da local e testing).
@@ -86,6 +93,11 @@ class AppServiceProvider extends ServiceProvider
         // API pubblica in lettura: 120 richieste al minuto per IP (07).
         RateLimiter::for('public-read', fn (Request $request): Limit => Limit::perMinute((int) config('security.public_read_rate_limit_per_minute'))
             ->by('public-read:'.$request->ip()));
+
+        // Feed iCal esportati: 60 richieste all'ora per token (06 "Formato"); il token entra nella chiave
+        // solo come impronta.
+        RateLimiter::for('ical', fn (Request $request): Limit => Limit::perHour((int) config('calendar.feed_rate_limit_per_hour'))
+            ->by('ical:'.hash('sha256', (string) $request->route('token'))));
 
         // Creazione di prenotazioni dalla pagina ospite: per IP e per email (07). L'email entra nella
         // chiave del limite solo come impronta (09: nessun dato personale nella cache).

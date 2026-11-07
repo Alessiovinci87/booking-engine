@@ -76,4 +76,20 @@ return [
         'subject' => 'Reminder: payment capture failed :code',
         'lines' => ['The payment capture for booking :code is still unresolved. The dates will be released in 12 hours.', 'Send a payment link to the guest or release the dates.'],
     ],
+    'calendar_conflict_opened' => [
+        'subject' => 'Calendar conflict: :unit from :check_in to :check_out',
+        'lines' => ['The dates from :check_in to :check_out at :unit (:property) are occupied by two different sources.', 'The dates stay blocked and no booking is cancelled automatically. Check in the panel which booking to keep.'],
+    ],
+    'calendar_conflict_auto_resolved' => [
+        'subject' => 'Calendar conflict resolved: :unit from :check_in to :check_out',
+        'lines' => ['The external event causing the conflict at :unit (:property) from :check_in to :check_out was removed from the OTA calendar.', 'The conflict was closed automatically. Other bookings on the same dates are unchanged.'],
+    ],
+    'calendar_sync_unhealthy' => [
+        'subject' => ':source calendar not synchronised: :unit',
+        'lines' => ['For more than 3 hours we have not been able to read the :source calendar of :unit (:property).', 'Dates already imported stay blocked, but new OTA bookings may not be visible. Check the connection in the panel.'],
+    ],
+    'quote_sent' => [
+        'subject' => 'Your quote for :property',
+        'lines' => ['Here is the quote for :unit from :check_in to :check_out: total :amount.', 'The quote is valid until :expires_at (UTC). You can book from the link below.'],
+    ],
 ];

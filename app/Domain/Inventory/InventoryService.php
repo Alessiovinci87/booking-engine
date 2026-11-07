@@ -159,6 +159,8 @@ final class InventoryService
 
             $previous = (string) $occupancy->stay;
             $occupancy->stay = $newStay;
+            // SEQUENCE dell'evento nei feed iCal: stesso UID, date nuove (06).
+            $occupancy->ics_sequence++;
             $occupancy->save();
 
             $this->audit->record('occupancy.moved', 'inventory_occupancy', $occupancy->id, [
@@ -333,6 +335,42 @@ final class InventoryService
         );
 
         return array_map(fn (object $row): array => ['tenant_id' => (string) $row->tenant_id, 'reservation_id' => (string) $row->reservation_id, 'problem' => (string) $row->problem], $rows);
+    }
+
+    /**
+     * Occupazioni attive di un'unità che toccano l'intervallo, come fatti in sola lettura per i feed
+     * iCal, la classificazione degli echi e i conflitti (06). Nessun dato personale (la nota resta fuori).
+     *
+     * @return list<array{id: string, kind: OccupancyKind, reservation_id: string|null, stay: StayRange, ics_uid: string, ics_sequence: int, created_at: CarbonImmutable, updated_at: CarbonImmutable}>
+     */
+    public function occupancyFacts(string $unitId, StayRange $range): array
+    {
+        return $this->activeInRange($unitId, $range)->map(fn (InventoryOccupancy $o): array => [
+            'id' => $o->id,
+            'kind' => $o->kind,
+            'reservation_id' => $o->reservation_id,
+            'stay' => $o->stay,
+            'ics_uid' => $o->ics_uid,
+            'ics_sequence' => $o->ics_sequence,
+            'created_at' => CarbonImmutable::instance($o->created_at ?? now()),
+            'updated_at' => CarbonImmutable::instance($o->updated_at ?? now()),
+        ])->values()->all();
+    }
+
+    /**
+     * Prenotazione di ciascuna occupazione (null per i blocchi manuali), per le viste del pannello.
+     *
+     * @param  list<string>  $occupancyIds
+     * @return array<string, string|null>
+     */
+    public function reservationIdsFor(array $occupancyIds): array
+    {
+        if ($occupancyIds === []) {
+            return [];
+        }
+
+        return InventoryOccupancy::query()->whereIn('id', $occupancyIds)->pluck('reservation_id', 'id')
+            ->map(fn ($id) => $id === null ? null : (string) $id)->all();
     }
 
     /**

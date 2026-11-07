@@ -76,4 +76,20 @@ return [
         'subject' => 'Promemoria: incasso non riuscito :code',
         'lines' => ['L’incasso della prenotazione :code non è ancora risolto. Tra 12 ore le date verranno liberate.', 'Invia un link di pagamento all’ospite oppure rilascia le date.'],
     ],
+    'calendar_conflict_opened' => [
+        'subject' => 'Conflitto di calendario: :unit dal :check_in al :check_out',
+        'lines' => ['Le date dal :check_in al :check_out di :unit (:property) risultano occupate da due fonti diverse.', 'Le date restano bloccate e nessuna prenotazione viene cancellata in automatico. Controlla nel pannello quale prenotazione tenere.'],
+    ],
+    'calendar_conflict_auto_resolved' => [
+        'subject' => 'Conflitto di calendario risolto: :unit dal :check_in al :check_out',
+        'lines' => ['L’evento esterno che causava il conflitto su :unit (:property) dal :check_in al :check_out è stato rimosso dal calendario dell’OTA.', 'Il conflitto è stato chiuso automaticamente. Le altre prenotazioni sulle stesse date restano invariate.'],
+    ],
+    'calendar_sync_unhealthy' => [
+        'subject' => 'Calendario :source non sincronizzato: :unit',
+        'lines' => ['Da oltre 3 ore non riusciamo a leggere il calendario :source di :unit (:property).', 'Le date già importate restano bloccate, ma eventuali nuove prenotazioni dell’OTA potrebbero non essere visibili. Controlla il collegamento nel pannello.'],
+    ],
+    'quote_sent' => [
+        'subject' => 'Il tuo preventivo per :property',
+        'lines' => ['Ecco il preventivo per :unit dal :check_in al :check_out: totale :amount.', 'Il preventivo è valido fino al :expires_at (UTC). Puoi prenotare dal link qui sotto.'],
+    ],
 ];

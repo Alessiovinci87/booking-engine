@@ -21,7 +21,7 @@ export function PanelLayout() {
                         </p>
                     </div>
                     <div className="flex flex-wrap items-center gap-4 text-sm">
-                        <nav className="flex items-center gap-4">
+                        <nav className="flex flex-wrap items-center gap-4">
                             <Link to="/" className="font-medium text-blue-700 hover:underline">
                                 {t('layout.properties')}
                             </Link>
@@ -30,6 +30,15 @@ export function PanelLayout() {
                             </Link>
                             <Link to="/prenotazioni" className="font-medium text-blue-700 hover:underline">
                                 {t('layout.reservations')}
+                            </Link>
+                            <Link to="/conflitti" className="font-medium text-blue-700 hover:underline">
+                                {t('layout.conflicts')}
+                            </Link>
+                            <Link to="/calendari" className="font-medium text-blue-700 hover:underline">
+                                {t('layout.calendars')}
+                            </Link>
+                            <Link to="/preventivi" className="font-medium text-blue-700 hover:underline">
+                                {t('layout.quotes')}
                             </Link>
                             <Link to="/pagamenti" className="font-medium text-blue-700 hover:underline">
                                 {t('layout.payments')}

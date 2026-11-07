@@ -1,6 +1,8 @@
 # 06 — Sincronizzazione calendari (iCal)
 
-Versione: 1.2 · Data: 06/11/2026 · Modifiche: ADR-0003, [CHANGELOG-v1.1](CHANGELOG-v1.1.md); 1.2: ADR-0009
+Versione: 1.2 · Data: 06/11/2026 · Modifiche: ADR-0003, [CHANGELOG-v1.1](CHANGELOG-v1.1.md); 1.2: ADR-0009; 1.3: ADR-0013 (dettagli di implementazione di M5: SafeHttpFetcher, conversione in notti, salvaguardia anti-svuotamento, backoff, echi e conflitti, documento ICS e `SEQUENCE`, ciclo di vita dei feed, salute dei calendari, checklist)
+
+> Le precisazioni di [ADR-0013](adr/0013-precisazioni-m5-calendari-preventivi.md) valgono come parte di questo documento. I formati dei feed delle OTA restano ipotesi da verificare nella Fase 0.
 
 ## Principi
 

@@ -6,10 +6,14 @@ use App\Http\Controllers\Api\V1\Admin\Auth\MfaVerifyController;
 use App\Http\Controllers\Api\V1\Admin\Auth\SessionController;
 use App\Http\Controllers\Api\V1\Admin\BlockController;
 use App\Http\Controllers\Api\V1\Admin\CalendarController;
+use App\Http\Controllers\Api\V1\Admin\ConflictController;
 use App\Http\Controllers\Api\V1\Admin\DisputeController;
+use App\Http\Controllers\Api\V1\Admin\ExternalCalendarController;
+use App\Http\Controllers\Api\V1\Admin\IcsFeedController;
 use App\Http\Controllers\Api\V1\Admin\MeController;
 use App\Http\Controllers\Api\V1\Admin\PricePreviewController;
 use App\Http\Controllers\Api\V1\Admin\PropertyController;
+use App\Http\Controllers\Api\V1\Admin\QuoteController;
 use App\Http\Controllers\Api\V1\Admin\RatePlanController;
 use App\Http\Controllers\Api\V1\Admin\RefundController;
 use App\Http\Controllers\Api\V1\Admin\ReservationController;
@@ -17,12 +21,13 @@ use App\Http\Controllers\Api\V1\Admin\StripeAccountController;
 use App\Http\Controllers\Api\V1\Admin\UnitController;
 use App\Http\Controllers\Api\V1\Admin\UnitPhotoController;
 use App\Http\Controllers\Api\V1\Public\PropertyController as PublicPropertyController;
+use App\Http\Controllers\Api\V1\Public\QuoteController as PublicQuoteController;
 use App\Http\Controllers\Api\V1\Public\ReservationController as PublicReservationController;
 use Illuminate\Support\Facades\Route;
 use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful;
 
 // Identificativi UUID nei percorsi: un valore diverso non trova la rotta (404) e non arriva mai al database.
-foreach (['property', 'unit', 'photo', 'season', 'reservation', 'block', 'refund'] as $parameter) {
+foreach (['property', 'unit', 'photo', 'season', 'reservation', 'block', 'refund', 'quote'] as $parameter) {
     Route::pattern($parameter, '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}');
 }
 
@@ -62,11 +67,21 @@ Route::prefix('admin')->middleware(EnsureFrontendRequestsAreStateful::class)->gr
         Route::post('units/{unit}/blocks', [BlockController::class, 'store'])->name('admin.units.blocks.store');
         Route::post('refunds/{refund}/retry', [RefundController::class, 'retry'])->middleware('reauth')->name('admin.refunds.retry');
         Route::post('refunds/{refund}/mark-offline', [RefundController::class, 'markOffline'])->middleware('reauth')->name('admin.refunds.mark-offline');
+        Route::post('quotes', [QuoteController::class, 'store'])->name('admin.quotes.store');
+        Route::post('quotes/{quote}/send', [QuoteController::class, 'send'])->name('admin.quotes.send');
+        Route::post('quotes/{quote}/revoke', [QuoteController::class, 'revoke'])->name('admin.quotes.revoke');
     });
 
     // Chiamate al servizio di pagamento fuori transazione (05): il servizio apre i propri passi.
     Route::middleware(['auth:sanctum', 'panel.fresh', 'mfa', 'throttle:admin', 'idempotent', 'tenant:panel,steps'])->group(function (): void {
         Route::post('reservations/{reservation}/recovery-link', [ReservationController::class, 'recoveryLink'])->name('admin.reservations.recovery-link');
+    });
+
+    // Calendari importati (5.6): download con SafeHttpFetcher fuori transazione, il servizio apre i propri passi.
+    Route::middleware(['auth:sanctum', 'panel.fresh', 'mfa', 'throttle:admin', 'tenant:panel,steps'])->group(function (): void {
+        Route::post('units/{unit}/external-calendars', [ExternalCalendarController::class, 'store'])->name('admin.units.external-calendars.store');
+        Route::patch('external-calendars/{calendar}', [ExternalCalendarController::class, 'update'])->name('admin.external-calendars.update');
+        Route::post('external-calendars/{calendar}/sync-now', [ExternalCalendarController::class, 'syncNow'])->name('admin.external-calendars.sync-now');
     });
 
     // Collegamento Stripe (4.1): letture e link di onboarding con chiamate a Stripe fuori transazione.
@@ -109,7 +124,39 @@ Route::prefix('admin')->middleware(EnsureFrontendRequestsAreStateful::class)->gr
         Route::patch('reservations/{reservation}', [ReservationController::class, 'update'])->name('admin.reservations.update');
         Route::get('refunds', [RefundController::class, 'index'])->name('admin.refunds.index');
         Route::get('disputes', [DisputeController::class, 'index'])->name('admin.disputes.index');
+
+        Route::get('units/{unit}/external-calendars', [ExternalCalendarController::class, 'index'])->name('admin.units.external-calendars.index');
+        Route::delete('external-calendars/{calendar}', [ExternalCalendarController::class, 'destroy'])->name('admin.external-calendars.destroy');
+        Route::get('external-calendars/{calendar}/runs', [ExternalCalendarController::class, 'runs'])->name('admin.external-calendars.runs');
+        Route::post('external-events/{event}/remove', [ExternalCalendarController::class, 'removeEvent'])->name('admin.external-events.remove');
+        Route::get('units/{unit}/calendar-checklist', [ExternalCalendarController::class, 'checklist'])->name('admin.units.calendar-checklist');
+        Route::post('units/{unit}/calendar-checklist/confirm', [ExternalCalendarController::class, 'confirmChecklist'])->name('admin.units.calendar-checklist.confirm');
+
+        Route::get('units/{unit}/ics-feeds', [IcsFeedController::class, 'index'])->name('admin.units.ics-feeds.index');
+        Route::post('units/{unit}/ics-feeds', [IcsFeedController::class, 'store'])->name('admin.units.ics-feeds.store');
+        Route::post('ics-feeds/{feed}/rotate', [IcsFeedController::class, 'rotate'])->name('admin.ics-feeds.rotate');
+
+        Route::get('conflicts', [ConflictController::class, 'index'])->name('admin.conflicts.index');
+        Route::post('conflicts/{conflict}/investigate', [ConflictController::class, 'investigate'])->name('admin.conflicts.investigate');
+        Route::post('conflicts/{conflict}/resolve', [ConflictController::class, 'resolve'])->name('admin.conflicts.resolve');
+        Route::post('conflicts/{conflict}/ignore', [ConflictController::class, 'ignore'])->name('admin.conflicts.ignore');
+        Route::post('external-events/{event}/not-echo', [ConflictController::class, 'notAnEcho'])->name('admin.external-events.not-echo');
+
+        Route::get('quotes', [QuoteController::class, 'index'])->name('admin.quotes.index');
+        Route::get('quotes/{quote}', [QuoteController::class, 'show'])->name('admin.quotes.show');
     });
+});
+
+// Preventivo dalla pagina ospite /q/{token} (07, 5.7): tenant dal token; accettazione con
+// Idempotency-Key, limite per IP ed email e passi fuori transazione (sessione di pagamento, 05). Registrate prima di public/{t}/{p}:
+// un token di sole minuscole e cifre corrisponderebbe anche a quelle rotte.
+Route::prefix('public/quotes/{token}')->where(['token' => '[A-Za-z0-9_-]{43}'])->middleware(['guest.locale'])->group(function (): void {
+    Route::get('/', [PublicQuoteController::class, 'show'])
+        ->middleware(['throttle:public-read', 'tenant:quote'])
+        ->name('public.quotes.show');
+    Route::post('accept', [PublicQuoteController::class, 'accept'])
+        ->middleware(['throttle:public-booking', 'idempotent', 'tenant:quote,steps'])
+        ->name('public.quotes.accept');
 });
 
 /*

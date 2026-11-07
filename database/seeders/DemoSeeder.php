@@ -2,6 +2,9 @@
 
 namespace Database\Seeders;
 
+use App\Domain\Calendar\DemoCalendars;
+use App\Domain\Calendar\Enums\ChannelSource;
+use App\Domain\Calendar\IcsFeedLifecycle;
 use App\Domain\Inventory\Enums\BookingMode;
 use App\Domain\Inventory\InventoryService;
 use App\Domain\Inventory\Models\Property;
@@ -20,10 +23,13 @@ use App\Domain\Pricing\Calculator\PriceRequest;
 use App\Domain\Pricing\Models\RatePlan;
 use App\Domain\Pricing\Models\SeasonRule;
 use App\Domain\Pricing\PriceQuoteService;
+use App\Domain\Quotes\QuoteLinks;
+use App\Domain\Quotes\QuoteService;
 use App\Domain\Reservations\CancellationRefund;
 use App\Domain\Reservations\Enums\CancellationPolicyCode;
 use App\Domain\Reservations\Enums\ReservationChannel;
 use App\Domain\Reservations\GuestDetails;
+use App\Domain\Reservations\LegalAcceptance;
 use App\Domain\Reservations\Models\CancellationPolicy;
 use App\Domain\Reservations\Models\Reservation;
 use App\Domain\Reservations\NewReservation;
@@ -41,6 +47,12 @@ use RuntimeException;
  * Dati demo (11, attività 1.8 e 2.8): tenant "demo-alghero" con una struttura finta e due unità,
  * ciascuna con tariffa base e due stagioni (alta stagione e Ferragosto) per l'anteprima prezzo.
  * Tutti i dati sono inventati; l'email usa il dominio riservato example.test. Mai in produzione.
+ *
+ * Da M5 (verifica, ADR-0013 punto 44): due calendari importati dimostrativi sul Trilocale ("Booking
+ * demo" e "Airbnb demo", `demo = true`: mai scaricati, esclusi da polling e salute) con eventi
+ * inseriti come da una sincronizzazione, uno dei quali in conflitto aperto con una prenotazione
+ * confermata; i feed per Booking e Airbnb di entrambe le unità; due preventivi, uno inviato e uno
+ * accettato e pagato. Nessuna chiamata esterna.
  *
  * Il tenant ha un account Stripe finto (acct_demo_…, livemode false, incassi e bonifici abilitati)
  * perché la guardia dei pagamenti di 07 (ADR-0010) permetta di pubblicare le strutture demo. Non
@@ -100,6 +112,7 @@ final class DemoSeeder extends Seeder
         });
 
         $this->reservations($tenantId, $setup['account'], $setup['sea_view'], $setup['garden'], $tenantContext);
+        $this->calendarsAndQuotes($tenantId, $setup['account'], $setup['sea_view'], $setup['garden'], $tenantContext);
 
         $this->command?->warn(__('demo.created', ['slug' => self::TENANT_SLUG, 'email' => self::OWNER_EMAIL]));
         $this->command?->line(__('demo.password_once', ['password' => $password]));
@@ -257,6 +270,59 @@ final class DemoSeeder extends Seeder
         });
     }
 
+    /**
+     * Dati di M5 (ADR-0013 punto 44). Trilocale: prenotazione manuale confermata ai giorni 25–30,
+     * richiesta in attesa ai giorni 7–11. L'evento Booking ai giorni 27–29 apre un conflitto.
+     */
+    private function calendarsAndQuotes(string $tenantId, string $accountId, string $seaView, string $garden, TenantContext $tenants): void
+    {
+        $stay = fn (int $from, int $nights): StayRange => StayRange::of(
+            CarbonImmutable::today()->addDays($from)->toDateString(), CarbonImmutable::today()->addDays($from + $nights)->toDateString(),
+        );
+
+        $quoteIds = $tenants->run($tenantId, function () use ($seaView, $garden, $stay): array {
+            $calendars = app(DemoCalendars::class);
+            $gardenUnit = Unit::query()->findOrFail($garden);
+
+            $calendars->create($gardenUnit, ChannelSource::BOOKING, [
+                ['uid' => 'demo-booking-1@booking.example.test', 'stay' => $stay(18, 3), 'summary' => 'CLOSED - Not available'],
+                ['uid' => 'demo-booking-2@booking.example.test', 'stay' => $stay(27, 2), 'summary' => 'CLOSED - Not available'],
+            ]);
+            $calendars->create($gardenUnit, ChannelSource::AIRBNB, [
+                ['uid' => 'demo-airbnb-1@airbnb.example.test', 'stay' => $stay(33, 4), 'summary' => 'Reserved'],
+                ['uid' => 'demo-airbnb-2@airbnb.example.test', 'stay' => $stay(42, 3), 'summary' => 'Airbnb (Not available)'],
+            ]);
+
+            $feeds = app(IcsFeedLifecycle::class);
+
+            foreach ([$seaView, $garden] as $unitId) {
+                foreach ([ChannelSource::BOOKING, ChannelSource::AIRBNB] as $destination) {
+                    $feeds->create(Unit::query()->findOrFail($unitId), $destination);
+                }
+            }
+
+            $quotes = app(QuoteService::class);
+            $sent = $quotes->create($gardenUnit, $stay(60, 4), 4, 1, 5000, 'Claudia Mura', 'claudia.mura@example.test', Locale::IT, CarbonImmutable::now()->addDays(2));
+            $quotes->send($sent->id, 'link');
+            $accepted = $quotes->create(Unit::query()->findOrFail($seaView), $stay(55, 3), 2, 0, 3000, 'James Carter', 'james.carter@example.test', Locale::EN, null);
+            $quotes->send($accepted->id, 'link');
+
+            return ['accepted' => $accepted->refresh()];
+        });
+
+        // L'ospite accetta il secondo preventivo e paga sulla pagina di pagamento simulato.
+        $quote = $quoteIds['accepted'];
+        $property = $tenants->run($tenantId, fn () => Unit::query()->with('property')->findOrFail($seaView)->property);
+        $result = app(QuoteService::class)->accept(
+            $tenantId,
+            QuoteLinks::hash($quote->public_token_encrypted),
+            new GuestDetails('James', 'Carter', 'james.carter@example.test', '+44 7700 900 110', 'GB', Locale::EN),
+            ['terms' => $property->terms_url === null ? null : LegalAcceptance::version($property->terms_url),
+                'privacy' => LegalAcceptance::version((string) $property->privacy_policy_url)],
+        );
+        $this->pay($tenantId, $accountId, $result['reservation']->id, FakeCustomerAction::PAY);
+    }
+
     /** Prenotazione dalla pagina ospite (T1) e, se indicata, azione sulla pagina di pagamento simulato. */
     private function online(string $tenantId, string $accountId, string $unitId, StayRange $stay, int $adults, GuestDetails $guest, ?FakeCustomerAction $action): string
     {
@@ -270,17 +336,23 @@ final class DemoSeeder extends Seeder
         $reservationId = app(CheckoutService::class)->start($tenantId, $data)['created']->reservation->id;
 
         if ($action !== null) {
-            if (config('payments.gateway') !== 'fake') {
-                throw new RuntimeException('Il seeder demo richiede PAYMENT_GATEWAY=fake.');
-            }
-
-            $gateway = app(PaymentGateway::class);
-            $sessionId = (string) $tenants->run($tenantId, fn () => Payment::query()
-                ->where('reservation_id', $reservationId)->orderByDesc('created_at')->value('checkout_session_id'));
-            app(SimulatedPaymentEvents::class)->dispatch($accountId, $gateway->simulateCustomer($sessionId, $action));
+            $this->pay($tenantId, $accountId, $reservationId, $action);
         }
 
         return $reservationId;
+    }
+
+    /** Azione dell'ospite sulla pagina di pagamento simulato (gateway finto). */
+    private function pay(string $tenantId, string $accountId, string $reservationId, FakeCustomerAction $action): void
+    {
+        if (config('payments.gateway') !== 'fake') {
+            throw new RuntimeException('Il seeder demo richiede PAYMENT_GATEWAY=fake.');
+        }
+
+        $gateway = app(PaymentGateway::class);
+        $sessionId = (string) app(TenantContext::class)->run($tenantId, fn () => Payment::query()
+            ->where('reservation_id', $reservationId)->orderByDesc('created_at')->value('checkout_session_id'));
+        app(SimulatedPaymentEvents::class)->dispatch($accountId, $gateway->simulateCustomer($sessionId, $action));
     }
 
     /** Prenotazione manuale del gestore (T2), con pagamento offline facoltativo. */
