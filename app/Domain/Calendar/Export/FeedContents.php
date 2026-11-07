@@ -45,7 +45,7 @@ final class FeedContents
         foreach ($this->inventory->occupancyFacts($unitId, $window) as $o) {
             $items[] = new FeedItem(
                 $o['kind'] === OccupancyKind::RESERVATION ? FeedItem::RESERVATION : FeedItem::MANUAL_BLOCK,
-                $o['id'], $o['ics_uid'], $o['stay'], $o['created_at'], $o['updated_at'],
+                $o['id'], $o['ics_uid'], $o['stay'], $o['created_at'], $o['updated_at'], $o['ics_sequence'],
             );
         }
 
@@ -63,7 +63,7 @@ final class FeedContents
         foreach ($events as $e) {
             $items[] = new FeedItem(
                 FeedItem::EXTERNAL_EVENT, $e->id, 'ext-'.$e->id.'@'.$domain, $e->stay,
-                $e->first_seen_at, CarbonImmutable::instance($e->updated_at ?? $e->first_seen_at),
+                $e->first_seen_at, CarbonImmutable::instance($e->updated_at ?? $e->first_seen_at), $e->ics_sequence,
             );
         }
 

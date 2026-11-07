@@ -61,6 +61,12 @@ final class ExternalEventStateMachine
         $reappeared = $event->status !== S::ACTIVE;
 
         $event->stay = $parsed->stay;
+
+        if ($datesChanged) {
+            // SEQUENCE dell'evento riesportato (`ext-{id}`) nei feed delle altre destinazioni (06).
+            $event->ics_sequence++;
+        }
+
         $event->summary_redacted = $parsed->summaryRedacted;
         $event->content_hash = $parsed->contentHash;
         $event->last_seen_at = $now;

@@ -26,6 +26,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property EchoKind $echo_kind
  * @property string|null $echo_of_ics_uid
  * @property ExternalEventStatus $status
+ * @property int $ics_sequence
  */
 #[PersonalData('summary_redacted')]
 class ExternalCalendarEvent extends TenantModel
@@ -39,6 +40,7 @@ class ExternalCalendarEvent extends TenantModel
             'missing_since' => 'immutable_datetime',
             'echo_kind' => EchoKind::class,
             'status' => ExternalEventStatus::class,
+            'ics_sequence' => 'integer',
         ];
     }
 

@@ -29,6 +29,7 @@ final readonly class FeedItem
         public StayRange $stay,
         public CarbonImmutable $createdAt,
         public CarbonImmutable $updatedAt,
+        public int $sequence = 0,
     ) {}
 
     public function precedence(): int

@@ -31,6 +31,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property CarbonImmutable|null $released_at
  * @property string|null $release_reason
  * @property string $ics_uid
+ * @property int $ics_sequence
  * @property string|null $note
  */
 #[PersonalData('note')]
@@ -46,6 +47,7 @@ class InventoryOccupancy extends TenantModel
             'expires_at' => 'immutable_datetime',
             'status' => OccupancyStatus::class,
             'released_at' => 'immutable_datetime',
+            'ics_sequence' => 'integer',
         ];
     }
 

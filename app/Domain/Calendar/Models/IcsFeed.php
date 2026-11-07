@@ -23,6 +23,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property CarbonImmutable|null $last_fetched_at
  * @property string|null $last_fetch_user_agent
  * @property CarbonImmutable|null $rotated_at
+ * @property CarbonImmutable|null $frozen_at
  */
 class IcsFeed extends TenantModel
 {
@@ -37,6 +38,7 @@ class IcsFeed extends TenantModel
             'status' => IcsFeedStatus::class,
             'last_fetched_at' => 'immutable_datetime',
             'rotated_at' => 'immutable_datetime',
+            'frozen_at' => 'immutable_datetime',
         ];
     }
 

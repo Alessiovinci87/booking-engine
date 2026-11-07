@@ -40,6 +40,14 @@ L'implementazione di M5 (import ed export iCal, conflitti, preventivi) ha incont
 19. **Notifiche al gestore** tramite outbox: `calendar.conflict_opened`, `calendar.conflict_auto_resolved` (e `calendar.sync_unhealthy`, 5.6), consegnate da `SendCalendarEmail` all'email di contatto della struttura, senza dati dell'ospite.
 20. **API aggiunta**: `POST /admin/external-events/{id}/not-echo` per la riclassificazione "non è un'eco, è una prenotazione vera" prevista da 06; `409 ILLEGAL_TRANSITION` se l'evento non è un'eco sospetta. `GET /admin/conflicts` accetta `status[]` (predefinito `OPEN` e `INVESTIGATING`) e `unit_id`; ogni conflitto riporta `kind` (`RESERVATION`, `MANUAL_BLOCK`, `EXTERNAL`), la prenotazione coinvolta e gli eventi esterni con origine.
 
+### Feed esportati (5.4)
+
+21. **Colonne per `SEQUENCE` e congelamento** (migration `2027_01_18_000100_add_ics_feed_columns`):
+    - `inventory_occupancies.ics_sequence` e `external_calendar_events.ics_sequence` (intero ≥ 0, predefinito 0): `SEQUENCE` dell'evento `occ-`/`ext-` in tutti i feed. Cresce di 1 a ogni cambio di date: `InventoryService::move` (T18) per le occupazioni, `ExternalEventStateMachine::seen` per gli eventi importati. Gli altri cambi (fase, stato economico) non cambiano il contenuto dell'evento. I conflitti non cambiano date: `SEQUENCE` 0. Con la sequenza sulla fonte la lettura del feed non scrive nulla e lo stesso UID ha la stessa `SEQUENCE` in ogni feed.
+    - `ics_feeds.frozen_at`: istante del congelamento (rotazione del token o offboarding), obbligatorio per un feed `FROZEN` (vincolo `ics_feeds_frozen_has_date`).
+22. **Documento.** `PRODID:-//BookingEngine//Calendar Export 1.0//IT`, `METHOD:PUBLISH`; per evento `UID`, `DTSTAMP` = ultima modifica della fonte (documento ed ETag stabili tra due letture senza cambi), `DTSTART;VALUE=DATE`, `DTEND;VALUE=DATE`, `SUMMARY:Non disponibile`, `SEQUENCE`, `TRANSP:OPAQUE`. Nessuna `DESCRIPTION`, nessun nome di unità o struttura. Orizzonte: dagli intervalli in corso fino a 760 giorni.
+23. **Feed `FROZEN`.** Contiene solo gli elementi nati entro `frozen_at`, con le modifiche e le cancellazioni successive (06). Se non ne resta nessuno, il feed **non** si serve vuoto (I19): `GET /ical/{token}.ics` risponde `503` con `Retry-After`, e le OTA mantengono l'ultimo calendario letto (nel dubbio, si blocca).
+
 ## Alternative considerate
 
 | Alternativa | Perché scartata |
@@ -53,7 +61,7 @@ L'implementazione di M5 (import ed export iCal, conflitti, preventivi) ha incont
 
 ## Impatto sui test
 
-- Test aggiunti: `Unit/Calendar/SafeHttpFetcherTest`, `Unit/Calendar/IcsParserTest`, `Feature/Calendar/IcalImportTest`, `SyncErrorKeepsDatesTest`, `AntiWipeSafeguardTest`, `ConflictOnConfirmedTest`, `ConflictCloseKeepsDatesTest`, `EchoLoopTest`.
+- Test aggiunti: `Unit/Calendar/SafeHttpFetcherTest`, `Unit/Calendar/IcsParserTest`, `Feature/Calendar/IcalImportTest`, `SyncErrorKeepsDatesTest`, `AntiWipeSafeguardTest`, `ConflictOnConfirmedTest`, `ConflictCloseKeepsDatesTest`, `EchoLoopTest`, `FeedMatrixTest`, `IcsUidStabilityTest`.
 - Test modificati: `Arch/ExternalHttpTest` (eccezione per `CurlTransport`).
 
 ## Aggiornamento della specifica

@@ -159,6 +159,8 @@ final class InventoryService
 
             $previous = (string) $occupancy->stay;
             $occupancy->stay = $newStay;
+            // SEQUENCE dell'evento nei feed iCal: stesso UID, date nuove (06).
+            $occupancy->ics_sequence++;
             $occupancy->save();
 
             $this->audit->record('occupancy.moved', 'inventory_occupancy', $occupancy->id, [
@@ -339,7 +341,7 @@ final class InventoryService
      * Occupazioni attive di un'unità che toccano l'intervallo, come fatti in sola lettura per i feed
      * iCal, la classificazione degli echi e i conflitti (06). Nessun dato personale (la nota resta fuori).
      *
-     * @return list<array{id: string, kind: OccupancyKind, reservation_id: string|null, stay: StayRange, ics_uid: string, created_at: CarbonImmutable, updated_at: CarbonImmutable}>
+     * @return list<array{id: string, kind: OccupancyKind, reservation_id: string|null, stay: StayRange, ics_uid: string, ics_sequence: int, created_at: CarbonImmutable, updated_at: CarbonImmutable}>
      */
     public function occupancyFacts(string $unitId, StayRange $range): array
     {
@@ -349,6 +351,7 @@ final class InventoryService
             'reservation_id' => $o->reservation_id,
             'stay' => $o->stay,
             'ics_uid' => $o->ics_uid,
+            'ics_sequence' => $o->ics_sequence,
             'created_at' => CarbonImmutable::instance($o->created_at ?? now()),
             'updated_at' => CarbonImmutable::instance($o->updated_at ?? now()),
         ])->values()->all();
