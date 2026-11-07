@@ -2,7 +2,7 @@
 
 - **Stato**: Accettata
 - **Data**: 2026-11-07
-- **Autori**: Alessio Vinci, Claude Code
+- **Autori**: Claude Code (stesura), verificata da Claude (chat) per Alessio
 - **Documenti di specifica toccati**: 03-BOOKING-STATE-MACHINE, 05-PAYMENTS-SPEC, 07-API-CONTRACT, 08-SECURITY-OPERATIONS
 
 ## Contesto
@@ -31,12 +31,12 @@ L'implementazione di M3 (inventario, macchina a stati, checkout con gateway fint
 
 14. **Token di accesso alla prenotazione.** `POST /public/{t}/{p}/reservations` restituisce anche `access_token` (in chiaro una sola volta; nel database solo l'hash). La pagina ospite lo conserva in `sessionStorage` (`guest.reservation.{code}`) insieme a `checkout_url` per riprendere il pagamento dopo un annullamento. L'email di recupero punta alla pagina della prenotazione con il token nel link.
 15. **Risoluzione del tenant da codice e token.** `GET /public/reservations/{code}?token=` non contiene lo slug: una funzione `SECURITY DEFINER` (`app_tenant_by_reservation_access`, eseguibile solo da `app_runtime`) restituisce l'ID del tenant solo se codice e hash del token corrispondono. Senza token il codice non rivela neanche l'esistenza della prenotazione (`404`). La risposta non contiene dati personali né `checkout_url`.
-16. **Versioni dei documenti legali** = primi 12 caratteri esadecimali dello SHA-256 dell'URL (`privacy_version`, `terms_version` in `GET /public/{t}/{p}`). Cambiare il link cambia la versione; una versione accettata diversa da quella corrente → `400 VALIDATION_FAILED`. Le versioni accettate si registrano nell'audit (`reservation.terms_accepted`), senza dati dell'ospite.
+16. **Versioni dei documenti legali** = primi 12 caratteri esadecimali dello SHA-256 dell'URL (`privacy_version`, `terms_version` in `GET /public/{t}/{p}`). Cambiare il link cambia la versione; una versione accettata diversa da quella corrente → `400 VALIDATION_FAILED`. Le versioni accettate si registrano nell'audit (`reservation.terms_accepted`), senza dati dell'ospite. Nel pannello, accanto ai campi dell'informativa privacy e delle condizioni, l'avviso: "Se aggiorni il documento, cambia anche il link (per esempio aggiungendo ?v=2): così agli ospiti verrà chiesto di accettare la nuova versione" (decisione dopo la verifica di M3).
 17. **Informativa privacy obbligatoria per pubblicare**: nuova guardia `422 PRIVACY_POLICY_MISSING`, dopo la politica di cancellazione e prima dei pagamenti; su una struttura pubblicata non si può svuotare il link. Le condizioni di prenotazione (`terms_url`) restano facoltative: se assenti la casella non compare e `accepted_terms_version` è `null`.
 18. **Niente cookie sull'API pubblica.** Il middleware stateful di Sanctum si applica solo al gruppo `/admin`; le rotte `public/*` non avviano sessioni e non usano CSRF. Al loro posto: controllo `Origin` (`public.origin`): ammessi richieste senza `Origin`, l'origine dell'app e le `embed_allowed_origins` del tenant; altre origini → `403 FORBIDDEN`. Limiti `public-read` e `public-booking` (per IP e per hash dell'email).
 19. **Pagine ospite ed embed senza sessione.** `/p/{t}/{p}` e `/e/{t}/{p}` escludono sessione, cookie e CSRF. CSP con nonce per pagina (`default-src 'self'`, `object-src 'none'`, `base-uri 'self'`, `form-action 'self'`); `frame-ancestors 'none'` per pannello e pagina ospite, `frame-ancestors` = `embed_allowed_origins` per la vista embed (struttura pubblicata, altrimenti `404`); API con `default-src 'none'; frame-ancestors 'none'`. Solo in locale, con il server Vite attivo, si aggiungono l'origine di Vite e gli stili inline. Origini aggiuntive per le immagini da `CSP_IMG_SRC`.
 20. **Pagamento sempre a pagina intera.** Fuori dall'iframe si usa `location.assign`; nella vista embed `window.top.location`, poi una nuova scheda, infine un pulsante se il browser blocca la finestra. Il ritorno dal pagamento va sempre su `/p/…/prenotazione/{code}`.
-21. **Pagina di ritorno**: interroga lo stato ogni 2 s per al massimo 60 s finché la prenotazione è `AWAITING_PAYMENT` o `CAPTURING`, poi invita ad attendere l'email. Il redirect non conferma nulla (I6). Con `?cancelled=1` offre "Riprendi il pagamento" se la sessione salvata non è scaduta.
+21. **Pagina di ritorno**: interroga lo stato ogni 2 s per al massimo 60 s finché la prenotazione è `AWAITING_PAYMENT` o `CAPTURING`, poi invita ad attendere l'email. Il redirect non conferma nulla (I2). Con `?cancelled=1` offre "Riprendi il pagamento" se la sessione salvata non è scaduta.
 22. **Prezzo cambiato durante la compilazione**: `409 PRICE_CHANGED` con `details.price` (stesso formato di `quote-price`); la pagina aggiorna il riepilogo e chiede una nuova conferma con una nuova Idempotency-Key, perché il corpo è cambiato.
 23. **Ultima unità attiva**: il pannello chiede conferma prima di disattivarla su una struttura pubblicata (ADR-0010 punto 8).
 
@@ -46,6 +46,11 @@ L'implementazione di M3 (inventario, macchina a stati, checkout con gateway fint
 25. **Rimborso proposto visibile prima di cancellare.** Per le prenotazioni `CONFIRMED` il dettaglio include `cancellation_refund` (`proposed` dalla politica congelata, `max` = incassato online ancora rimborsabile), gli stessi valori che `POST /cancel` usa se `refund_cents` manca.
 26. **Calendario mensile per unità** con una griglia di 6 settimane da lunedì; ogni notte mostra l'occupazione che la copre (colore per stato, bordo tratteggiato per le occupazioni temporanee), gli eventi esterni e un bordo rosso per i conflitti aperti. Clic su una notte libera: nuovo blocco da quella data; clic su un blocco: rimozione.
 27. **Seeder demo con prenotazioni** create con i flussi veri (checkout con gateway finto, macchina a stati, pagamenti offline), date relative al giorno dell'esecuzione; struttura demo pubblicata, Bilocale immediato e Trilocale su richiesta. Richiede `PAYMENT_GATEWAY=fake`.
+
+### Decisioni dopo la verifica di M3
+
+28. **Anteprima della modifica.** Prima di salvare una modifica (T18) il pannello mostra vecchio e nuovo soggiorno, righe e totale e chiede una conferma esplicita. `POST /admin/reservations/{id}/modify-preview` (stesso body del `PATCH`, senza `If-Match`) esegue la modifica vera in un savepoint annullato: restituisce `current`, `proposed` (date, notti, ospiti, righe, totale, caparra, saldo), `difference` e `version`, con gli stessi errori del `PATCH` (`DATES_UNAVAILABLE`, `ILLEGAL_TRANSITION`, `MIN_NIGHTS_NOT_MET`, ...), senza scrivere nulla (nemmeno audit o storico). Il `PATCH` accetta `expected_total_cents` facoltativo: se il prezzo ricalcolato è diverso → `409 PRICE_CHANGED` con il nuovo totale in `details.contract_total`, e il pannello torna all'anteprima.
+29. **Avviso sui link legali** nel pannello: vedi punto 16.
 
 ## Alternative considerate
 
@@ -65,7 +70,7 @@ L'implementazione di M3 (inventario, macchina a stati, checkout con gateway fint
 
 ## Impatto sui test
 
-- Test aggiunti: `ConfirmationKindTest`, `NoConfirmOnRedirectTest`, `ManualUnpaidTest`, `CancelHistoryTest`, `Reservations/OccupancyReleaseJobTest`, `Public/PublicReservationApiTest`, `SecurityHeadersTest`, `Payments/SimulatedCheckoutTest`, `Admin/ReservationApiTest`.
+- Test aggiunti: `Admin/ReservationModifyPreviewTest` (punto 28), `ConfirmationKindTest`, `NoConfirmOnRedirectTest`, `ManualUnpaidTest`, `CancelHistoryTest`, `Reservations/OccupancyReleaseJobTest`, `Public/PublicReservationApiTest`, `SecurityHeadersTest`, `Payments/SimulatedCheckoutTest`, `Admin/ReservationApiTest`.
 - Test modificati: `PropertyPublishTest` (guardia privacy), `Architecture/RlsCatalogTest` (`reservations.definer_lookup`), `Auth/ReauthTest` e `Tenancy/TenantRequestRollbackTest` (middleware stateful esplicito), `Frontend/SpaRoutesTest` (testi della pagina ospite).
 - Invarianti toccati: I4, I6, I9, I11, I15.
 

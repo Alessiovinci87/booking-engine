@@ -122,7 +122,8 @@
         "terms_url": "Indirizzo delle condizioni (https)",
         "defaultPolicy": "Politica di cancellazione predefinita",
         "defaultPolicyHint": "Obbligatoria per pubblicare; ogni unità può sceglierne un'altra.",
-        "noPolicy": "Nessuna"
+        "noPolicy": "Nessuna",
+        "legalUrlHint": "Se aggiorni il documento, cambia anche il link (per esempio aggiungendo ?v=2): così agli ospiti verrà chiesto di accettare la nuova versione."
     },
     "policies": {
         "FLEXIBLE_7D": "Flessibile (7 giorni)",
@@ -469,7 +470,15 @@
         "method": "Metodo",
         "recoveryHint": "Crea una nuova sessione di pagamento per l'ospite; le date restano tenute fino alla scadenza.",
         "recoveryHours": "Validità (ore, 1–24)",
-        "recoveryCreated": "Link creato, valido fino al {{expires}}. Invialo all'ospite:"
+        "recoveryCreated": "Link creato, valido fino al {{expires}}. Invialo all'ospite:",
+        "previewModify": "Calcola il nuovo prezzo",
+        "confirmModify": "Conferma la modifica",
+        "modifyPreviewHint": "Controlla il confronto: la modifica si salva solo dopo la conferma. Se nel frattempo il prezzo cambia, ti verrà chiesto di ricontrollare.",
+        "before": "Prima",
+        "after": "Dopo",
+        "difference": "Differenza sul totale: {{amount}}",
+        "previewStay_one": "{{checkIn}} → {{checkOut}} · {{count}} notte · {{adults}} adulti, {{children}} bambini",
+        "previewStay_other": "{{checkIn}} → {{checkOut}} · {{count}} notti · {{adults}} adulti, {{children}} bambini"
     },
     "newReservation": {
         "title": "Nuova prenotazione manuale",
