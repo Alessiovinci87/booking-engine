@@ -40,7 +40,7 @@ export function BookingPage({ embed }: { embed: boolean }) {
         return (
             <Shell>
                 <Notice tone="error">{property.isError ? t('common.loadError') : t('common.notFound')}</Notice>
-                <Link to="/" className="mt-4 inline-block text-sm text-slate-700 underline">
+                <Link to="/" className="mt-4 inline-block text-sm text-ink underline">
                     {t('common.back')}
                 </Link>
             </Shell>
@@ -295,21 +295,21 @@ function BookingForm({ property, unit, embed }: { property: PublicProperty; unit
     const nights = stay !== null && checkIn !== undefined && checkOut !== undefined ? Math.round((checkOut.getTime() - checkIn.getTime()) / 86_400_000) : 0;
     const requestMode = unit.booking_mode === 'REQUEST';
     const inputClass = (field: string) =>
-        `mt-1 block w-full rounded-lg border px-3 py-2.5 text-base ${errors[field] ? 'border-red-400 bg-red-50' : 'border-slate-300 bg-white'}`;
+        `mt-1 block w-full rounded-card border px-3 py-2.5 text-base ${errors[field] ? 'border-red-400 bg-danger-soft' : 'border-line bg-surface'}`;
 
     return (
         <Shell title={property.name}>
-            <Link to="/" className="text-sm text-slate-600 underline">
+            <Link to="/" className="text-sm text-muted underline">
                 {t('common.back')}
             </Link>
-            <h1 className="mt-3 text-2xl font-semibold text-slate-900">{t('booking.title', { name: unit.name })}</h1>
+            <h1 className="mt-3 text-2xl font-semibold text-ink">{t('booking.title', { name: unit.name })}</h1>
             <div className="mt-4">
                 <Gallery photos={unit.photos} name={unit.name} />
             </div>
 
             <form onSubmit={submit} noValidate className="mt-6 space-y-8">
                 <Section title={t('booking.dates')}>
-                    <p className="text-sm text-slate-600">{t('booking.datesHint')}</p>
+                    <p className="text-sm text-muted">{t('booking.datesHint')}</p>
                     {availability.isPending ? (
                         <Spinner />
                     ) : (
@@ -331,7 +331,7 @@ function BookingForm({ property, unit, embed }: { property: PublicProperty; unit
                             />
                         </div>
                     )}
-                    <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-700">
+                    <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-ink">
                         <span>
                             {t('booking.checkIn')}: <strong>{checkIn !== undefined ? formatDate(toIsoDate(checkIn), i18n.language) : '—'}</strong>
                         </span>
@@ -340,15 +340,15 @@ function BookingForm({ property, unit, embed }: { property: PublicProperty; unit
                         </span>
                         {nights > 0 && <span>{t('booking.nights', { count: nights })}</span>}
                         {range !== undefined && (
-                            <button type="button" className="text-slate-600 underline" onClick={() => setRange(undefined)}>
+                            <button type="button" className="text-muted underline" onClick={() => setRange(undefined)}>
                                 {t('booking.clearDates')}
                             </button>
                         )}
                     </div>
                     {checkIn !== undefined && checkOut === undefined && minNightsFor(checkIn) > 1 && (
-                        <p className="mt-2 text-sm text-slate-600">{t('booking.minNightsFor', { count: minNightsFor(checkIn) })}</p>
+                        <p className="mt-2 text-sm text-muted">{t('booking.minNightsFor', { count: minNightsFor(checkIn) })}</p>
                     )}
-                    <p className="mt-1 text-xs text-slate-500">
+                    <p className="mt-1 text-xs text-muted">
                         <span className="guest-unavailable-legend mr-1 inline-block">31</span>
                         {t('booking.unavailableLegend')}
                     </p>
@@ -357,12 +357,12 @@ function BookingForm({ property, unit, embed }: { property: PublicProperty; unit
                 <Section title={t('booking.guests')}>
                     <Counter label={t('booking.adults')} value={adults} min={1} max={unit.max_occupancy - children} onChange={setAdults} />
                     <Counter label={t('booking.children')} value={children} min={0} max={unit.max_occupancy - adults} onChange={setChildren} />
-                    <p className="text-xs text-slate-500">{t('booking.maxGuests', { count: unit.max_occupancy })}</p>
+                    <p className="text-xs text-muted">{t('booking.maxGuests', { count: unit.max_occupancy })}</p>
                 </Section>
 
                 <Section title={t('booking.price')}>
-                    {stay === null && <p className="text-sm text-slate-600">{t('booking.priceHint')}</p>}
-                    {stay !== null && quote.isFetching && <p className="text-sm text-slate-600">{t('booking.priceLoading')}</p>}
+                    {stay === null && <p className="text-sm text-muted">{t('booking.priceHint')}</p>}
+                    {stay !== null && quote.isFetching && <p className="text-sm text-muted">{t('booking.priceLoading')}</p>}
                     {stay !== null && quote.isError && (
                         <Notice tone="error">
                             {quote.error instanceof ApiError
@@ -403,7 +403,7 @@ function BookingForm({ property, unit, embed }: { property: PublicProperty; unit
                     <Field label={t('booking.notes')} error={errors.notes}>
                         <textarea className={inputClass('notes')} rows={3} maxLength={2000} value={guest.notes} onChange={(e) => update('notes', e.target.value)} name="notes" />
                     </Field>
-                    <p className="text-xs text-amber-800" data-testid="notes-warning">
+                    <p className="text-xs text-warning" data-testid="notes-warning">
                         {t('booking.notesWarning')}
                     </p>
                 </Section>
@@ -427,7 +427,7 @@ function BookingForm({ property, unit, embed }: { property: PublicProperty; unit
 
                 {notice !== null && <Notice tone={notice.tone}>{notice.text}</Notice>}
                 {pendingCheckout !== null && (
-                    <a href={pendingCheckout} target="_top" className="block rounded-lg bg-emerald-700 px-4 py-3 text-center font-medium text-white">
+                    <a href={pendingCheckout} target="_top" className="block rounded-card bg-brand-700 px-4 py-3 text-center font-medium text-white">
                         {t('booking.openPayment')}
                     </a>
                 )}
@@ -436,11 +436,11 @@ function BookingForm({ property, unit, embed }: { property: PublicProperty; unit
                     <button
                         type="submit"
                         disabled={reserve.isPending || quote.data === undefined || stay === null}
-                        className="w-full rounded-lg bg-emerald-700 px-4 py-3.5 text-base font-semibold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+                        className="w-full rounded-card bg-brand-700 px-4 py-3.5 text-base font-semibold text-white hover:bg-brand-800 disabled:cursor-not-allowed disabled:bg-slate-300"
                     >
                         {reserve.isPending ? t('booking.sending') : requestMode ? t('booking.proceedRequest') : t('booking.proceed')}
                     </button>
-                    <p className="text-center text-xs text-slate-500">{t('booking.paymentNote')}</p>
+                    <p className="text-center text-xs text-muted">{t('booking.paymentNote')}</p>
                 </div>
             </form>
         </Shell>
@@ -456,27 +456,27 @@ export function PriceDetails({ quote, requestMode }: { quote: PriceQuote; reques
             <ul className="divide-y divide-slate-100 text-sm">
                 {quote.lines.map((line, index) => (
                     <li key={`${line.kind}-${line.date ?? ''}-${index}`} className="flex justify-between gap-4 py-1.5">
-                        <span className="text-slate-700">
+                        <span className="text-ink">
                             {t(`lines.${line.kind}`, { date: line.date !== null ? formatDate(line.date, i18n.language) : '', defaultValue: line.kind })}
                             {line.quantity > 1 && ` × ${line.quantity}`}
                         </span>
-                        <span className="tabular-nums text-slate-900">{money(line.amount)}</span>
+                        <span className="tabular-nums text-ink">{money(line.amount)}</span>
                     </li>
                 ))}
             </ul>
-            <dl className="space-y-1 border-t border-slate-200 pt-3 text-sm">
-                <div className="flex justify-between font-semibold text-slate-900">
+            <dl className="space-y-1 border-t border-line-soft pt-3 text-sm">
+                <div className="flex justify-between font-semibold text-ink">
                     <dt>{t('booking.total')}</dt>
                     <dd className="tabular-nums" data-testid="price-total">
                         {money(quote.total)}
                     </dd>
                 </div>
-                <div className="flex justify-between text-slate-700">
+                <div className="flex justify-between text-ink">
                     <dt>{requestMode ? t('booking.depositRequest') : t('booking.deposit')}</dt>
                     <dd className="tabular-nums">{money(quote.deposit)}</dd>
                 </div>
                 {quote.balance.amount_cents > 0 && (
-                    <div className="flex justify-between text-slate-700">
+                    <div className="flex justify-between text-ink">
                         <dt>{t('booking.balance')}</dt>
                         <dd className="tabular-nums">{money(quote.balance)}</dd>
                     </div>
@@ -484,7 +484,7 @@ export function PriceDetails({ quote, requestMode }: { quote: PriceQuote; reques
             </dl>
             {requestMode && <Notice>{t('booking.requestNote')}</Notice>}
             {quote.cancellation_policy !== null && (
-                <div className="rounded-lg bg-slate-50 p-3 text-sm text-slate-700">
+                <div className="rounded-card bg-canvas p-3 text-sm text-ink">
                     <p className="font-medium">
                         {t('booking.cancellation')}: {quote.cancellation_policy.title}
                     </p>
@@ -498,7 +498,7 @@ export function PriceDetails({ quote, requestMode }: { quote: PriceQuote; reques
 export function Section({ title, children }: { title: string; children: ReactNode }) {
     return (
         <section className="space-y-3">
-            <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
+            <h2 className="text-lg font-semibold text-ink">{title}</h2>
             {children}
         </section>
     );
@@ -506,10 +506,10 @@ export function Section({ title, children }: { title: string; children: ReactNod
 
 export function Field({ label, error, children }: { label: string; error?: string; children: ReactNode }) {
     return (
-        <label className="block text-sm font-medium text-slate-800">
+        <label className="block text-sm font-medium text-ink">
             {label}
             {children}
-            {error !== undefined && error !== '' && <span className="mt-1 block text-xs font-normal text-red-700">{error}</span>}
+            {error !== undefined && error !== '' && <span className="mt-1 block text-xs font-normal text-danger">{error}</span>}
         </label>
     );
 }
@@ -517,11 +517,11 @@ export function Field({ label, error, children }: { label: string; error?: strin
 export function Checkbox({ checked, onChange, error, name, children }: { checked: boolean; onChange: (value: boolean) => void; error?: string; name: string; children: ReactNode }) {
     return (
         <div>
-            <label className="flex items-start gap-3 text-sm text-slate-800">
+            <label className="flex items-start gap-3 text-sm text-ink">
                 <input type="checkbox" name={name} checked={checked} onChange={(e) => onChange(e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0" />
                 <span>{children}</span>
             </label>
-            {error !== undefined && error !== '' && <p className="mt-1 ml-8 text-xs text-red-700">{error}</p>}
+            {error !== undefined && error !== '' && <p className="mt-1 ml-8 text-xs text-danger">{error}</p>}
         </div>
     );
 }
@@ -531,14 +531,14 @@ function Counter({ label, value, min, max, onChange }: { label: string; value: n
 
     return (
         <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-slate-800">{label}</span>
+            <span className="text-sm font-medium text-ink">{label}</span>
             <div className="flex items-center gap-3">
                 <button
                     type="button"
                     aria-label={t('booking.decrease', { what: label })}
                     onClick={() => onChange(Math.max(min, value - 1))}
                     disabled={value <= min}
-                    className="h-10 w-10 rounded-full border border-slate-300 text-lg disabled:opacity-40"
+                    className="h-10 w-10 rounded-full border border-line text-lg disabled:opacity-40"
                 >
                     −
                 </button>
@@ -550,7 +550,7 @@ function Counter({ label, value, min, max, onChange }: { label: string; value: n
                     aria-label={t('booking.increase', { what: label })}
                     onClick={() => onChange(Math.min(max, value + 1))}
                     disabled={value >= max}
-                    className="h-10 w-10 rounded-full border border-slate-300 text-lg disabled:opacity-40"
+                    className="h-10 w-10 rounded-full border border-line text-lg disabled:opacity-40"
                 >
                     +
                 </button>

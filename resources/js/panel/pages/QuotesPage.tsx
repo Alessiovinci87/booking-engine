@@ -14,13 +14,13 @@ import { formatMoney, parseEuroToCents } from '../money';
 const OPEN: QuoteStatus[] = ['DRAFT', 'SENT', 'IN_CHECKOUT'];
 
 const statusColors: Record<QuoteStatus, string> = {
-    DRAFT: 'bg-slate-100 text-slate-700 border-slate-300',
+    DRAFT: 'bg-surface-muted text-ink border-line',
     SENT: 'bg-sky-100 text-sky-900 border-sky-300',
-    IN_CHECKOUT: 'bg-amber-100 text-amber-900 border-amber-300',
+    IN_CHECKOUT: 'bg-amber-100 text-warning border-amber-300',
     ACCEPTED: 'bg-emerald-100 text-emerald-900 border-emerald-300',
-    EXPIRED: 'bg-slate-100 text-slate-600 border-slate-300',
-    REVOKED: 'bg-slate-100 text-slate-600 border-slate-300',
-    EXHAUSTED: 'bg-red-100 text-red-900 border-red-300',
+    EXPIRED: 'bg-surface-muted text-muted border-line',
+    REVOKED: 'bg-surface-muted text-muted border-line',
+    EXHAUSTED: 'bg-red-100 text-danger border-red-300',
 };
 
 /**
@@ -36,8 +36,8 @@ export function QuotesPage() {
 
     return (
         <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
-            <h1 className="text-2xl font-semibold text-slate-900">{t('quotes.title')}</h1>
-            <p className="text-sm text-slate-600">{t('quotes.intro')}</p>
+            <h1 className="text-2xl font-semibold text-ink">{t('quotes.title')}</h1>
+            <p className="text-sm text-muted">{t('quotes.intro')}</p>
 
             <NewQuoteForm />
 
@@ -45,7 +45,7 @@ export function QuotesPage() {
                 title={t('quotes.list')}
                 actions={
                     <select
-                        className="rounded-md border border-slate-300 px-2 py-1 text-sm"
+                        className="rounded-control border border-line px-2 py-1 text-sm"
                         value={filter.length === OPEN.length && OPEN.every((s) => filter.includes(s)) ? 'open' : (filter[0] ?? 'all')}
                         onChange={(e) => setFilter(e.target.value === 'open' ? OPEN : e.target.value === 'all' ? [] : [e.target.value as QuoteStatus])}
                         aria-label={t('quotes.filter')}
@@ -61,10 +61,10 @@ export function QuotesPage() {
                     </select>
                 }
             >
-                {quotes.isPending && <p className="text-sm text-slate-600">{t('common.loading')}</p>}
+                {quotes.isPending && <p className="text-sm text-muted">{t('common.loading')}</p>}
                 {quotes.isError && <FormError message={errorMessage(quotes.error)} />}
-                {quotes.data?.length === 0 && <p className="text-sm text-slate-600">{t('quotes.empty')}</p>}
-                <ul className="divide-y divide-slate-200" data-testid="quote-list">
+                {quotes.data?.length === 0 && <p className="text-sm text-muted">{t('quotes.empty')}</p>}
+                <ul className="divide-y divide-line-soft" data-testid="quote-list">
                     {quotes.data?.map((quote) => <QuoteRow key={quote.id} quote={quote} />)}
                 </ul>
             </Section>
@@ -125,7 +125,7 @@ function NewQuoteForm() {
     };
 
     if (isPending) {
-        return <p className="text-sm text-slate-600">{t('common.loading')}</p>;
+        return <p className="text-sm text-muted">{t('common.loading')}</p>;
     }
 
     return (
@@ -165,7 +165,7 @@ function NewQuoteForm() {
                         </select>
                     </Field>
                 </div>
-                <p className="mt-3 text-xs text-slate-500">{t('quotes.frozenNote')}</p>
+                <p className="mt-3 text-xs text-muted">{t('quotes.frozenNote')}</p>
                 {create.isError && <FormError message={errorMessage(create.error)} />}
                 <div className="mt-4">
                     <button type="submit" className={primaryButton} disabled={create.isPending || unit === ''}>
@@ -219,23 +219,23 @@ function QuoteRow({ quote }: { quote: Quote }) {
         <li className="py-4" data-testid="quote-row" data-status={quote.status}>
             <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                    <p className="font-medium text-slate-900">
+                    <p className="font-medium text-ink">
                         {quote.unit.name} · {formatDate(quote.check_in)} → {formatDate(quote.check_out)}
                     </p>
-                    <p className="text-sm text-slate-600">
+                    <p className="text-sm text-muted">
                         {[quote.guest_name, t('quotes.guests', { count: quote.adults + quote.children })].filter(Boolean).join(' · ')}
                     </p>
-                    <p className="text-sm text-slate-800">
+                    <p className="text-sm text-ink">
                         {formatMoney(quote.total)}
-                        {quote.discount.amount_cents > 0 && <span className="text-slate-500"> ({t('quotes.discountApplied', { amount: formatMoney(quote.discount) })})</span>}
+                        {quote.discount.amount_cents > 0 && <span className="text-muted"> ({t('quotes.discountApplied', { amount: formatMoney(quote.discount) })})</span>}
                     </p>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-muted">
                         {quote.expired ? t('quotes.expiredAt', { date: formatDateTime(quote.expires_at) }) : t('quotes.expiresAt', { date: formatDateTime(quote.expires_at) })}
                         {' · '}
                         {t('quotes.attempts', { count: quote.checkout_attempts, max: quote.max_checkout_attempts })}
                     </p>
                     {quote.reservation !== null && (
-                        <Link to={`/prenotazioni/${quote.reservation.id}`} className="text-sm text-blue-700 hover:underline">
+                        <Link to={`/prenotazioni/${quote.reservation.id}`} className="text-sm text-brand-800 hover:underline">
                             {t('quotes.reservation', { code: quote.reservation.code })}
                         </Link>
                     )}
@@ -289,7 +289,7 @@ function QuoteRow({ quote }: { quote: Quote }) {
                 </div>
             )}
             {link !== null && usable && (
-                <p className="mt-2 break-all text-xs text-slate-600" data-testid="quote-link">
+                <p className="mt-2 break-all text-xs text-muted" data-testid="quote-link">
                     {link}
                 </p>
             )}

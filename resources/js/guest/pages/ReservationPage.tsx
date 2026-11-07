@@ -81,14 +81,14 @@ export function ReservationPage() {
 
     return (
         <Shell title={reservation.property.name}>
-            <h1 className="text-2xl font-semibold text-slate-900">{t('reservation.title')}</h1>
-            <p className="mt-1 text-sm text-slate-600">{t('reservation.code', { code: reservation.reservation_code })}</p>
+            <h1 className="text-2xl font-semibold text-ink">{t('reservation.title')}</h1>
+            <p className="mt-1 text-sm text-muted">{t('reservation.code', { code: reservation.reservation_code })}</p>
             <div className="mt-6" data-testid="reservation-status" data-status={reservation.status}>
                 <StatusMessage reservation={reservation} cancelled={cancelled} timedOut={timedOut} resumeUrl={resumeUrl} />
             </div>
             <Summary reservation={reservation} />
             {(reservation.property.contact_email !== null || reservation.property.contact_phone !== null) && (
-                <p className="mt-6 text-sm text-slate-600">
+                <p className="mt-6 text-sm text-muted">
                     {t('reservation.contactProperty', {
                         contact: [reservation.property.contact_email, reservation.property.contact_phone].filter(Boolean).join(' · '),
                     })}
@@ -132,7 +132,7 @@ function StatusMessage({
                         <p className="font-medium">{t('reservation.cancelledByGuest')}</p>
                         <p className="mt-1">{t('reservation.cancelledByGuestHint')}</p>
                         {resumeUrl !== null && (
-                            <a href={resumeUrl} target="_top" className="mt-3 inline-block rounded-lg bg-emerald-700 px-4 py-2.5 font-medium text-white">
+                            <a href={resumeUrl} target="_top" className="mt-3 inline-block rounded-card bg-brand-700 px-4 py-2.5 font-medium text-white">
                                 {t('reservation.resumePayment')}
                             </a>
                         )}
@@ -198,10 +198,10 @@ function Summary({ reservation }: { reservation: ReservationStatus }) {
     const money = (value: ReservationStatus['paid']) => formatMoney(value, i18n.language);
 
     return (
-        <section className="mt-6 rounded-xl border border-slate-200 bg-white p-4">
-            <h2 className="font-semibold text-slate-900">{t('reservation.summary')}</h2>
-            <p className="mt-2 text-slate-800">{reservation.unit.name}</p>
-            <p className="text-sm text-slate-600">
+        <section className="mt-6 rounded-card border border-line-soft bg-surface p-4">
+            <h2 className="font-semibold text-ink">{t('reservation.summary')}</h2>
+            <p className="mt-2 text-ink">{reservation.unit.name}</p>
+            <p className="text-sm text-muted">
                 {t('reservation.stay', {
                     checkIn: formatDate(reservation.check_in, i18n.language),
                     checkOut: formatDate(reservation.check_out, i18n.language),
@@ -213,19 +213,19 @@ function Summary({ reservation }: { reservation: ReservationStatus }) {
                     <dt>{t('reservation.total')}</dt>
                     <dd className="tabular-nums">{money(reservation.contract_total)}</dd>
                 </div>
-                <div className="flex justify-between text-slate-700">
+                <div className="flex justify-between text-ink">
                     <dt>{t('reservation.paid')}</dt>
                     <dd className="tabular-nums">{money(reservation.paid)}</dd>
                 </div>
                 {reservation.status === 'CONFIRMED' && reservation.outstanding.amount_cents > 0 && (
-                    <div className="flex justify-between text-slate-700">
+                    <div className="flex justify-between text-ink">
                         <dt>{t('reservation.outstanding')}</dt>
                         <dd className="tabular-nums">{money(reservation.outstanding)}</dd>
                     </div>
                 )}
             </dl>
             {reservation.cancellation_policy !== null && (
-                <p className="mt-3 text-sm text-slate-600">
+                <p className="mt-3 text-sm text-muted">
                     {t('booking.cancellation')}: {reservation.cancellation_policy.title}
                 </p>
             )}
@@ -237,7 +237,7 @@ function BackLink() {
     const { t } = useTranslation();
 
     return (
-        <Link to="/" className="mt-6 inline-block text-sm text-slate-700 underline">
+        <Link to="/" className="mt-6 inline-block text-sm text-ink underline">
             {t('reservation.backToProperty')}
         </Link>
     );

@@ -40,7 +40,7 @@ export function OffboardingPage() {
 
     if (overview.isPending) {
         return (
-            <main className="mx-auto max-w-5xl px-4 py-6 text-sm text-slate-600" role="status">
+            <main className="mx-auto max-w-5xl px-4 py-6 text-sm text-muted" role="status">
                 {t('common.loading')}
             </main>
         );
@@ -62,23 +62,23 @@ export function OffboardingPage() {
     return (
         <main className="mx-auto max-w-5xl space-y-6 px-4 py-6" data-testid="offboarding-page">
             <div>
-                <h1 className="text-xl font-semibold text-slate-900">{t('offboarding.title')}</h1>
-                <p className="mt-1 text-sm text-slate-600">{t('offboarding.intro')}</p>
+                <h1 className="text-xl font-semibold text-ink">{t('offboarding.title')}</h1>
+                <p className="mt-1 text-sm text-muted">{t('offboarding.intro')}</p>
             </div>
 
             <Section title={t('offboarding.statusTitle')}>
                 <div className="space-y-3 text-sm">
                     <p data-testid="offboarding-status">{t(`offboarding.status.${data.status}`)}</p>
-                    {offboarding && data.auto_retire_from && <p className="text-slate-600">{t('offboarding.autoRetire', { date: dateTime(data.auto_retire_from) })}</p>}
-                    {data.feeds_disabled_at && <p className="text-slate-600">{t('offboarding.feedsDisabled', { date: dateTime(data.feeds_disabled_at) })}</p>}
+                    {offboarding && data.auto_retire_from && <p className="text-muted">{t('offboarding.autoRetire', { date: dateTime(data.auto_retire_from) })}</p>}
+                    {data.feeds_disabled_at && <p className="text-muted">{t('offboarding.feedsDisabled', { date: dateTime(data.feeds_disabled_at) })}</p>}
                     {!offboarding && !closed && !confirmingStart && (
                         <button type="button" className={dangerButton} onClick={() => setConfirmingStart(true)} data-testid="offboarding-start">
                             {t('offboarding.start')}
                         </button>
                     )}
                     {confirmingStart && (
-                        <div className="space-y-3 rounded-md border border-red-200 bg-red-50 p-3">
-                            <p className="text-red-900">{t('offboarding.startConfirm')}</p>
+                        <div className="space-y-3 rounded-control border border-red-200 bg-danger-soft p-3">
+                            <p className="text-danger">{t('offboarding.startConfirm')}</p>
                             <div className="flex gap-3">
                                 <button type="button" className={dangerButton} disabled={start.isPending} onClick={() => start.mutate()} data-testid="offboarding-start-confirm">
                                     {t('offboarding.start')}
@@ -107,7 +107,7 @@ export function OffboardingPage() {
 
             <Section title={t('offboarding.exportTitle')}>
                 <div className="space-y-3 text-sm">
-                    <p className="text-slate-600">{t('offboarding.exportHint')}</p>
+                    <p className="text-muted">{t('offboarding.exportHint')}</p>
                     {!closed && (
                         <button type="button" className={primaryButton} disabled={requestExport.isPending} onClick={() => requestExport.mutate()} data-testid="offboarding-export">
                             {requestExport.isPending ? t('common.wait') : t('offboarding.exportRequest')}
@@ -120,9 +120,9 @@ export function OffboardingPage() {
                             <FormError message={errorMessage(requestExport.error)} />
                         ))}
                     {exports.length === 0 ? (
-                        <p className="text-slate-500">{t('offboarding.noExports')}</p>
+                        <p className="text-muted">{t('offboarding.noExports')}</p>
                     ) : (
-                        <ul className="divide-y divide-slate-200 rounded-md border border-slate-200" data-testid="offboarding-exports">
+                        <ul className="divide-y divide-line-soft rounded-control border border-line-soft" data-testid="offboarding-exports">
                             {exports.map((item) => (
                                 <ExportRow key={item.id} item={item} />
                             ))}
@@ -133,13 +133,13 @@ export function OffboardingPage() {
 
             <Section title={t('offboarding.feedsTitle')}>
                 <div className="space-y-3 text-sm">
-                    <p className="text-slate-600">{t('offboarding.feedsHint')}</p>
+                    <p className="text-muted">{t('offboarding.feedsHint')}</p>
                     {data.feeds.length === 0 ? (
-                        <p className="text-slate-500">{t('offboarding.noFeeds')}</p>
+                        <p className="text-muted">{t('offboarding.noFeeds')}</p>
                     ) : (
                         <div className="overflow-x-auto">
                             <table className="min-w-full text-left" data-testid="offboarding-feeds">
-                                <thead className="text-xs uppercase text-slate-500">
+                                <thead className="text-xs uppercase text-muted">
                                     <tr>
                                         <th className="py-2 pr-4">{t('offboarding.feedUnit')}</th>
                                         <th className="py-2 pr-4">{t('offboarding.feedDestination')}</th>
@@ -150,7 +150,7 @@ export function OffboardingPage() {
                                         </th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-slate-200">
+                                <tbody className="divide-y divide-line-soft">
                                     {data.feeds.map((feed) => (
                                         <FeedRow key={feed.id} feed={feed} canConfirm={offboarding} onDone={refresh} />
                                     ))}
@@ -170,8 +170,8 @@ function ExportRow({ item }: { item: TenantExport }) {
     return (
         <li className="flex flex-wrap items-center justify-between gap-3 p-3" data-testid={`export-${item.status}`}>
             <div>
-                <p className="font-medium text-slate-900">{t(`offboarding.exportStatus.${item.status}`)}</p>
-                <p className="text-xs text-slate-500">
+                <p className="font-medium text-ink">{t(`offboarding.exportStatus.${item.status}`)}</p>
+                <p className="text-xs text-muted">
                     {t('offboarding.exportRequestedAt', { date: dateTime(item.requested_at) })}
                     {item.expires_at && item.status === 'READY' && ` · ${t('offboarding.exportExpiresAt', { date: dateTime(item.expires_at) })}`}
                     {item.future_reservations !== null && ` · ${t('offboarding.exportFuture', { count: item.future_reservations })}`}
@@ -202,7 +202,7 @@ function FeedRow({ feed, canConfirm, onDone }: { feed: OffboardingFeed; canConfi
             <td className="py-2 pr-4">{t(`offboarding.feedState.${feed.status}`)}</td>
             <td className="py-2 pr-4">
                 {dateTime(feed.last_fetched_at)}
-                {feed.read_recently && feed.status !== 'RETIRED' && <span className="ml-2 text-xs text-amber-800">{t('offboarding.readRecently')}</span>}
+                {feed.read_recently && feed.status !== 'RETIRED' && <span className="ml-2 text-xs text-warning">{t('offboarding.readRecently')}</span>}
             </td>
             <td className="py-2 text-right">
                 {pending && !confirming && (
@@ -212,7 +212,7 @@ function FeedRow({ feed, canConfirm, onDone }: { feed: OffboardingFeed; canConfi
                 )}
                 {confirming && (
                     <div className="space-y-2 text-left">
-                        <p className="text-sm text-slate-700">{t('offboarding.confirmRemovedQuestion')}</p>
+                        <p className="text-sm text-ink">{t('offboarding.confirmRemovedQuestion')}</p>
                         <div className="flex gap-2">
                             <button type="button" className={dangerButton} disabled={confirm.isPending} onClick={() => confirm.mutate()} data-testid="feed-confirm-removed-yes">
                                 {t('offboarding.confirmRemovedYes')}

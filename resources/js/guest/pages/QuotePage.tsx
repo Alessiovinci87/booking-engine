@@ -41,7 +41,7 @@ export function QuotePage() {
 
         return (
             <Shell>
-                <h1 className="text-2xl font-semibold text-slate-900">{t('quote.title')}</h1>
+                <h1 className="text-2xl font-semibold text-ink">{t('quote.title')}</h1>
                 <div className="mt-4" data-testid="quote-unavailable" data-code={code}>
                     <Notice tone={known ? 'warning' : 'error'}>{known ? t(`quote.${code}`) : quote.error instanceof ApiError && quote.error.status === 404 ? t('quote.notFound') : t('common.loadError')}</Notice>
                 </div>
@@ -176,12 +176,12 @@ function QuoteForm({ token, quote }: { token: string; quote: PublicQuote }) {
     };
 
     const inputClass = (field: string) =>
-        `mt-1 block w-full rounded-lg border px-3 py-2.5 text-base ${errors[field] ? 'border-red-400 bg-red-50' : 'border-slate-300 bg-white'}`;
+        `mt-1 block w-full rounded-card border px-3 py-2.5 text-base ${errors[field] ? 'border-red-400 bg-danger-soft' : 'border-line bg-surface'}`;
 
     return (
         <Shell title={property.name}>
-            <h1 className="text-2xl font-semibold text-slate-900">{t('quote.title')}</h1>
-            <p className="mt-1 text-slate-700" data-testid="quote-summary">
+            <h1 className="text-2xl font-semibold text-ink">{t('quote.title')}</h1>
+            <p className="mt-1 text-ink" data-testid="quote-summary">
                 {t('quote.summary', {
                     unit: quote.unit.name,
                     checkIn: formatDate(quote.check_in, i18n.language),
@@ -189,7 +189,7 @@ function QuoteForm({ token, quote }: { token: string; quote: PublicQuote }) {
                     count: quote.nights,
                 })}
             </p>
-            <p className="mt-1 text-sm text-slate-600">
+            <p className="mt-1 text-sm text-muted">
                 {t('quote.guests', { count: quote.adults + quote.children })} · {t('quote.validUntil', { date: formatDateTime(quote.expires_at, i18n.language) })}
             </p>
 
@@ -235,7 +235,7 @@ function QuoteForm({ token, quote }: { token: string; quote: PublicQuote }) {
                         <Field label={t('booking.notes')} error={errors.notes}>
                             <textarea className={inputClass('notes')} rows={3} maxLength={2000} value={guest.notes} onChange={(e) => update('notes', e.target.value)} name="notes" />
                         </Field>
-                        <p className="text-xs text-amber-800">{t('booking.notesWarning')}</p>
+                        <p className="text-xs text-warning">{t('booking.notesWarning')}</p>
                     </Section>
 
                     <section className="space-y-3">
@@ -258,17 +258,17 @@ function QuoteForm({ token, quote }: { token: string; quote: PublicQuote }) {
                         <button
                             type="submit"
                             disabled={accept.isPending}
-                            className="w-full rounded-lg bg-emerald-700 px-4 py-3.5 text-base font-semibold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+                            className="w-full rounded-card bg-brand-700 px-4 py-3.5 text-base font-semibold text-white hover:bg-brand-800 disabled:cursor-not-allowed disabled:bg-slate-300"
                         >
                             {accept.isPending ? t('booking.sending') : requestMode ? t('booking.proceedRequest') : t('quote.accept')}
                         </button>
-                        <p className="text-center text-xs text-slate-500">{t('booking.paymentNote')}</p>
+                        <p className="text-center text-xs text-muted">{t('booking.paymentNote')}</p>
                     </div>
                 </form>
             )}
 
             {(property.contact_email !== null || property.contact_phone !== null) && (
-                <p className="mt-6 text-sm text-slate-600">
+                <p className="mt-6 text-sm text-muted">
                     {t('reservation.contactProperty', { contact: [property.contact_email, property.contact_phone].filter(Boolean).join(' · ') })}
                 </p>
             )}

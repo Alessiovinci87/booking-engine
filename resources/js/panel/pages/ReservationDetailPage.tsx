@@ -38,7 +38,7 @@ export function ReservationDetailPage() {
     const reservation = useQuery({ queryKey: ['reservation', reservationId], queryFn: () => reservationsApi.get(reservationId) });
 
     if (reservation.isPending) {
-        return <p className="mx-auto max-w-5xl px-4 py-8 text-slate-600">{t('common.loading')}</p>;
+        return <p className="mx-auto max-w-5xl px-4 py-8 text-muted">{t('common.loading')}</p>;
     }
 
     if (reservation.isError) {
@@ -55,15 +55,15 @@ export function ReservationDetailPage() {
 
     return (
         <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
-            <Link to="/prenotazioni" className="text-sm text-blue-700 hover:underline">
+            <Link to="/prenotazioni" className="text-sm text-brand-800 hover:underline">
                 {`← ${t('reservation.back')}`}
             </Link>
             <div className="flex flex-wrap items-center gap-3">
-                <h1 className="font-mono text-2xl font-semibold text-slate-900" data-testid="reservation-code">
+                <h1 className="font-mono text-2xl font-semibold text-ink" data-testid="reservation-code">
                     {r.code}
                 </h1>
                 <StatusBadge status={r.status} />
-                <span className="text-sm text-slate-600">{t(`channel.${r.channel}`)}</span>
+                <span className="text-sm text-muted">{t(`channel.${r.channel}`)}</span>
             </div>
 
             <Actions reservation={r} />
@@ -82,11 +82,11 @@ export function ReservationDetailPage() {
                             ...deadlines(r, t),
                         ]}
                     />
-                    {r.cancel_reason !== null && <p className="mt-3 text-sm text-slate-700">{t('reservation.reason', { reason: r.cancel_reason })}</p>}
+                    {r.cancel_reason !== null && <p className="mt-3 text-sm text-ink">{t('reservation.reason', { reason: r.cancel_reason })}</p>}
                 </Section>
                 <Section title={t('reservation.guest')}>
                     {r.guest.anonymized ? (
-                        <p className="text-sm text-slate-600">{t('reservation.anonymized')}</p>
+                        <p className="text-sm text-muted">{t('reservation.anonymized')}</p>
                     ) : (
                         <Rows
                             rows={[
@@ -98,7 +98,7 @@ export function ReservationDetailPage() {
                             ]}
                         />
                     )}
-                    {r.guest.notes !== null && <p className="mt-3 whitespace-pre-line rounded-md bg-slate-50 p-3 text-sm text-slate-700">{r.guest.notes}</p>}
+                    {r.guest.notes !== null && <p className="mt-3 whitespace-pre-line rounded-control bg-canvas p-3 text-sm text-ink">{r.guest.notes}</p>}
                 </Section>
             </div>
 
@@ -119,11 +119,11 @@ export function ReservationDetailPage() {
                         ]}
                     />
                     <div>
-                        <h3 className="mb-2 text-sm font-semibold text-slate-800">{t('reservation.priceLines')}</h3>
+                        <h3 className="mb-2 text-sm font-semibold text-ink">{t('reservation.priceLines')}</h3>
                         <ul className="divide-y divide-slate-100 text-sm" data-testid="price-lines">
                             {r.price_lines.map((line, index) => (
                                 <li key={`${line.kind}-${line.date ?? ''}-${index}`} className="flex justify-between gap-4 py-1">
-                                    <span className="text-slate-700">
+                                    <span className="text-ink">
                                         {t(`priceLines.${line.kind}`, { defaultValue: line.kind })}
                                         {line.date !== null && ` · ${formatDate(line.date)}`}
                                         {line.quantity > 1 && ` × ${line.quantity}`}
@@ -138,19 +138,19 @@ export function ReservationDetailPage() {
 
             <Section title={t('reservation.payments')}>
                 {r.payments.length === 0 ? (
-                    <p className="text-sm text-slate-600">{t('reservation.noPayments')}</p>
+                    <p className="text-sm text-muted">{t('reservation.noPayments')}</p>
                 ) : (
                     <ul className="space-y-3" data-testid="payments">
                         {r.payments.map((p) => (
-                            <li key={p.id} className="rounded-md border border-slate-200 p-3 text-sm">
+                            <li key={p.id} className="rounded-control border border-line-soft p-3 text-sm">
                                 <div className="flex flex-wrap items-center justify-between gap-2">
-                                    <span className="font-medium text-slate-900">
+                                    <span className="font-medium text-ink">
                                         {p.method_offline !== null ? t(`offlineMethod.${p.method_offline}`) : t(`paymentPurpose.${p.purpose}`, { defaultValue: p.purpose })}
                                     </span>
-                                    <span className="text-slate-700">{`${t(`paymentStatus.${p.status}`, { defaultValue: p.status })} · ${formatMoney(p.amount)}`}</span>
+                                    <span className="text-ink">{`${t(`paymentStatus.${p.status}`, { defaultValue: p.status })} · ${formatMoney(p.amount)}`}</span>
                                 </div>
                                 {p.events.length > 0 && (
-                                    <ul className="mt-2 space-y-0.5 text-xs text-slate-500">
+                                    <ul className="mt-2 space-y-0.5 text-xs text-muted">
                                         {p.events.map((e, index) => (
                                             <li key={`${e.type}-${index}`}>
                                                 {`${formatDateTime(e.occurred_at)} · ${e.type}${e.amount !== null ? ` · ${formatMoney(e.amount)}` : ''}`}
@@ -164,8 +164,8 @@ export function ReservationDetailPage() {
                 )}
                 {r.refunds.length > 0 && (
                     <div className="mt-4">
-                        <h3 className="mb-2 text-sm font-semibold text-slate-800">{t('reservation.refunds')}</h3>
-                        <ul className="space-y-1 text-sm text-slate-700">
+                        <h3 className="mb-2 text-sm font-semibold text-ink">{t('reservation.refunds')}</h3>
+                        <ul className="space-y-1 text-sm text-ink">
                             {r.refunds.map((f) => (
                                 <li key={f.id}>
                                     {`${formatMoney(f.amount)} · ${t(`refundRowStatus.${f.status}`, { defaultValue: f.status })} · ${t('reservation.attempts', { count: f.attempts })}`}
@@ -178,13 +178,13 @@ export function ReservationDetailPage() {
 
             {r.changes.length > 0 && (
                 <Section title={t('reservation.changes')}>
-                    <ul className="space-y-2 text-sm text-slate-700">
+                    <ul className="space-y-2 text-sm text-ink">
                         {r.changes.map((c) => (
                             <li key={c.occurred_at}>
-                                <span className="text-slate-500">{formatDateTime(c.occurred_at)}</span>
+                                <span className="text-muted">{formatDateTime(c.occurred_at)}</span>
                                 {` · ${formatDate(c.previous.check_in)} → ${formatDate(c.previous.check_out)} (${formatMoney(c.previous.contract_total)})`}
                                 {` ⇒ ${formatDate(c.new.check_in)} → ${formatDate(c.new.check_out)} (${formatMoney(c.new.contract_total)})`}
-                                {c.note !== null && <span className="block text-slate-600">{c.note}</span>}
+                                {c.note !== null && <span className="block text-muted">{c.note}</span>}
                             </li>
                         ))}
                     </ul>
@@ -192,10 +192,10 @@ export function ReservationDetailPage() {
             )}
 
             <Section title={t('reservation.history')}>
-                <ul className="space-y-1 text-sm text-slate-700" data-testid="history">
+                <ul className="space-y-1 text-sm text-ink" data-testid="history">
                     {r.history.map((h, index) => (
                         <li key={`${h.action}-${index}`}>
-                            <span className="text-slate-500">{formatDateTime(h.occurred_at)}</span>
+                            <span className="text-muted">{formatDateTime(h.occurred_at)}</span>
                             {` · ${t(`history.${h.action.replace(/\./g, '_')}`, { defaultValue: h.action })} · ${t(`actor.${h.actor_type}`, { defaultValue: h.actor_type })}`}
                         </li>
                     ))}
@@ -236,8 +236,8 @@ function Rows({ rows }: { rows: [string, string][] }) {
         <dl className="space-y-1 text-sm">
             {rows.map(([label, value]) => (
                 <div key={label} className="flex justify-between gap-4">
-                    <dt className="text-slate-500">{label}</dt>
-                    <dd className="text-right text-slate-900">{value}</dd>
+                    <dt className="text-muted">{label}</dt>
+                    <dd className="text-right text-ink">{value}</dd>
                 </div>
             ))}
         </dl>
@@ -285,7 +285,7 @@ function Actions({ reservation }: { reservation: ReservationDetail }) {
                     close();
                 }} />}
                 {recovery != null && (
-                    <div className="rounded-md bg-emerald-50 p-3 text-sm text-emerald-900" role="status">
+                    <div className="rounded-control bg-emerald-50 p-3 text-sm text-emerald-900" role="status">
                         <p>{t('reservation.recoveryCreated', { expires: formatDateTime(recovery.expires_at) })}</p>
                         <input readOnly className={`${inputClass} font-mono text-xs`} value={recovery.checkout_url} onFocus={(e) => e.target.select()} />
                     </div>
@@ -334,7 +334,7 @@ function ActionForm({ onSubmit, children, pending, submitLabel, onCancel }: { on
     };
 
     return (
-        <form onSubmit={submit} className="space-y-3 rounded-md border border-slate-200 bg-slate-50 p-4" data-testid="action-form">
+        <form onSubmit={submit} className="space-y-3 rounded-control border border-line-soft bg-canvas p-4" data-testid="action-form">
             {children}
             <div className="flex gap-2">
                 <button type="submit" className={primaryButton} disabled={pending}>
@@ -355,7 +355,7 @@ function ConfirmAction({ reservation, text, run, onDone }: { reservation: Reserv
     return (
         <>
             <ActionForm onSubmit={() => action.mutate(undefined)} pending={action.isPending} submitLabel={t('reservation.confirm')} onCancel={onDone}>
-                <p className="text-sm text-slate-700">{text}</p>
+                <p className="text-sm text-ink">{text}</p>
             </ActionForm>
             <ActionError error={action.error} />
         </>
@@ -370,7 +370,7 @@ function RejectForm({ reservation, onDone }: { reservation: ReservationDetail; o
     return (
         <>
             <ActionForm onSubmit={() => action.mutate(undefined)} pending={action.isPending} submitLabel={t('reservationActions.reject')} onCancel={onDone}>
-                <p className="text-sm text-slate-700">{t('reservation.rejectHint')}</p>
+                <p className="text-sm text-ink">{t('reservation.rejectHint')}</p>
                 <Field label={t('reservation.reasonLabel')} errors={fieldErrors(action.error).reason}>
                     <textarea className={inputClass} rows={2} value={reason} onChange={(e) => setReason(e.target.value)} maxLength={500} />
                 </Field>
@@ -402,7 +402,7 @@ function CancelForm({ reservation, onDone }: { reservation: ReservationDetail; o
     return (
         <>
             <ActionForm onSubmit={submit} pending={action.isPending} submitLabel={t('reservationActions.cancel')} onCancel={onDone}>
-                <p className="text-sm text-slate-700">{t('reservation.cancelHint', { proposed: formatMoney(proposed), max: formatMoney(max) })}</p>
+                <p className="text-sm text-ink">{t('reservation.cancelHint', { proposed: formatMoney(proposed), max: formatMoney(max) })}</p>
                 <Field label={t('reservation.refundLabel')} errors={invalid ? [t('common.invalidAmount')] : errors.refund_cents} hint={t('reservation.refundHint')}>
                     <TextInput value={refund} onChange={setRefund} inputMode="decimal" />
                 </Field>
@@ -453,12 +453,12 @@ function ModifyForm({ reservation, onDone }: { reservation: ReservationDetail; o
                     submitLabel={t('reservation.confirmModify')}
                     onCancel={back}
                 >
-                    <p className="text-sm text-slate-700">{t('reservation.modifyPreviewHint')}</p>
+                    <p className="text-sm text-ink">{t('reservation.modifyPreviewHint')}</p>
                     <div className="grid gap-4 sm:grid-cols-2" data-testid="modify-preview">
                         <StayPriceColumn title={t('reservation.before')} price={current} />
                         <StayPriceColumn title={t('reservation.after')} price={proposed} />
                     </div>
-                    <p className="text-sm font-medium text-slate-900" data-testid="modify-difference">
+                    <p className="text-sm font-medium text-ink" data-testid="modify-difference">
                         {t('reservation.difference', { amount: formatMoney(difference) })}
                     </p>
                 </ActionForm>
@@ -470,7 +470,7 @@ function ModifyForm({ reservation, onDone }: { reservation: ReservationDetail; o
     return (
         <>
             <ActionForm onSubmit={() => preview.mutate()} pending={preview.isPending} submitLabel={t('reservation.previewModify')} onCancel={onDone}>
-                <p className="text-sm text-slate-700">{t('reservation.modifyHint')}</p>
+                <p className="text-sm text-ink">{t('reservation.modifyHint')}</p>
                 <div className="grid gap-3 sm:grid-cols-4">
                     <Field label={t('reservation.checkIn')} errors={errors.check_in}>
                         <TextInput type="date" value={checkIn} onChange={setCheckIn} />
@@ -498,9 +498,9 @@ function StayPriceColumn({ title, price }: { title: string; price: StayPrice }) 
     const { t } = useTranslation();
 
     return (
-        <div className="rounded-md border border-slate-200 p-3 text-sm">
-            <p className="font-medium text-slate-900">{title}</p>
-            <p className="text-slate-700">
+        <div className="rounded-control border border-line-soft p-3 text-sm">
+            <p className="font-medium text-ink">{title}</p>
+            <p className="text-ink">
                 {t('reservation.previewStay', {
                     checkIn: formatDate(price.check_in),
                     checkOut: formatDate(price.check_out),
@@ -512,7 +512,7 @@ function StayPriceColumn({ title, price }: { title: string; price: StayPrice }) 
             <ul className="mt-2 divide-y divide-slate-100">
                 {price.price_lines.map((line, index) => (
                     <li key={`${line.kind}-${line.date ?? ''}-${index}`} className="flex justify-between gap-4 py-1">
-                        <span className="text-slate-700">
+                        <span className="text-ink">
                             {t(`priceLines.${line.kind}`, { defaultValue: line.kind })}
                             {line.date !== null && ` · ${formatDate(line.date)}`}
                             {line.quantity > 1 && ` × ${line.quantity}`}
@@ -521,7 +521,7 @@ function StayPriceColumn({ title, price }: { title: string; price: StayPrice }) 
                     </li>
                 ))}
             </ul>
-            <p className="mt-2 flex justify-between font-medium text-slate-900">
+            <p className="mt-2 flex justify-between font-medium text-ink">
                 <span>{t('reservation.total')}</span>
                 <span className="tabular-nums">{formatMoney(price.contract_total)}</span>
             </p>
@@ -549,7 +549,7 @@ function OfflinePaymentForm({ reservation, onDone }: { reservation: ReservationD
     return (
         <>
             <ActionForm onSubmit={submit} pending={action.isPending} submitLabel={t('reservationActions.offline_payment')} onCancel={onDone}>
-                <p className="text-sm text-slate-700">{t('reservation.offlineHint', { outstanding: formatMoney(reservation.outstanding) })}</p>
+                <p className="text-sm text-ink">{t('reservation.offlineHint', { outstanding: formatMoney(reservation.outstanding) })}</p>
                 <div className="grid gap-3 sm:grid-cols-2">
                     <Field label={t('reservation.amount')} errors={invalid ? [t('common.invalidAmount')] : errors.amount_cents}>
                         <TextInput value={amount} onChange={setAmount} inputMode="decimal" />
@@ -578,7 +578,7 @@ function RecoveryForm({ reservation, onDone }: { reservation: ReservationDetail;
     return (
         <>
             <ActionForm onSubmit={() => action.mutate(undefined)} pending={action.isPending} submitLabel={t('reservationActions.recovery_link')} onCancel={() => onDone(undefined)}>
-                <p className="text-sm text-slate-700">{t('reservation.recoveryHint')}</p>
+                <p className="text-sm text-ink">{t('reservation.recoveryHint')}</p>
                 <Field label={t('reservation.recoveryHours')} errors={fieldErrors(action.error).deadline_hours}>
                     <TextInput type="number" value={hours} onChange={setHours} min={1} max={24} />
                 </Field>

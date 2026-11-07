@@ -101,16 +101,16 @@ export function NewReservationPage() {
     const setGuestField = (field: keyof typeof guest) => (value: string) => setGuest((g) => ({ ...g, [field]: value }));
 
     if (isPending) {
-        return <p className="mx-auto max-w-5xl px-4 py-8 text-slate-600">{t('common.loading')}</p>;
+        return <p className="mx-auto max-w-5xl px-4 py-8 text-muted">{t('common.loading')}</p>;
     }
 
     return (
         <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
-            <Link to="/prenotazioni" className="text-sm text-blue-700 hover:underline">
+            <Link to="/prenotazioni" className="text-sm text-brand-800 hover:underline">
                 {`← ${t('reservation.back')}`}
             </Link>
-            <h1 className="text-2xl font-semibold text-slate-900">{t('newReservation.title')}</h1>
-            <p className="text-sm text-slate-600">{t('newReservation.intro')}</p>
+            <h1 className="text-2xl font-semibold text-ink">{t('newReservation.title')}</h1>
+            <p className="text-sm text-muted">{t('newReservation.intro')}</p>
 
             <form onSubmit={submit} className="space-y-6" data-testid="manual-reservation-form" noValidate>
                 <Section title={t('newReservation.stay')}>
@@ -131,19 +131,19 @@ export function NewReservationPage() {
                             <TextInput type="number" value={children} onChange={setChildren} min={0} />
                         </Field>
                     </div>
-                    <div className="mt-4 rounded-md bg-slate-50 p-3 text-sm" data-testid="manual-price">
+                    <div className="mt-4 rounded-control bg-canvas p-3 text-sm" data-testid="manual-price">
                         {!validStay ? (
-                            <p className="text-slate-600">{t('newReservation.chooseDates')}</p>
+                            <p className="text-muted">{t('newReservation.chooseDates')}</p>
                         ) : preview.isFetching ? (
-                            <p className="text-slate-600">{t('common.loading')}</p>
+                            <p className="text-muted">{t('common.loading')}</p>
                         ) : preview.isError ? (
-                            <p className="text-red-700">{errorMessage(preview.error)}</p>
+                            <p className="text-danger">{errorMessage(preview.error)}</p>
                         ) : preview.data !== undefined ? (
-                            <p className="text-slate-800">
+                            <p className="text-ink">
                                 {t('newReservation.priceSummary', { nights: preview.data.nights, total: formatMoney(preview.data.total) })}
                             </p>
                         ) : null}
-                        <p className="mt-1 text-xs text-slate-500">{t('newReservation.availabilityNote')}</p>
+                        <p className="mt-1 text-xs text-muted">{t('newReservation.availabilityNote')}</p>
                     </div>
                     <div className="mt-4 max-w-xs">
                         <Field label={t('newReservation.discount')} errors={errors.discount_cents} hint={t('newReservation.discountHint')}>
@@ -190,7 +190,7 @@ export function NewReservationPage() {
                 </Section>
 
                 <Section title={t('newReservation.payment')}>
-                    <label className="flex items-center gap-2 text-sm text-slate-700">
+                    <label className="flex items-center gap-2 text-sm text-ink">
                         <input type="checkbox" checked={payNow} onChange={(e) => setPayNow(e.target.checked)} name="pay_now" />
                         {t('newReservation.payNow')}
                     </label>
@@ -210,7 +210,7 @@ export function NewReservationPage() {
                             </Field>
                         </div>
                     )}
-                    <p className="mt-3 text-xs text-slate-500">{t('newReservation.unpaidNote')}</p>
+                    <p className="mt-3 text-xs text-muted">{t('newReservation.unpaidNote')}</p>
                 </Section>
 
                 {create.isError && <FormError message={errorMessage(create.error)} />}

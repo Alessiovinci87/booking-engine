@@ -21,7 +21,7 @@ export function AuthGate({ stage, children }: { stage: Exclude<AuthStage, 'loadi
 
     if (current === 'loading') {
         return (
-            <p className="p-10 text-center text-slate-500" role="status">
+            <p className="p-10 text-center text-muted" role="status">
                 {t('common.loading')}
             </p>
         );

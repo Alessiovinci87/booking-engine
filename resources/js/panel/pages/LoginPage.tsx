@@ -31,7 +31,7 @@ export function LoginPage() {
         <AuthCard title={t('login.title')}>
             <form className="space-y-4" onSubmit={submit} noValidate>
                 <FormError message={login.isError ? errorMessage(login.error) : null} />
-                <label className="block text-sm font-medium text-slate-700">
+                <label className="block text-sm font-medium text-ink">
                     {t('login.email')}
                     <input
                         className={inputClass}
@@ -42,7 +42,7 @@ export function LoginPage() {
                         onChange={(e) => setEmail(e.target.value)}
                     />
                 </label>
-                <label className="block text-sm font-medium text-slate-700">
+                <label className="block text-sm font-medium text-ink">
                     {t('login.password')}
                     <input
                         className={inputClass}
@@ -58,7 +58,7 @@ export function LoginPage() {
                 </button>
             </form>
             <p className="mt-6 text-center text-sm">
-                <Link to="/password-dimenticata" className="font-medium text-blue-700 hover:underline">
+                <Link to="/password-dimenticata" className="font-medium text-brand-800 hover:underline">
                     {t('password.forgotLink')}
                 </Link>
             </p>

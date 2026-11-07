@@ -36,19 +36,19 @@ export function PropertyPage() {
             <main className="space-y-6">
                 <Gallery photos={photos} name={p.name} />
                 <section>
-                    <h1 className="text-2xl font-semibold text-slate-900">{p.name}</h1>
+                    <h1 className="text-2xl font-semibold text-ink">{p.name}</h1>
                     {p.address.city !== null && (
-                        <p className="mt-1 text-sm text-slate-600">{[p.address.line1, p.address.city].filter(Boolean).join(', ')}</p>
+                        <p className="mt-1 text-sm text-muted">{[p.address.line1, p.address.city].filter(Boolean).join(', ')}</p>
                     )}
-                    {p.description !== null && <p className="mt-3 whitespace-pre-line text-slate-700">{p.description}</p>}
-                    <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-600">
+                    {p.description !== null && <p className="mt-3 whitespace-pre-line text-ink">{p.description}</p>}
+                    <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted">
                         {p.checkin_time !== null && <span>{t('property.checkin', { time: p.checkin_time })}</span>}
                         {p.checkout_time !== null && <span>{t('property.checkout', { time: p.checkout_time })}</span>}
                     </div>
                 </section>
 
                 <section aria-labelledby="units-title">
-                    <h2 id="units-title" className="text-lg font-semibold text-slate-900">
+                    <h2 id="units-title" className="text-lg font-semibold text-ink">
                         {t('property.units')}
                     </h2>
                     {p.units.length === 0 ? (
@@ -69,14 +69,14 @@ export function PropertyPage() {
 
                 {p.house_rules !== null && (
                     <section>
-                        <h2 className="text-lg font-semibold text-slate-900">{t('property.houseRules')}</h2>
-                        <p className="mt-2 whitespace-pre-line text-sm text-slate-700">{p.house_rules}</p>
+                        <h2 className="text-lg font-semibold text-ink">{t('property.houseRules')}</h2>
+                        <p className="mt-2 whitespace-pre-line text-sm text-ink">{p.house_rules}</p>
                     </section>
                 )}
 
                 {(p.contact_email !== null || p.contact_phone !== null) && (
-                    <section className="text-sm text-slate-600">
-                        <h2 className="text-lg font-semibold text-slate-900">{t('property.contact')}</h2>
+                    <section className="text-sm text-muted">
+                        <h2 className="text-lg font-semibold text-ink">{t('property.contact')}</h2>
                         <p className="mt-2">{[p.contact_email, p.contact_phone].filter(Boolean).join(' · ')}</p>
                     </section>
                 )}
@@ -90,25 +90,25 @@ function UnitCard({ unit }: { unit: PublicUnit }) {
     const cover = unit.photos[0];
 
     return (
-        <li className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm" data-testid="unit-card">
+        <li className="overflow-hidden rounded-card border border-line-soft bg-surface shadow-card" data-testid="unit-card">
             {cover !== undefined ? (
                 <img src={cover.urls.thumbnail} alt={t('property.photoAlt', { name: unit.name })} className="aspect-[4/3] w-full object-cover" />
             ) : (
-                <div className="flex aspect-[4/3] items-center justify-center bg-slate-100 text-sm text-slate-500">{t('unit.noPhoto')}</div>
+                <div className="flex aspect-[4/3] items-center justify-center bg-surface-muted text-sm text-muted">{t('unit.noPhoto')}</div>
             )}
             <div className="space-y-2 p-4">
-                <h3 className="font-semibold text-slate-900">{unit.name}</h3>
-                {unit.description !== null && <p className="line-clamp-3 text-sm text-slate-600">{unit.description}</p>}
-                <ul className="flex flex-wrap gap-2 text-xs text-slate-700">
-                    <li className="rounded-full bg-slate-100 px-2 py-0.5">{t('unit.guests', { count: unit.max_occupancy })}</li>
-                    <li className="rounded-full bg-slate-100 px-2 py-0.5">{t('unit.minNights', { count: unit.min_nights })}</li>
-                    <li className={`rounded-full px-2 py-0.5 ${unit.booking_mode === 'INSTANT' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>
+                <h3 className="font-semibold text-ink">{unit.name}</h3>
+                {unit.description !== null && <p className="line-clamp-3 text-sm text-muted">{unit.description}</p>}
+                <ul className="flex flex-wrap gap-2 text-xs text-ink">
+                    <li className="rounded-full bg-surface-muted px-2 py-0.5">{t('unit.guests', { count: unit.max_occupancy })}</li>
+                    <li className="rounded-full bg-surface-muted px-2 py-0.5">{t('unit.minNights', { count: unit.min_nights })}</li>
+                    <li className={`rounded-full px-2 py-0.5 ${unit.booking_mode === 'INSTANT' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-warning'}`}>
                         {unit.booking_mode === 'INSTANT' ? t('unit.instant') : t('unit.request')}
                     </li>
                 </ul>
                 <Link
                     to={`/alloggi/${unit.id}`}
-                    className="mt-2 block rounded-lg bg-slate-900 px-4 py-3 text-center text-sm font-medium text-white hover:bg-slate-800"
+                    className="mt-2 block rounded-card bg-slate-900 px-4 py-3 text-center text-sm font-medium text-white hover:bg-slate-800"
                 >
                     {t('unit.choose')}
                 </Link>

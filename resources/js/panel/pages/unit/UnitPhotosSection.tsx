@@ -66,19 +66,19 @@ export function UnitPhotosSection({ unitId }: { unitId: string }) {
                 </>
             }
         >
-            <p className="mb-3 text-sm text-slate-600">{t('photos.hint')}</p>
+            <p className="mb-3 text-sm text-muted">{t('photos.hint')}</p>
             {uploadErrors !== undefined ? (
                 <FormError message={uploadErrors.join(' ')} />
             ) : (
                 error !== null && <FormError message={errorMessage(error)} />
             )}
-            {photos.isSuccess && list.length === 0 && <p className="text-slate-600">{t('photos.empty')}</p>}
+            {photos.isSuccess && list.length === 0 && <p className="text-muted">{t('photos.empty')}</p>}
             <ul className="mt-3 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
                 {list.map((photo, index) => (
-                    <li key={photo.id} className="rounded-md border border-slate-200 p-2">
+                    <li key={photo.id} className="rounded-control border border-line-soft p-2">
                         <img src={photo.urls.thumbnail} alt={t('photos.alt', { position: index + 1 })} className="aspect-[4/3] w-full rounded object-cover" />
                         <div className="mt-2 flex items-center justify-between gap-1 text-xs">
-                            <span className="text-slate-600">{photo.is_cover ? t('photos.cover') : `#${index + 1}`}</span>
+                            <span className="text-muted">{photo.is_cover ? t('photos.cover') : `#${index + 1}`}</span>
                             <span className="flex gap-1">
                                 <button className={secondaryButton} type="button" aria-label={t('photos.moveUp')} disabled={index === 0 || reorder.isPending} onClick={() => move(index, -1)}>
                                     ←

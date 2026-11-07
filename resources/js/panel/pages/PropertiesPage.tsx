@@ -34,19 +34,19 @@ export function PropertiesPage() {
 
     return (
         <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
-            <h1 className="text-2xl font-semibold text-slate-900">{t('properties.title')}</h1>
+            <h1 className="text-2xl font-semibold text-ink">{t('properties.title')}</h1>
 
             <Section title={t('properties.list')}>
-                {properties.isPending && <p className="text-slate-600">{t('common.loading')}</p>}
+                {properties.isPending && <p className="text-muted">{t('common.loading')}</p>}
                 {properties.isError && <FormError message={errorMessage(properties.error)} />}
-                {properties.data?.data.length === 0 && <p className="text-slate-600">{t('properties.empty')}</p>}
-                <ul className="divide-y divide-slate-200">
+                {properties.data?.data.length === 0 && <p className="text-muted">{t('properties.empty')}</p>}
+                <ul className="divide-y divide-line-soft">
                     {properties.data?.data.map((property) => (
                         <li key={property.id} className="flex items-center justify-between py-3">
-                            <Link to={`/strutture/${property.id}`} className="font-medium text-blue-700 hover:underline">
+                            <Link to={`/strutture/${property.id}`} className="font-medium text-brand-800 hover:underline">
                                 {property.name}
                             </Link>
-                            <span className="text-sm text-slate-600">{t(`properties.status.${property.status}`)}</span>
+                            <span className="text-sm text-muted">{t(`properties.status.${property.status}`)}</span>
                         </li>
                     ))}
                 </ul>

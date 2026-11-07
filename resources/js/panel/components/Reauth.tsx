@@ -23,15 +23,15 @@ export function ReauthPrompt({ onConfirmed, onCancel }: { onConfirmed: () => voi
 
     return (
         <form
-            className="space-y-2 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm"
+            className="space-y-2 rounded-control border border-amber-300 bg-warning-soft p-3 text-sm"
             data-testid="reauth"
             onSubmit={(event) => {
                 event.preventDefault();
                 confirm.mutate();
             }}
         >
-            <p className="text-amber-900">{t('reauth.hint')}</p>
-            <label className="block text-slate-700">
+            <p className="text-warning">{t('reauth.hint')}</p>
+            <label className="block text-ink">
                 {t('login.password')}
                 <input type="password" autoComplete="current-password" className={`${inputClass} mt-1`} value={password} onChange={(e) => setPassword(e.target.value)} required />
             </label>

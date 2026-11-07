@@ -2,41 +2,35 @@ import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import type { LocaleCode, TranslationTexts, Translations } from '../api/admin';
+import { buttonClass, Card } from '../../shared/ui';
 import { inputClass } from './AuthCard';
 
 export { FormError, inputClass } from './AuthCard';
 
-export const primaryButton =
-    'rounded-md bg-blue-700 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60';
+export const primaryButton = buttonClass('primary');
 
-export const secondaryButton =
-    'rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60';
+export const secondaryButton = buttonClass('secondary');
 
-export const dangerButton =
-    'rounded-md border border-red-300 bg-white px-3 py-1.5 text-sm text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60';
+export const dangerButton = buttonClass('danger');
 
 /** Riquadro di una sezione della pagina. */
 export function Section({ title, children, actions }: { title: string; children: ReactNode; actions?: ReactNode }) {
     return (
-        <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="mb-4 flex items-center justify-between gap-4">
-                <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
-                {actions}
-            </div>
+        <Card title={title} actions={actions}>
             {children}
-        </section>
+        </Card>
     );
 }
 
 /** Campo con etichetta ed eventuali errori di validazione del server. */
 export function Field({ label, errors, children, hint }: { label: string; errors?: string[]; children: ReactNode; hint?: string }) {
     return (
-        <label className="block text-sm font-medium text-slate-700">
+        <label className="block text-sm font-medium text-ink">
             {label}
             {children}
-            {hint !== undefined && <span className="mt-1 block text-xs font-normal text-slate-500">{hint}</span>}
+            {hint !== undefined && <span className="mt-1 block text-xs font-normal text-muted">{hint}</span>}
             {errors?.map((message) => (
-                <span key={message} className="mt-1 block text-xs font-normal text-red-700">
+                <span key={message} className="mt-1 block text-xs font-normal text-danger">
                     {message}
                 </span>
             ))}
@@ -103,8 +97,8 @@ export function TranslationFields({
                 const set = (field: keyof typeof value, text: string) => onChange({ ...draft, [locale]: { ...value, [field]: text } });
 
                 return (
-                    <fieldset key={locale} className="space-y-3 rounded-md border border-slate-200 p-3">
-                        <legend className="px-1 text-sm font-semibold text-slate-800">{t(`translations.${locale}`)}</legend>
+                    <fieldset key={locale} className="space-y-3 rounded-control border border-line-soft p-3">
+                        <legend className="px-1 text-sm font-semibold text-ink">{t(`translations.${locale}`)}</legend>
                         <Field label={t('translations.name')} errors={errors[`translations.${locale}.name`] ?? errors[`translations.${locale}`]}>
                             <TextInput value={value.name} onChange={(text) => set('name', text)} />
                         </Field>
@@ -125,7 +119,7 @@ export function SavedNotice({ show }: { show: boolean }) {
     const { t } = useTranslation();
 
     return show ? (
-        <span className="text-sm text-green-700" role="status">
+        <span className="text-sm text-success" role="status">
             {t('common.saved')}
         </span>
     ) : null;
@@ -139,7 +133,7 @@ export function ConflictNotice({ show }: { show: boolean }) {
     const { t } = useTranslation();
 
     return show ? (
-        <p className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900" role="alert">
+        <p className="rounded-control border border-amber-200 bg-warning-soft px-3 py-2 text-sm text-warning" role="alert">
             {t('common.conflictReloaded')}
         </p>
     ) : null;

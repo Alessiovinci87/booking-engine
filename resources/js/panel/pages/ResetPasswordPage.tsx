@@ -43,11 +43,11 @@ export function ResetPasswordPage() {
     if (reset.isSuccess) {
         return (
             <AuthCard title={t('password.resetTitle')}>
-                <p className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-800" role="status" data-testid="reset-done">
+                <p className="rounded-control bg-green-50 px-3 py-2 text-sm text-green-800" role="status" data-testid="reset-done">
                     {t('password.resetDone')}
                 </p>
                 <p className="mt-6 text-center text-sm">
-                    <Link to="/login" className="font-medium text-blue-700 hover:underline">
+                    <Link to="/login" className="font-medium text-brand-800 hover:underline">
                         {t('password.goToLogin')}
                     </Link>
                 </p>
@@ -61,9 +61,9 @@ export function ResetPasswordPage() {
                 <FormError message={t('errors.PASSWORD_RESET_INVALID')} />
             ) : (
                 <form className="space-y-4" onSubmit={submit} noValidate>
-                    <p className="text-sm text-slate-600">{t('password.rules')}</p>
+                    <p className="text-sm text-muted">{t('password.rules')}</p>
                     <FormError message={reset.isError ? errorMessage(reset.error) : null} />
-                    <label className="block text-sm font-medium text-slate-700">
+                    <label className="block text-sm font-medium text-ink">
                         {t('password.new')}
                         <input
                             className={inputClass}
@@ -75,11 +75,11 @@ export function ResetPasswordPage() {
                         />
                     </label>
                     {errors.password?.map((message) => (
-                        <p key={message} className="text-sm text-red-700">
+                        <p key={message} className="text-sm text-danger">
                             {message}
                         </p>
                     ))}
-                    <label className="block text-sm font-medium text-slate-700">
+                    <label className="block text-sm font-medium text-ink">
                         {t('password.confirm')}
                         <input
                             className={inputClass}
@@ -96,7 +96,7 @@ export function ResetPasswordPage() {
                 </form>
             )}
             <p className="mt-6 text-center text-sm">
-                <Link to="/password-dimenticata" className="font-medium text-blue-700 hover:underline">
+                <Link to="/password-dimenticata" className="font-medium text-brand-800 hover:underline">
                     {t('password.requestNewLink')}
                 </Link>
             </p>

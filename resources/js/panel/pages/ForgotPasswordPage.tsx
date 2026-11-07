@@ -26,14 +26,14 @@ export function ForgotPasswordPage() {
     return (
         <AuthCard title={t('password.forgotTitle')}>
             {request.isSuccess ? (
-                <p className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-800" role="status" data-testid="forgot-sent">
+                <p className="rounded-control bg-green-50 px-3 py-2 text-sm text-green-800" role="status" data-testid="forgot-sent">
                     {t('password.forgotSent')}
                 </p>
             ) : (
                 <form className="space-y-4" onSubmit={submit} noValidate>
-                    <p className="text-sm text-slate-600">{t('password.forgotIntro')}</p>
+                    <p className="text-sm text-muted">{t('password.forgotIntro')}</p>
                     <FormError message={request.isError ? errorMessage(request.error) : null} />
-                    <label className="block text-sm font-medium text-slate-700">
+                    <label className="block text-sm font-medium text-ink">
                         {t('login.email')}
                         <input
                             className={inputClass}
@@ -50,7 +50,7 @@ export function ForgotPasswordPage() {
                 </form>
             )}
             <p className="mt-6 text-center text-sm">
-                <Link to="/login" className="font-medium text-blue-700 hover:underline">
+                <Link to="/login" className="font-medium text-brand-800 hover:underline">
                     {t('password.backToLogin')}
                 </Link>
             </p>

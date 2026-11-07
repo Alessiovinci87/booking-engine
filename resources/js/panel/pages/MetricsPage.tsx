@@ -38,7 +38,7 @@ export function MetricsPage() {
 
     return (
         <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
-            <h1 className="text-2xl font-semibold text-slate-900">{t('metrics.title')}</h1>
+            <h1 className="text-2xl font-semibold text-ink">{t('metrics.title')}</h1>
 
             <Section
                 title={t('metrics.period')}
@@ -62,11 +62,11 @@ export function MetricsPage() {
                     </Field>
                 </div>
                 {!valid && <FormError message={t('metrics.invalidPeriod')} />}
-                <p className="mt-2 text-sm text-slate-600">{t('metrics.csvHint')}</p>
+                <p className="mt-2 text-sm text-muted">{t('metrics.csvHint')}</p>
             </Section>
 
             {metrics.isError && <FormError message={errorMessage(metrics.error)} />}
-            {valid && data === undefined && !metrics.isError && <p className="text-slate-600">{t('common.loading')}</p>}
+            {valid && data === undefined && !metrics.isError && <p className="text-muted">{t('common.loading')}</p>}
 
             {data !== undefined && (
                 <>
@@ -90,7 +90,7 @@ export function MetricsPage() {
                             <dt className="font-semibold">{t('metrics.benefit')}</dt>
                             <dd className="text-right font-semibold">{money(data.estimated_direct_benefit_cents)}</dd>
                         </dl>
-                        <p className="mt-4 text-sm text-slate-600" data-testid="metrics-reliability">
+                        <p className="mt-4 text-sm text-muted" data-testid="metrics-reliability">
                             {t('metrics.reliability')}
                         </p>
                         {data.payment_fees_estimated && <p className="mt-2 text-sm text-amber-700">{t('metrics.feesEstimatedNote')}</p>}
@@ -98,7 +98,7 @@ export function MetricsPage() {
 
                     <Section title={t('metrics.byProperty')}>
                         <table className="w-full text-left text-sm">
-                            <thead className="text-slate-500">
+                            <thead className="text-muted">
                                 <tr>
                                     <th className="py-1">{t('metrics.property')}</th>
                                     <th className="py-1">{t('metrics.otaPercent')}</th>
@@ -119,7 +119,7 @@ export function MetricsPage() {
                                 ))}
                             </tbody>
                         </table>
-                        <p className="mt-2 text-sm text-slate-600">{t('metrics.otaPercentHint')}</p>
+                        <p className="mt-2 text-sm text-muted">{t('metrics.otaPercentHint')}</p>
                     </Section>
                 </>
             )}
@@ -129,10 +129,10 @@ export function MetricsPage() {
 
 function Metric({ label, value, hint, testId }: { label: string; value: string; hint: string; testId: string }) {
     return (
-        <div className="rounded-lg border border-slate-200 bg-white p-4" data-testid={testId}>
-            <p className="text-sm text-slate-600">{label}</p>
-            <p className="mt-1 text-2xl font-semibold text-slate-900">{value}</p>
-            <p className="mt-1 text-xs text-slate-500">{hint}</p>
+        <div className="rounded-card border border-line-soft bg-surface p-4" data-testid={testId}>
+            <p className="text-sm text-muted">{label}</p>
+            <p className="mt-1 text-2xl font-semibold text-ink">{value}</p>
+            <p className="mt-1 text-xs text-muted">{hint}</p>
         </div>
     );
 }

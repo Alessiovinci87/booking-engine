@@ -3,30 +3,104 @@
 @source '../**/*.blade.php';
 @source '../js/**/*.{ts,tsx}';
 
+/*
+ * Token di design (8.1, ADR-0017): un solo punto per colori, tipografia, raggi e ombre di pannello e
+ * pagina ospite. Contrasti misurati su bianco (WCAG 2.2 AA: 4.5:1 per il testo normale):
+ * - brand-700 #0f766e 5.5:1, brand-800 #115e59 7.6:1 (testo e pulsanti);
+ * - ink #0f172a 17.8:1; muted #475569 7.6:1 (anche su surface-muted #f1f5f9: 6.9:1);
+ * - danger #b91c1c 6.5:1, success #047857 5.5:1, warning #92400e 7.1:1, info #075985 7.5:1.
+ * brand-600 (3.7:1) solo per bordi, anelli e testo grande.
+ */
 @theme {
     /* Font di sistema: nessuna risorsa esterna (CSP default-src 'self', 08). */
     --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif, 'Apple Color Emoji',
         'Segoe UI Emoji';
+
+    --color-brand-50: #f0fdfa;
+    --color-brand-100: #ccfbf1;
+    --color-brand-200: #99f6e4;
+    --color-brand-600: #0d9488;
+    --color-brand-700: #0f766e;
+    --color-brand-800: #115e59;
+    --color-brand-900: #134e4a;
+
+    --color-ink: #0f172a;
+    --color-muted: #475569;
+    --color-line: #cbd5e1;
+    --color-line-soft: #e2e8f0;
+    --color-surface: #ffffff;
+    --color-surface-muted: #f1f5f9;
+    --color-canvas: #f8fafc;
+
+    --color-danger: #b91c1c;
+    --color-danger-soft: #fef2f2;
+    --color-success: #047857;
+    --color-success-soft: #ecfdf5;
+    --color-warning: #92400e;
+    --color-warning-soft: #fffbeb;
+    --color-info: #075985;
+    --color-info-soft: #f0f9ff;
+
+    --radius-control: 0.5rem;
+    --radius-card: 0.75rem;
+
+    --shadow-card: 0 1px 2px 0 rgb(15 23 42 / 0.06), 0 1px 3px 0 rgb(15 23 42 / 0.08);
+    --shadow-overlay: 0 10px 30px -5px rgb(15 23 42 / 0.25);
+
+    /* Altezza minima delle aree toccabili (8.3: 44 px). */
+    --spacing-tap: 2.75rem;
+}
+
+@layer base {
+    html {
+        color: var(--color-ink);
+        background-color: var(--color-canvas);
+        -webkit-text-size-adjust: 100%;
+    }
+
+    /* Focus sempre visibile da tastiera (8.2, WCAG 2.4.7 e 2.4.11). */
+    :focus-visible {
+        outline: 3px solid var(--color-brand-600);
+        outline-offset: 2px;
+    }
+
+    dialog::backdrop {
+        background: rgb(15 23 42 / 0.5);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+            animation-duration: 0.01ms !important;
+            transition-duration: 0.01ms !important;
+            scroll-behavior: auto !important;
+        }
+    }
 }
 
 /* Calendario della pagina ospite (react-day-picker): notti non disponibili barrate. */
-.rdp-root {
-    --rdp-accent-color: var(--color-emerald-700);
-    --rdp-accent-background-color: var(--color-emerald-50);
-    --rdp-day-width: 2.5rem;
-    --rdp-day-height: 2.5rem;
-    --rdp-day_button-width: 2.4rem;
-    --rdp-day_button-height: 2.4rem;
+html .rdp-root {
+    --rdp-accent-color: var(--color-brand-700);
+    --rdp-accent-background-color: var(--color-brand-50);
+    /* Giorni da 44 px: aree toccabili sul telefono (8.3). */
+    --rdp-day-width: 2.75rem;
+    --rdp-day-height: 2.75rem;
+    --rdp-day_button-width: 2.75rem;
+    --rdp-day_button-height: 2.75rem;
+    --rdp-nav-height: 2.75rem;
+    --rdp-nav_button-width: 2.75rem;
+    --rdp-nav_button-height: 2.75rem;
 }
 
-.rdp-months {
+html .rdp-months {
     flex-wrap: wrap;
     gap: 1.5rem;
 }
 
 .guest-unavailable,
 .guest-unavailable-legend {
-    color: var(--color-slate-400);
+    color: var(--color-muted);
     text-decoration: line-through;
 }
 

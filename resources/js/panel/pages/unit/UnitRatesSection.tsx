@@ -23,16 +23,16 @@ export function UnitRatesSection({ unitId }: { unitId: string }) {
             {plan.data !== undefined && <BasePriceForm key={plan.data.version} unitId={unitId} plan={plan.data} />}
 
             <div className="mt-6 flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-slate-800">{t('seasons.title')}</h3>
+                <h3 className="text-sm font-semibold text-ink">{t('seasons.title')}</h3>
                 <button className={secondaryButton} type="button" onClick={() => setEditing('new')}>
                     {t('seasons.add')}
                 </button>
             </div>
             <Warnings warnings={seasons.data?.warnings ?? []} />
-            {seasons.data?.data.length === 0 && <p className="mt-2 text-sm text-slate-600">{t('seasons.empty')}</p>}
+            {seasons.data?.data.length === 0 && <p className="mt-2 text-sm text-muted">{t('seasons.empty')}</p>}
             {(seasons.data?.data.length ?? 0) > 0 && (
                 <table className="mt-3 w-full text-left text-sm">
-                    <thead className="text-slate-500">
+                    <thead className="text-muted">
                         <tr>
                             <th className="py-1 font-medium">{t('seasons.name')}</th>
                             <th className="py-1 font-medium">{t('seasons.firstNight')}</th>
@@ -43,7 +43,7 @@ export function UnitRatesSection({ unitId }: { unitId: string }) {
                             <th />
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-200">
+                    <tbody className="divide-y divide-line-soft">
                         {seasons.data?.data.map((season) => (
                             <tr key={season.id}>
                                 <td className="py-2">{season.name}</td>
@@ -122,7 +122,7 @@ function Warnings({ warnings }: { warnings: SeasonWarning[] }) {
     }
 
     return (
-        <div className="mt-3 space-y-1 rounded-md bg-amber-50 p-3 text-sm text-amber-900" role="status">
+        <div className="mt-3 space-y-1 rounded-control bg-warning-soft p-3 text-sm text-warning" role="status">
             {warnings.map((warning) => (
                 <p key={warning.seasons.map((s) => s.id).join('-')}>
                     {t('seasons.overlapWarning', { priority: warning.priority, seasons: warning.seasons.map((s) => s.name).join(', ') })}
@@ -184,8 +184,8 @@ function SeasonForm({ unitId, season, onDone }: { unitId: string; season: Season
     };
 
     return (
-        <form className="mt-4 space-y-4 rounded-md border border-slate-200 p-4" onSubmit={submit} noValidate>
-            <h4 className="text-sm font-semibold text-slate-800">{season === null ? t('seasons.add') : t('seasons.edit')}</h4>
+        <form className="mt-4 space-y-4 rounded-control border border-line-soft p-4" onSubmit={submit} noValidate>
+            <h4 className="text-sm font-semibold text-ink">{season === null ? t('seasons.add') : t('seasons.edit')}</h4>
             {error !== null && !(error instanceof ApiError && error.code === 'VALIDATION_FAILED') && <FormError message={errorMessage(error)} />}
             <div className="grid gap-4 md:grid-cols-3">
                 <Field label={t('seasons.name')} errors={errors.name}>
