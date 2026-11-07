@@ -8,17 +8,19 @@ import { ApiError, fieldErrors } from '../api/client';
 import { useErrorMessage } from '../auth/session';
 import {
     ConflictNotice,
+    EmptyState,
     Field,
     FormError,
     inputClass,
+    Loading,
     primaryButton,
     SavedNotice,
-    type SaveNotice,
     Section,
     TextInput,
-    TranslationFields,
     translationDraft,
+    TranslationFields,
     translationPayload,
+    type SaveNotice,
 } from '../components/Form';
 import { parseEuroToCents } from '../money';
 import { NotFoundPage } from './NotFoundPage';
@@ -38,7 +40,7 @@ export function PropertyPage() {
     const [notice, setNotice] = useState<SaveNotice>(null);
 
     if (property.isPending) {
-        return <p className="mx-auto max-w-5xl px-4 py-8 text-slate-600">{t('common.loading')}</p>;
+        return <Loading page />;
     }
 
     if (property.isError) {
@@ -47,12 +49,12 @@ export function PropertyPage() {
 
     return (
         <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
-            <Link to="/" className="text-sm text-blue-700 hover:underline">
+            <Link to="/" className="text-sm text-brand-800 hover:underline">
                 ← {t('properties.title')}
             </Link>
             <div className="flex flex-wrap items-center justify-between gap-4">
-                <h1 className="text-2xl font-semibold text-slate-900">{property.data.name}</h1>
-                <span className="rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-700" data-testid="property-status">
+                <h1 className="text-2xl font-semibold text-ink">{property.data.name}</h1>
+                <span className="rounded-full bg-surface-muted px-3 py-1 text-sm text-ink" data-testid="property-status">
                     {t(`properties.status.${property.data.status}`)}
                 </span>
             </div>
@@ -101,9 +103,9 @@ function PublishSection({ property }: { property: Property }) {
                 </button>
             }
         >
-            <p className="text-sm text-slate-700">{t('publish.intro')}</p>
+            <p className="text-sm text-ink">{t('publish.intro')}</p>
             {missing.length > 0 ? (
-                <div className="mt-3 rounded-md bg-amber-50 p-3 text-sm text-amber-900" role="alert">
+                <div className="mt-3 rounded-control bg-warning-soft p-3 text-sm text-warning" role="alert">
                     <p className="font-medium">{t('publish.missing')}</p>
                     <ul className="mt-1 list-disc pl-5">
                         {missing.map((code) => (
@@ -289,14 +291,14 @@ function UnitsSection({ property }: { property: Property }) {
     return (
         <Section title={t('units.title')}>
             {units.isError && <FormError message={errorMessage(units.error)} />}
-            {units.data?.data.length === 0 && <p className="text-slate-600">{t('units.empty')}</p>}
-            <ul className="divide-y divide-slate-200">
+            {units.data?.data.length === 0 && <EmptyState title={t('units.empty')} />}
+            <ul className="divide-y divide-line-soft">
                 {units.data?.data.map((unit) => (
                     <li key={unit.id} className="flex items-center justify-between py-3">
-                        <Link to={`/unita/${unit.id}`} className="font-medium text-blue-700 hover:underline">
+                        <Link to={`/unita/${unit.id}`} className="font-medium text-brand-800 hover:underline">
                             {unit.name}
                         </Link>
-                        <span className="text-sm text-slate-600">
+                        <span className="text-sm text-muted">
                             {t(`units.status.${unit.status}`)}
                             {unit.sales_suspended && ` · ${t('units.salesSuspended')}`}
                         </span>
@@ -304,8 +306,8 @@ function UnitsSection({ property }: { property: Property }) {
                 ))}
             </ul>
 
-            <form className="mt-6 grid gap-4 border-t border-slate-200 pt-4 md:grid-cols-5 md:items-end" onSubmit={submit} noValidate>
-                <h3 className="text-sm font-semibold text-slate-800 md:col-span-5">{t('units.create')}</h3>
+            <form className="mt-6 grid gap-4 border-t border-line-soft pt-4 md:grid-cols-5 md:items-end" onSubmit={submit} noValidate>
+                <h3 className="text-sm font-semibold text-ink md:col-span-5">{t('units.create')}</h3>
                 <div className="md:col-span-2">
                     <Field label={t('unit.name')} errors={errors.name}>
                         <TextInput value={name} onChange={setName} required />

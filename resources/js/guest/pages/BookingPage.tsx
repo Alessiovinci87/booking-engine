@@ -1,12 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react';
+import { cloneElement, isValidElement, useEffect, useId, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { DayPicker, type DateRange } from 'react-day-picker';
+import 'react-day-picker/style.css';
 import { enGB, it } from 'react-day-picker/locale';
 import { Trans, useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router';
 
-import { ApiError, fieldErrors, publicApi, type GuestInput, type PriceQuote, type PublicProperty, type PublicUnit } from '../api';
-import { Gallery, Notice, Shell, Spinner, useProperty } from '../components';
+import { ApiError, fieldErrors, publicApi, type CancellationPolicy, type GuestInput, type PriceQuote, type PublicProperty, type PublicUnit } from '../api';
+import { ContactLinks, Gallery, Notice, Shell, Spinner, useProperty } from '../components';
 import { addDays, COUNTRY_CODES, countryName, formatDate, formatMoney, toIsoDate } from '../format';
 import { saveBooking } from '../storage';
 
@@ -40,7 +41,7 @@ export function BookingPage({ embed }: { embed: boolean }) {
         return (
             <Shell>
                 <Notice tone="error">{property.isError ? t('common.loadError') : t('common.notFound')}</Notice>
-                <Link to="/" className="mt-4 inline-block text-sm text-slate-700 underline">
+                <Link to="/" className="mt-4 inline-block text-sm text-ink underline">
                     {t('common.back')}
                 </Link>
             </Shell>
@@ -212,6 +213,7 @@ function BookingForm({ property, unit, embed }: { property: PublicProperty; unit
 
                 setErrors(mapped);
                 setNotice({ tone: 'error', text: t('booking.fixErrors') });
+                focusFirstError();
 
                 return;
             }
@@ -254,6 +256,7 @@ function BookingForm({ property, unit, embed }: { property: PublicProperty; unit
 
         if (Object.keys(found).length > 0 || stay === null || quote.data === undefined) {
             setNotice({ tone: 'error', text: t('booking.fixErrors') });
+            focusFirstError();
 
             return;
         }
@@ -295,21 +298,21 @@ function BookingForm({ property, unit, embed }: { property: PublicProperty; unit
     const nights = stay !== null && checkIn !== undefined && checkOut !== undefined ? Math.round((checkOut.getTime() - checkIn.getTime()) / 86_400_000) : 0;
     const requestMode = unit.booking_mode === 'REQUEST';
     const inputClass = (field: string) =>
-        `mt-1 block w-full rounded-lg border px-3 py-2.5 text-base ${errors[field] ? 'border-red-400 bg-red-50' : 'border-slate-300 bg-white'}`;
+        `mt-1 block w-full rounded-card border px-3 py-2.5 text-base ${errors[field] ? 'border-red-400 bg-danger-soft' : 'border-line bg-surface'}`;
 
     return (
         <Shell title={property.name}>
-            <Link to="/" className="text-sm text-slate-600 underline">
+            <Link to="/" className="inline-flex min-h-tap items-center text-sm text-muted underline">
                 {t('common.back')}
             </Link>
-            <h1 className="mt-3 text-2xl font-semibold text-slate-900">{t('booking.title', { name: unit.name })}</h1>
+            <h1 className="mt-3 text-2xl font-semibold text-ink">{t('booking.title', { name: unit.name })}</h1>
             <div className="mt-4">
                 <Gallery photos={unit.photos} name={unit.name} />
             </div>
 
             <form onSubmit={submit} noValidate className="mt-6 space-y-8">
                 <Section title={t('booking.dates')}>
-                    <p className="text-sm text-slate-600">{t('booking.datesHint')}</p>
+                    <p className="text-sm text-muted">{t('booking.datesHint')}</p>
                     {availability.isPending ? (
                         <Spinner />
                     ) : (
@@ -328,10 +331,23 @@ function BookingForm({ property, unit, embed }: { property: PublicProperty; unit
                                 modifiersClassNames={{ unavailable: 'guest-unavailable' }}
                                 locale={i18n.language === 'en' ? enGB : it}
                                 weekStartsOn={1}
+                                labels={{
+                                    labelDayButton: (date, modifiers) =>
+                                        [
+                                            modifiers.today ? t('calendar.today') : null,
+                                            new Intl.DateTimeFormat(i18n.language, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(date),
+                                            modifiers.unavailable || modifiers.disabled ? t('calendar.unavailable') : null,
+                                            modifiers.range_start ? t('calendar.checkIn') : modifiers.range_end ? t('calendar.checkOut') : modifiers.selected ? t('calendar.selected') : null,
+                                        ]
+                                            .filter(Boolean)
+                                            .join(', '),
+                                    labelNext: () => t('calendar.next'),
+                                    labelPrevious: () => t('calendar.previous'),
+                                }}
                             />
                         </div>
                     )}
-                    <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-700">
+                    <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-ink" aria-live="polite" data-testid="stay-summary">
                         <span>
                             {t('booking.checkIn')}: <strong>{checkIn !== undefined ? formatDate(toIsoDate(checkIn), i18n.language) : '—'}</strong>
                         </span>
@@ -340,15 +356,15 @@ function BookingForm({ property, unit, embed }: { property: PublicProperty; unit
                         </span>
                         {nights > 0 && <span>{t('booking.nights', { count: nights })}</span>}
                         {range !== undefined && (
-                            <button type="button" className="text-slate-600 underline" onClick={() => setRange(undefined)}>
+                            <button type="button" className="min-h-tap text-muted underline" onClick={() => setRange(undefined)}>
                                 {t('booking.clearDates')}
                             </button>
                         )}
                     </div>
                     {checkIn !== undefined && checkOut === undefined && minNightsFor(checkIn) > 1 && (
-                        <p className="mt-2 text-sm text-slate-600">{t('booking.minNightsFor', { count: minNightsFor(checkIn) })}</p>
+                        <p className="mt-2 text-sm text-muted">{t('booking.minNightsFor', { count: minNightsFor(checkIn) })}</p>
                     )}
-                    <p className="mt-1 text-xs text-slate-500">
+                    <p className="mt-1 text-xs text-muted">
                         <span className="guest-unavailable-legend mr-1 inline-block">31</span>
                         {t('booking.unavailableLegend')}
                     </p>
@@ -357,12 +373,12 @@ function BookingForm({ property, unit, embed }: { property: PublicProperty; unit
                 <Section title={t('booking.guests')}>
                     <Counter label={t('booking.adults')} value={adults} min={1} max={unit.max_occupancy - children} onChange={setAdults} />
                     <Counter label={t('booking.children')} value={children} min={0} max={unit.max_occupancy - adults} onChange={setChildren} />
-                    <p className="text-xs text-slate-500">{t('booking.maxGuests', { count: unit.max_occupancy })}</p>
+                    <p className="text-xs text-muted">{t('booking.maxGuests', { count: unit.max_occupancy })}</p>
                 </Section>
 
                 <Section title={t('booking.price')}>
-                    {stay === null && <p className="text-sm text-slate-600">{t('booking.priceHint')}</p>}
-                    {stay !== null && quote.isFetching && <p className="text-sm text-slate-600">{t('booking.priceLoading')}</p>}
+                    {stay === null && <p className="text-sm text-muted">{t('booking.priceHint')}</p>}
+                    {stay !== null && quote.isFetching && <p className="text-sm text-muted">{t('booking.priceLoading')}</p>}
                     {stay !== null && quote.isError && (
                         <Notice tone="error">
                             {quote.error instanceof ApiError
@@ -403,10 +419,17 @@ function BookingForm({ property, unit, embed }: { property: PublicProperty; unit
                     <Field label={t('booking.notes')} error={errors.notes}>
                         <textarea className={inputClass('notes')} rows={3} maxLength={2000} value={guest.notes} onChange={(e) => update('notes', e.target.value)} name="notes" />
                     </Field>
-                    <p className="text-xs text-amber-800" data-testid="notes-warning">
+                    <p className="text-xs text-warning" data-testid="notes-warning">
                         {t('booking.notesWarning')}
                     </p>
                 </Section>
+
+                <BeforePayment
+                    policy={quote.data?.cancellation_policy ?? unit.cancellation_policy ?? property.cancellation_policy}
+                    privacyUrl={property.privacy_policy_url}
+                    contactEmail={property.contact_email}
+                    contactPhone={property.contact_phone}
+                />
 
                 <section className="space-y-3">
                     {property.terms_url !== null && (
@@ -427,7 +450,7 @@ function BookingForm({ property, unit, embed }: { property: PublicProperty; unit
 
                 {notice !== null && <Notice tone={notice.tone}>{notice.text}</Notice>}
                 {pendingCheckout !== null && (
-                    <a href={pendingCheckout} target="_top" className="block rounded-lg bg-emerald-700 px-4 py-3 text-center font-medium text-white">
+                    <a href={pendingCheckout} target="_top" className="block rounded-card bg-brand-700 px-4 py-3 text-center font-medium text-white">
                         {t('booking.openPayment')}
                     </a>
                 )}
@@ -435,16 +458,68 @@ function BookingForm({ property, unit, embed }: { property: PublicProperty; unit
                 <div className="space-y-2">
                     <button
                         type="submit"
+                        id="booking-submit"
                         disabled={reserve.isPending || quote.data === undefined || stay === null}
-                        className="w-full rounded-lg bg-emerald-700 px-4 py-3.5 text-base font-semibold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+                        className="w-full rounded-card bg-brand-700 px-4 py-3.5 text-base font-semibold text-white hover:bg-brand-800 disabled:cursor-not-allowed disabled:bg-slate-300"
                     >
                         {reserve.isPending ? t('booking.sending') : requestMode ? t('booking.proceedRequest') : t('booking.proceed')}
                     </button>
-                    <p className="text-center text-xs text-slate-500">{t('booking.paymentNote')}</p>
+                    <p className="text-center text-xs text-muted">{t('booking.paymentNote')}</p>
                 </div>
             </form>
+            {quote.data !== undefined && stay !== null && !quote.isError && (
+                <PriceSummaryBar total={formatMoney(quote.data.total, i18n.language)} nights={nights} label={requestMode ? t('booking.proceedRequestShort') : t('booking.proceedShort')} />
+            )}
         </Shell>
     );
+}
+
+/**
+ * Riepilogo del prezzo sempre raggiungibile sul telefono (8.3): fisso in basso sotto i 640 px, con il
+ * totale e un pulsante che porta all'invio del modulo. Lo spazio sotto la pagina evita che copra il
+ * contenuto.
+ */
+export function PriceSummaryBar({ total, nights, label }: { total: string; nights: number; label: string }) {
+    const { t } = useTranslation();
+
+    return (
+        <>
+            <div className="h-24 sm:hidden" aria-hidden="true" />
+            <div
+                className="fixed inset-x-0 bottom-0 z-40 border-t border-line-soft bg-surface/95 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-overlay backdrop-blur sm:hidden"
+                data-testid="price-summary-bar"
+            >
+                <div className="mx-auto flex max-w-3xl items-center justify-between gap-3">
+                    <p className="text-sm text-muted">
+                        <span className="block text-lg font-semibold text-ink tabular-nums">{total}</span>
+                        {t('booking.nights', { count: nights })}
+                    </p>
+                    <button
+                        type="button"
+                        className="min-h-tap rounded-control bg-brand-700 px-5 font-semibold text-white hover:bg-brand-800"
+                        onClick={() => {
+                            const submit = document.getElementById('booking-submit');
+                            submit?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            submit?.focus({ preventScroll: true });
+                        }}
+                    >
+                        {label}
+                    </button>
+                </div>
+            </div>
+        </>
+    );
+}
+
+/** Dopo un invio con errori il focus va sul primo campo non valido (8.2). */
+export function focusFirstError() {
+    window.requestAnimationFrame(() => {
+        const first = document.querySelector('[aria-invalid="true"]');
+
+        if (first instanceof HTMLElement) {
+            first.focus();
+        }
+    });
 }
 
 export function PriceDetails({ quote, requestMode }: { quote: PriceQuote; requestMode: boolean }) {
@@ -456,72 +531,164 @@ export function PriceDetails({ quote, requestMode }: { quote: PriceQuote; reques
             <ul className="divide-y divide-slate-100 text-sm">
                 {quote.lines.map((line, index) => (
                     <li key={`${line.kind}-${line.date ?? ''}-${index}`} className="flex justify-between gap-4 py-1.5">
-                        <span className="text-slate-700">
+                        <span className="text-ink">
                             {t(`lines.${line.kind}`, { date: line.date !== null ? formatDate(line.date, i18n.language) : '', defaultValue: line.kind })}
                             {line.quantity > 1 && ` × ${line.quantity}`}
                         </span>
-                        <span className="tabular-nums text-slate-900">{money(line.amount)}</span>
+                        <span className="tabular-nums text-ink">{money(line.amount)}</span>
                     </li>
                 ))}
             </ul>
-            <dl className="space-y-1 border-t border-slate-200 pt-3 text-sm">
-                <div className="flex justify-between font-semibold text-slate-900">
+            <dl className="space-y-1 border-t border-line-soft pt-3 text-sm">
+                <div className="flex justify-between font-semibold text-ink">
                     <dt>{t('booking.total')}</dt>
                     <dd className="tabular-nums" data-testid="price-total">
                         {money(quote.total)}
                     </dd>
                 </div>
-                <div className="flex justify-between text-slate-700">
+                <div className="flex justify-between text-ink">
                     <dt>{requestMode ? t('booking.depositRequest') : t('booking.deposit')}</dt>
                     <dd className="tabular-nums">{money(quote.deposit)}</dd>
                 </div>
                 {quote.balance.amount_cents > 0 && (
-                    <div className="flex justify-between text-slate-700">
+                    <div className="flex justify-between text-ink">
                         <dt>{t('booking.balance')}</dt>
                         <dd className="tabular-nums">{money(quote.balance)}</dd>
                     </div>
                 )}
             </dl>
             {requestMode && <Notice>{t('booking.requestNote')}</Notice>}
-            {quote.cancellation_policy !== null && (
-                <div className="rounded-lg bg-slate-50 p-3 text-sm text-slate-700">
-                    <p className="font-medium">
-                        {t('booking.cancellation')}: {quote.cancellation_policy.title}
-                    </p>
-                    {quote.cancellation_policy.text !== null && <p className="mt-1">{quote.cancellation_policy.text}</p>}
-                </div>
-            )}
         </div>
+    );
+}
+
+/**
+ * Riquadro "Prima di pagare" (8.7): politica di cancellazione, pagamento sicuro con Stripe, uso dei
+ * dati con l'informativa della struttura e contatti. Solo dati già presenti nelle risposte pubbliche.
+ */
+export function BeforePayment({
+    policy,
+    privacyUrl,
+    contactEmail,
+    contactPhone,
+}: {
+    policy: CancellationPolicy | null;
+    privacyUrl: string | null;
+    contactEmail: string | null;
+    contactPhone: string | null;
+}) {
+    const { t } = useTranslation();
+    const titleId = useId();
+
+    return (
+        <section aria-labelledby={titleId} className="rounded-card border border-line-soft bg-surface p-4 shadow-card sm:p-5" data-testid="before-payment">
+            <h2 id={titleId} className="text-lg font-semibold text-ink">
+                {t('trust.title')}
+            </h2>
+            <ul className="mt-3 space-y-4 text-sm">
+                {policy !== null && (
+                    <TrustItem icon="calendar" title={t('trust.policy', { title: policy.title ?? '' })} testId="trust-policy">
+                        {policy.text}
+                    </TrustItem>
+                )}
+                <TrustItem icon="lock" title={t('trust.securePayment')} testId="trust-payment">
+                    {t('trust.securePaymentText')}
+                </TrustItem>
+                {privacyUrl !== null && (
+                    <TrustItem icon="shield" title={t('trust.privacy')} testId="trust-privacy">
+                        <Trans
+                            i18nKey="trust.privacyText"
+                            components={{ privacyLink: <a href={privacyUrl} target="_blank" rel="noopener noreferrer" className="font-medium text-brand-800 underline" /> }}
+                        />
+                    </TrustItem>
+                )}
+                {(contactEmail !== null || contactPhone !== null) && (
+                    <TrustItem icon="chat" title={t('trust.questions')} testId="trust-contact">
+                        <ContactLinks email={contactEmail} phone={contactPhone} />
+                    </TrustItem>
+                )}
+            </ul>
+        </section>
+    );
+}
+
+const TRUST_ICONS = {
+    calendar: 'M8 2v3m8-3v3M3.5 9h17M5 4.5h14A1.5 1.5 0 0 1 20.5 6v13a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 19V6A1.5 1.5 0 0 1 5 4.5Z',
+    lock: 'M7 10.5V8a5 5 0 0 1 10 0v2.5M6 10.5h12a1.5 1.5 0 0 1 1.5 1.5v7a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 19v-7A1.5 1.5 0 0 1 6 10.5Z',
+    shield: 'M12 3 4.5 6v5.5c0 4.5 3.2 8.2 7.5 9.5 4.3-1.3 7.5-5 7.5-9.5V6L12 3Zm-3 9 2 2 4-4',
+    chat: 'M4.5 5.5h15A1.5 1.5 0 0 1 21 7v9a1.5 1.5 0 0 1-1.5 1.5H10l-4.5 3.5v-3.5h-1A1.5 1.5 0 0 1 3 16V7a1.5 1.5 0 0 1 1.5-1.5Z',
+} as const;
+
+function TrustItem({ icon, title, testId, children }: { icon: keyof typeof TRUST_ICONS; title: string; testId: string; children: ReactNode }) {
+    return (
+        <li className="flex gap-3" data-testid={testId}>
+            <svg viewBox="0 0 24 24" aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 fill-none stroke-brand-700" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
+                <path d={TRUST_ICONS[icon]} />
+            </svg>
+            <div className="min-w-0">
+                <p className="font-medium text-ink">{title}</p>
+                {children !== null && <div className="mt-0.5 text-muted">{children}</div>}
+            </div>
+        </li>
     );
 }
 
 export function Section({ title, children }: { title: string; children: ReactNode }) {
     return (
         <section className="space-y-3">
-            <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
+            <h2 className="text-lg font-semibold text-ink">{title}</h2>
             {children}
         </section>
     );
 }
 
+/**
+ * Campo con etichetta: con un errore il controllo riceve aria-invalid e aria-describedby verso il
+ * messaggio, che gli screen reader leggono insieme al campo (8.2, WCAG 3.3.1).
+ */
 export function Field({ label, error, children }: { label: string; error?: string; children: ReactNode }) {
+    const errorId = useId();
+    const hasError = error !== undefined && error !== '';
+    const control = isValidElement<{ 'aria-invalid'?: boolean; 'aria-describedby'?: string }>(children)
+        ? cloneElement(children, { 'aria-invalid': hasError || undefined, 'aria-describedby': hasError ? errorId : undefined })
+        : children;
+
     return (
-        <label className="block text-sm font-medium text-slate-800">
+        <label className="block text-sm font-medium text-ink">
             {label}
-            {children}
-            {error !== undefined && error !== '' && <span className="mt-1 block text-xs font-normal text-red-700">{error}</span>}
+            {control}
+            {hasError && (
+                <span id={errorId} className="mt-1 block text-xs font-normal text-danger">
+                    {error}
+                </span>
+            )}
         </label>
     );
 }
 
 export function Checkbox({ checked, onChange, error, name, children }: { checked: boolean; onChange: (value: boolean) => void; error?: string; name: string; children: ReactNode }) {
+    const errorId = useId();
+    const hasError = error !== undefined && error !== '';
+
     return (
         <div>
-            <label className="flex items-start gap-3 text-sm text-slate-800">
-                <input type="checkbox" name={name} checked={checked} onChange={(e) => onChange(e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0" />
+            <label className="flex min-h-tap items-start gap-3 py-2 text-sm text-ink">
+                <input
+                    type="checkbox"
+                    name={name}
+                    checked={checked}
+                    onChange={(e) => onChange(e.target.checked)}
+                    aria-invalid={hasError || undefined}
+                    aria-describedby={hasError ? errorId : undefined}
+                    className="mt-0.5 h-5 w-5 shrink-0 accent-brand-700"
+                />
                 <span>{children}</span>
             </label>
-            {error !== undefined && error !== '' && <p className="mt-1 ml-8 text-xs text-red-700">{error}</p>}
+            {hasError && (
+                <p id={errorId} className="mt-1 ml-8 text-xs text-danger">
+                    {error}
+                </p>
+            )}
         </div>
     );
 }
@@ -531,14 +698,14 @@ function Counter({ label, value, min, max, onChange }: { label: string; value: n
 
     return (
         <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-slate-800">{label}</span>
+            <span className="text-sm font-medium text-ink">{label}</span>
             <div className="flex items-center gap-3">
                 <button
                     type="button"
                     aria-label={t('booking.decrease', { what: label })}
                     onClick={() => onChange(Math.max(min, value - 1))}
                     disabled={value <= min}
-                    className="h-10 w-10 rounded-full border border-slate-300 text-lg disabled:opacity-40"
+                    className="h-11 w-11 rounded-full border border-line text-lg disabled:opacity-40"
                 >
                     −
                 </button>
@@ -550,7 +717,7 @@ function Counter({ label, value, min, max, onChange }: { label: string; value: n
                     aria-label={t('booking.increase', { what: label })}
                     onClick={() => onChange(Math.min(max, value + 1))}
                     disabled={value >= max}
-                    className="h-10 w-10 rounded-full border border-slate-300 text-lg disabled:opacity-40"
+                    className="h-11 w-11 rounded-full border border-line text-lg disabled:opacity-40"
                 >
                     +
                 </button>

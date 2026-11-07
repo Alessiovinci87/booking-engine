@@ -6,15 +6,15 @@ import type { ReservationStatus } from '../api/reservations';
 
 /** Colori per stato: gli stessi nel calendario, nell'elenco e nel dettaglio (legenda unica). */
 export const statusColors: Record<ReservationStatus | 'BLOCK' | 'EXTERNAL', string> = {
-    AWAITING_PAYMENT: 'bg-amber-100 text-amber-900 border-amber-300',
+    AWAITING_PAYMENT: 'bg-amber-100 text-warning border-amber-300',
     AWAITING_APPROVAL: 'bg-sky-100 text-sky-900 border-sky-300',
     CAPTURING: 'bg-indigo-100 text-indigo-900 border-indigo-300',
-    CAPTURE_FAILED: 'bg-red-100 text-red-900 border-red-300',
+    CAPTURE_FAILED: 'bg-red-100 text-danger border-red-300',
     CONFIRMED: 'bg-emerald-100 text-emerald-900 border-emerald-300',
-    REJECTED: 'bg-slate-100 text-slate-600 border-slate-300',
-    EXPIRED: 'bg-slate-100 text-slate-600 border-slate-300',
-    PAYMENT_FAILED: 'bg-slate-100 text-slate-600 border-slate-300',
-    CANCELLED: 'bg-slate-100 text-slate-600 border-slate-300',
+    REJECTED: 'bg-surface-muted text-muted border-line',
+    EXPIRED: 'bg-surface-muted text-muted border-line',
+    PAYMENT_FAILED: 'bg-surface-muted text-muted border-line',
+    CANCELLED: 'bg-surface-muted text-muted border-line',
     BLOCK: 'bg-slate-700 text-white border-slate-800',
     EXTERNAL: 'bg-violet-100 text-violet-900 border-violet-300',
 };

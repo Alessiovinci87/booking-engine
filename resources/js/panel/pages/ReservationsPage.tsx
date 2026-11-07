@@ -5,7 +5,7 @@ import { Link, useSearchParams } from 'react-router';
 
 import { RESERVATION_STATUSES, type ReservationFilters, type ReservationStatus, reservationsApi } from '../api/reservations';
 import { useErrorMessage } from '../auth/session';
-import { FormError, inputClass, primaryButton, secondaryButton } from '../components/Form';
+import { EmptyState, FormError, inputClass, Loading, primaryButton, secondaryButton } from '../components/Form';
 import { StatusBadge, UnitSelect, useAllUnits } from '../components/Reservations';
 import { formatDate } from '../dates';
 import { formatMoney } from '../money';
@@ -34,7 +34,7 @@ export function ReservationsPage() {
     return (
         <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
             <div className="flex flex-wrap items-center justify-between gap-4">
-                <h1 className="text-2xl font-semibold text-slate-900">{t('reservations.title')}</h1>
+                <h1 className="text-2xl font-semibold text-ink">{t('reservations.title')}</h1>
                 <Link to="/prenotazioni/nuova" className={primaryButton} data-testid="new-reservation">
                     {t('reservations.new')}
                 </Link>
@@ -44,15 +44,13 @@ export function ReservationsPage() {
 
             {list.isError && <FormError message={errorMessage(list.error)} />}
             {list.isPending ? (
-                <p className="text-slate-600">{t('common.loading')}</p>
+                <Loading />
             ) : rows.length === 0 ? (
-                <p className="text-slate-600" data-testid="reservations-empty">
-                    {t('reservations.empty')}
-                </p>
+                <EmptyState title={t('reservations.empty')} testId="reservations-empty" />
             ) : (
-                <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-sm">
-                    <table className="min-w-full divide-y divide-slate-200 text-sm" data-testid="reservations-table">
-                        <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+                <div className="overflow-x-auto rounded-card border border-line-soft bg-surface shadow-card">
+                    <table className="min-w-full divide-y divide-line-soft text-sm" data-testid="reservations-table">
+                        <thead className="bg-canvas text-left text-xs uppercase tracking-wide text-muted">
                             <tr>
                                 <th className="px-3 py-2">{t('reservations.code')}</th>
                                 <th className="px-3 py-2">{t('reservations.guest')}</th>
@@ -65,9 +63,9 @@ export function ReservationsPage() {
                         </thead>
                         <tbody className="divide-y divide-slate-100">
                             {rows.map((r) => (
-                                <tr key={r.id} className="hover:bg-slate-50">
+                                <tr key={r.id} className="hover:bg-canvas">
                                     <td className="px-3 py-2 font-mono">
-                                        <Link to={`/prenotazioni/${r.id}`} className="text-blue-700 hover:underline">
+                                        <Link to={`/prenotazioni/${r.id}`} className="text-brand-800 hover:underline">
                                             {r.code}
                                         </Link>
                                     </td>
@@ -75,12 +73,12 @@ export function ReservationsPage() {
                                     <td className="px-3 py-2">{r.unit.name}</td>
                                     <td className="whitespace-nowrap px-3 py-2">
                                         {`${formatDate(r.check_in)} → ${formatDate(r.check_out)}`}
-                                        <span className="block text-xs text-slate-500">{t('reservations.nights', { count: r.nights })}</span>
+                                        <span className="block text-xs text-muted">{t('reservations.nights', { count: r.nights })}</span>
                                     </td>
                                     <td className="px-3 py-2">
                                         <StatusBadge status={r.status} />
                                     </td>
-                                    <td className="px-3 py-2 text-slate-700">{t(`economicStatus.${r.economic_status}`)}</td>
+                                    <td className="px-3 py-2 text-ink">{t(`economicStatus.${r.economic_status}`)}</td>
                                     <td className="px-3 py-2 text-right tabular-nums">{formatMoney(r.contract_total)}</td>
                                 </tr>
                             ))}
@@ -131,12 +129,12 @@ function Filters({
         setStatuses((current) => (current.includes(status) ? current.filter((s) => s !== status) : [...current, status]));
 
     return (
-        <form onSubmit={submit} className="space-y-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm" data-testid="reservation-filters">
+        <form onSubmit={submit} className="space-y-3 rounded-card border border-line-soft bg-surface p-4 shadow-card" data-testid="reservation-filters">
             <fieldset>
-                <legend className="text-sm font-medium text-slate-700">{t('reservations.filterStatus')}</legend>
+                <legend className="text-sm font-medium text-ink">{t('reservations.filterStatus')}</legend>
                 <div className="mt-2 flex flex-wrap gap-2">
                     {RESERVATION_STATUSES.map((status) => (
-                        <label key={status} className="flex items-center gap-1.5 rounded-full border border-slate-300 px-2.5 py-1 text-xs text-slate-700">
+                        <label key={status} className="flex items-center gap-1.5 rounded-full border border-line px-2.5 py-1 text-xs text-ink">
                             <input type="checkbox" checked={statuses.includes(status)} onChange={() => toggle(status)} />
                             {t(`reservationStatus.${status}`)}
                         </label>
@@ -144,19 +142,19 @@ function Filters({
                 </div>
             </fieldset>
             <div className="grid gap-3 sm:grid-cols-4">
-                <label className="text-sm font-medium text-slate-700">
+                <label className="text-sm font-medium text-ink">
                     {t('reservations.filterFrom')}
                     <input type="date" className={inputClass} value={from} onChange={(e) => setFrom(e.target.value)} />
                 </label>
-                <label className="text-sm font-medium text-slate-700">
+                <label className="text-sm font-medium text-ink">
                     {t('reservations.filterTo')}
                     <input type="date" className={inputClass} value={to} onChange={(e) => setTo(e.target.value)} />
                 </label>
-                <label className="text-sm font-medium text-slate-700">
+                <label className="text-sm font-medium text-ink">
                     {t('reservations.unit')}
                     <UnitSelect options={options} value={unit} onChange={setUnit} allowEmpty className={inputClass} />
                 </label>
-                <label className="text-sm font-medium text-slate-700">
+                <label className="text-sm font-medium text-ink">
                     {t('reservations.filterCode')}
                     <input className={inputClass} value={q} onChange={(e) => setQ(e.target.value)} placeholder="K7Q2MZ4A" />
                 </label>

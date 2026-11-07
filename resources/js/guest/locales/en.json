@@ -10,7 +10,9 @@
         "retry": "Try again",
         "close": "Close",
         "notFound": "Page not found.",
-        "loadError": "We could not load the page. Please try again shortly."
+        "loadError": "We could not load the page. Please try again shortly.",
+        "skipToContent": "Skip to content",
+        "pageTitle": "Booking"
     },
     "property": {
         "noAvailability": "No availability at the moment",
@@ -22,13 +24,16 @@
         "contact": "Contact",
         "photoAlt": "Photo of {{name}}",
         "galleryPrevious": "Previous photo",
-        "galleryNext": "Next photo"
+        "galleryNext": "Next photo",
+        "galleryZoom": "Enlarge photo",
+        "privacyLink": "Property's privacy policy",
+        "termsLink": "Booking terms"
     },
     "unit": {
         "guests": "Up to {{count}} guests",
         "minNights": "Minimum {{count}} nights",
         "instant": "Instant booking",
-        "request": "On request: the host confirms within 12 hours",
+        "request": "On request: the property replies within 12 hours",
         "choose": "Choose dates",
         "noPhoto": "No photo"
     },
@@ -55,8 +60,8 @@
         "total": "Total",
         "deposit": "To pay now",
         "balance": "Balance to pay later",
-        "depositRequest": "To authorise now (charged only if the host accepts)",
-        "requestNote": "This is a request: the host has 12 hours to accept it. Until then the amount is only authorised on your card.",
+        "depositRequest": "To authorise now (charged only if the property approves)",
+        "requestNote": "This is a request: the property has 12 hours to approve it. Until then the amount is only authorised on your card.",
         "cancellation": "Cancellation policy",
         "yourDetails": "Your details",
         "firstName": "First name",
@@ -65,14 +70,14 @@
         "phone": "Phone",
         "country": "Country",
         "countryPlaceholder": "Choose your country",
-        "notes": "Notes for the host (optional)",
-        "notesWarning": "Do not include sensitive data (health, ID documents, payment details): the host will ask if needed.",
+        "notes": "Notes for the property (optional)",
+        "notesWarning": "Do not include sensitive data (health, ID documents, payment details): the property will ask if needed.",
         "acceptTerms": "I accept the property's <termsLink>booking terms</termsLink>.",
         "acceptPrivacy": "I have read the property's <privacyLink>privacy policy</privacyLink>.",
         "proceed": "Continue to payment",
         "proceedRequest": "Send request and authorise payment",
         "sending": "Sending…",
-        "paymentNote": "Payment takes place on a secure page of the payment provider.",
+        "paymentNote": "Payment takes place on Stripe's secure page.",
         "openPayment": "Open the payment page",
         "popupBlocked": "Your browser blocked the payment page. Use the button below.",
         "priceChanged": "The price changed while you were filling in the form: check the new total and confirm again.",
@@ -81,7 +86,9 @@
         "invalidEmail": "Invalid email address.",
         "invalidPhone": "Invalid phone number.",
         "mustAccept": "You must accept to continue.",
-        "fixErrors": "Please check the highlighted fields."
+        "fixErrors": "Please check the highlighted fields.",
+        "proceedShort": "Book",
+        "proceedRequestShort": "Request"
     },
     "lines": {
         "NIGHT": "Night of {{date}}",
@@ -98,14 +105,14 @@
         "confirmed": "Booking confirmed",
         "confirmedHint": "We have sent you an email with all the details.",
         "awaitingApproval": "Request sent",
-        "awaitingApprovalHint": "The host will reply by {{deadline}}. The amount is only authorised on your card: it is charged if the request is accepted.",
-        "capturing": "Request accepted: we are completing the payment…",
+        "awaitingApprovalHint": "The property will reply by {{deadline}}. The amount is only authorised on your card: it is charged if the request is approved.",
+        "capturing": "Request approved: we are completing the payment…",
         "paymentFailed": "Payment failed",
         "paymentFailedHint": "Nothing has been charged. You can try again by choosing your dates once more.",
         "expired": "Payment time expired",
         "expiredHint": "The dates have been released. You can start again from the property page.",
-        "rejected": "Request not accepted",
-        "rejectedHint": "The host could not accept your request: the authorisation on your card is being cancelled.",
+        "rejected": "Request not approved",
+        "rejectedHint": "The property could not approve your request: the authorisation on your card is being cancelled.",
         "cancelled": "Booking cancelled",
         "cancelledByGuest": "You cancelled the payment",
         "cancelledByGuestHint": "The dates stay reserved for a few minutes: you can resume the payment while the session is open.",
@@ -131,12 +138,25 @@
         "PAYMENT_PROVIDER_UNAVAILABLE": "The payment provider is not responding. Please try again in a few minutes.",
         "AMOUNT_BELOW_MINIMUM": "The amount is below the minimum that can be paid online.",
         "RATE_LIMITED": "Too many attempts. Please try again in a few minutes.",
-        "IDEMPOTENCY_KEY_REUSED": "Request already sent with different data. Reload the page and try again.",
+        "IDEMPOTENCY_KEY_REUSED": "You already sent this request with different details. Reload the page and try again.",
         "IDEMPOTENCY_KEY_IN_USE": "The request is still in progress. Please wait a few seconds.",
         "VALIDATION_FAILED": "Please check the details you entered.",
-        "NOT_FOUND": "Not found.",
+        "NOT_FOUND": "Page not found or no longer available.",
         "FORBIDDEN": "This action is not allowed from this page.",
-        "SERVER_ERROR": "Something went wrong. Please try again later."
+        "SERVER_ERROR": "Something went wrong. Please try again later.",
+        "CSRF_TOKEN_EXPIRED": "This page has been open for a long time. Reload it and try again.",
+        "ILLEGAL_TRANSITION": "Your booking has changed in the meantime. Reload the page to see its current status.",
+        "VERSION_MISMATCH": "The details changed in the meantime. Reload the page and try again.",
+        "CHECKOUT_EXPIRED": "The time to pay has run out and the dates have been released. You can book again.",
+        "UNAUTHENTICATED": "This page is not available. Use the link you received by email.",
+        "QUOTE_EXPIRED": "This quote has expired. Contact the property to receive a new one.",
+        "QUOTE_REVOKED": "This quote has been withdrawn by the property.",
+        "QUOTE_EXHAUSTED": "Too many payment attempts have been made for this quote. Please contact the property.",
+        "QUOTE_ALREADY_ACCEPTED": "This quote has already been accepted.",
+        "QUOTE_CHECKOUT_IN_PROGRESS": "The payment started earlier is being closed. Please try again in a few minutes.",
+        "QUOTE_EMAIL_MISSING": "This quote is incomplete. Please contact the property.",
+        "TENANT_OFFBOARDING": "This property no longer accepts online bookings. Please contact it directly.",
+        "TENANT_CLOSED": "This property no longer accepts online bookings."
     },
     "quote": {
         "title": "Your quote",
@@ -160,5 +180,23 @@
     "footer": {
         "platformPrivacy": "Platform privacy notice",
         "subprocessors": "Data sub-processors"
+    },
+    "calendar": {
+        "today": "Today",
+        "unavailable": "unavailable",
+        "checkIn": "arrival",
+        "checkOut": "departure",
+        "selected": "part of your stay",
+        "next": "Next month",
+        "previous": "Previous month"
+    },
+    "trust": {
+        "title": "Before you pay",
+        "policy": "Cancellation: {{title}}",
+        "securePayment": "Secure payment with Stripe",
+        "securePaymentText": "You enter your card details on Stripe's secure page: neither the property nor this site sees or stores them.",
+        "privacy": "Your data",
+        "privacyText": "The property receives it to manage your booking, as explained in its <privacyLink>privacy policy</privacyLink>.",
+        "questions": "Questions before booking?"
     }
 }

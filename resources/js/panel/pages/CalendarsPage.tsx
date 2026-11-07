@@ -6,15 +6,27 @@ import { useSearchParams } from 'react-router';
 import { calendarsApi, CHANNEL_SOURCES, type ChannelSource, type ExternalCalendar, type IcsFeed } from '../api/calendars';
 import { ApiError, fieldErrors } from '../api/client';
 import { useErrorMessage } from '../auth/session';
-import { dangerButton, Field, FormError, inputClass, primaryButton, secondaryButton, Section, TextInput } from '../components/Form';
+import {
+    dangerButton,
+    EmptyState,
+    Field,
+    FormError,
+    inputClass,
+    Loading,
+    primaryButton,
+    secondaryButton,
+    Section,
+    TextInput,
+    useConfirm,
+} from '../components/Form';
 import { UnitSelect, useAllUnits } from '../components/Reservations';
 import { formatDateTime } from '../dates';
 
 const healthColors: Record<ExternalCalendar['health'], string> = {
     ACTIVE: 'bg-emerald-100 text-emerald-900 border-emerald-300',
-    DEGRADED: 'bg-amber-100 text-amber-900 border-amber-300',
-    UNHEALTHY: 'bg-red-100 text-red-900 border-red-300',
-    DISABLED: 'bg-slate-100 text-slate-600 border-slate-300',
+    DEGRADED: 'bg-amber-100 text-warning border-amber-300',
+    UNHEALTHY: 'bg-red-100 text-danger border-red-300',
+    DISABLED: 'bg-surface-muted text-muted border-line',
 };
 
 /**
@@ -29,13 +41,13 @@ export function CalendarsPage() {
     const unit = params.get('unit') ?? options[0]?.unit.id ?? '';
 
     if (isPending) {
-        return <p className="mx-auto max-w-5xl px-4 py-8 text-slate-600">{t('common.loading')}</p>;
+        return <Loading page />;
     }
 
     return (
         <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
-            <h1 className="text-2xl font-semibold text-slate-900">{t('calendars.title')}</h1>
-            <p className="text-sm text-slate-600">{t('calendars.intro')}</p>
+            <h1 className="text-2xl font-semibold text-ink">{t('calendars.title')}</h1>
+            <p className="text-sm text-muted">{t('calendars.intro')}</p>
             <div className="max-w-sm">
                 <Field label={t('reservation.unit')}>
                     <UnitSelect options={options} value={unit} onChange={(id) => setParams({ unit: id })} className={inputClass} />
@@ -83,15 +95,15 @@ function ImportedCalendars({ unitId }: { unitId: string }) {
 
     return (
         <Section title={t('calendars.imported')}>
-            <p className="mb-4 text-sm text-slate-600">{t('calendars.importedIntro')}</p>
-            {calendars.isPending && <p className="text-sm text-slate-600">{t('common.loading')}</p>}
+            <p className="mb-4 text-sm text-muted">{t('calendars.importedIntro')}</p>
+            {calendars.isPending && <Loading />}
             {calendars.isError && <FormError message={errorMessage(calendars.error)} />}
-            {calendars.data?.length === 0 && <p className="text-sm text-slate-600">{t('calendars.noImported')}</p>}
-            <ul className="divide-y divide-slate-200" data-testid="external-calendar-list">
+            {calendars.data?.length === 0 && <EmptyState title={t('calendars.noImported')} />}
+            <ul className="divide-y divide-line-soft" data-testid="external-calendar-list">
                 {calendars.data?.map((calendar) => <CalendarRow key={calendar.id} calendar={calendar} onChange={refresh} />)}
             </ul>
 
-            <form onSubmit={submit} noValidate className="mt-4 grid gap-3 rounded-md bg-slate-50 p-3 sm:grid-cols-4" data-testid="external-calendar-form">
+            <form onSubmit={submit} noValidate className="mt-4 grid gap-3 rounded-control bg-canvas p-3 sm:grid-cols-4" data-testid="external-calendar-form">
                 <Field label={t('calendars.source')}>
                     <select className={inputClass} value={source} onChange={(e) => setSource(e.target.value as ChannelSource)}>
                         {CHANNEL_SOURCES.map((s) => (
@@ -107,7 +119,7 @@ function ImportedCalendars({ unitId }: { unitId: string }) {
                     </Field>
                 </div>
                 {needsSwitch && (
-                    <label className="flex items-start gap-2 text-sm text-amber-900 sm:col-span-4">
+                    <label className="flex items-start gap-2 text-sm text-warning sm:col-span-4">
                         <input type="checkbox" checked={switchToRequest} onChange={(e) => setSwitchToRequest(e.target.checked)} name="switch_to_request" className="mt-0.5" />
                         {t('calendars.switchToRequest')}
                     </label>
@@ -129,6 +141,7 @@ function ImportedCalendars({ unitId }: { unitId: string }) {
 
 function CalendarRow({ calendar, onChange }: { calendar: ExternalCalendar; onChange: () => void }) {
     const { t } = useTranslation();
+    const confirmation = useConfirm();
     const errorMessage = useErrorMessage();
     const [showRuns, setShowRuns] = useState(false);
     const [newUrl, setNewUrl] = useState<string | null>(null);
@@ -153,19 +166,19 @@ function CalendarRow({ calendar, onChange }: { calendar: ExternalCalendar; onCha
         <li className="py-4" data-testid="external-calendar-row" data-health={calendar.health}>
             <div className="flex flex-wrap items-start justify-between gap-3 text-sm">
                 <div className="space-y-1">
-                    <p className="font-medium text-slate-900">
+                    <p className="font-medium text-ink">
                         {t(`channelSource.${calendar.source}`)} · {calendar.url_host ?? '—'}
                     </p>
-                    {calendar.demo && <p className="text-xs text-slate-500">{t('calendars.demo')}</p>}
-                    <p className="text-slate-700">
+                    {calendar.demo && <p className="text-xs text-muted">{t('calendars.demo')}</p>}
+                    <p className="text-ink">
                         {calendar.last_success_at !== null
                             ? t('calendars.lastSuccess', { date: formatDateTime(calendar.last_success_at) })
                             : t('calendars.neverSynced')}
                         {calendar.active_events !== null && ` · ${t('calendars.events', { count: calendar.active_events })}`}
                     </p>
-                    {calendar.consecutive_failures > 0 && <p className="text-amber-800">{t('calendars.failures', { count: calendar.consecutive_failures })}</p>}
-                    {calendar.health === 'UNHEALTHY' && <p className="text-red-800">{t('calendars.unhealthyHint')}</p>}
-                    {calendar.health === 'DEGRADED' && <p className="text-amber-800">{t('calendars.degradedHint')}</p>}
+                    {calendar.consecutive_failures > 0 && <p className="text-warning">{t('calendars.failures', { count: calendar.consecutive_failures })}</p>}
+                    {calendar.health === 'UNHEALTHY' && <p className="text-danger">{t('calendars.unhealthyHint')}</p>}
+                    {calendar.health === 'DEGRADED' && <p className="text-warning">{t('calendars.degradedHint')}</p>}
                 </div>
                 <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${healthColors[calendar.health]}`} data-testid="calendar-health">
                     {t(`calendarHealth.${calendar.health}`)}
@@ -190,14 +203,11 @@ function CalendarRow({ calendar, onChange }: { calendar: ExternalCalendar; onCha
                     type="button"
                     className={dangerButton}
                     disabled={remove.isPending}
-                    onClick={() => {
-                        if (window.confirm(t('calendars.removeConfirm'))) {
-                            remove.mutate();
-                        }
-                    }}
+                    onClick={() => confirmation.ask({ title: t('calendars.removeConfirm'), confirmLabel: t('calendars.remove'), action: () => remove.mutate() })}
                 >
                     {t('calendars.remove')}
                 </button>
+                {confirmation.dialog}
             </div>
             {newUrl !== null && (
                 <div className="mt-3 flex flex-wrap items-end gap-2">
@@ -213,17 +223,17 @@ function CalendarRow({ calendar, onChange }: { calendar: ExternalCalendar; onCha
             )}
             {showRuns && (
                 <div className="mt-3 overflow-x-auto">
-                    {runs.isPending && <p className="text-sm text-slate-600">{t('common.loading')}</p>}
+                    {runs.isPending && <Loading />}
                     {runs.data !== undefined && (
                         <table className="min-w-full text-left text-xs" data-testid="sync-runs">
-                            <thead className="text-slate-500">
+                            <thead className="text-muted">
                                 <tr>
                                     <th className="py-1 pr-3">{t('calendars.runStarted')}</th>
                                     <th className="py-1 pr-3">{t('calendars.runOutcome')}</th>
                                     <th className="py-1 pr-3">{t('calendars.runEvents')}</th>
                                 </tr>
                             </thead>
-                            <tbody className="text-slate-700">
+                            <tbody className="text-ink">
                                 {runs.data.map((run) => (
                                     <tr key={run.id} className="border-t border-slate-100">
                                         <td className="py-1 pr-3">{formatDateTime(run.started_at)}</td>
@@ -261,10 +271,10 @@ function ExportedFeeds({ unitId }: { unitId: string }) {
 
     return (
         <Section title={t('calendars.exported')}>
-            <p className="mb-4 text-sm text-slate-600">{t('calendars.exportedIntro')}</p>
-            {feeds.isPending && <p className="text-sm text-slate-600">{t('common.loading')}</p>}
+            <p className="mb-4 text-sm text-muted">{t('calendars.exportedIntro')}</p>
+            {feeds.isPending && <Loading />}
             {feeds.isError && <FormError message={errorMessage(feeds.error)} />}
-            <ul className="divide-y divide-slate-200" data-testid="feed-list">
+            <ul className="divide-y divide-line-soft" data-testid="feed-list">
                 {feeds.data?.map((feed) => <FeedRow key={feed.id} feed={feed} onChange={refresh} />)}
             </ul>
             {missing.length > 0 && (
@@ -283,6 +293,7 @@ function ExportedFeeds({ unitId }: { unitId: string }) {
 
 function FeedRow({ feed, onChange }: { feed: IcsFeed; onChange: () => void }) {
     const { t } = useTranslation();
+    const confirmation = useConfirm();
     const errorMessage = useErrorMessage();
     const [copied, setCopied] = useState(false);
     const rotate = useMutation({ mutationFn: () => calendarsApi.rotateFeed(feed.id), onSuccess: onChange });
@@ -304,15 +315,15 @@ function FeedRow({ feed, onChange }: { feed: IcsFeed; onChange: () => void }) {
         <li className="py-4 text-sm" data-testid="feed-row" data-status={feed.status} data-destination={feed.destination}>
             <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="space-y-1">
-                    <p className="font-medium text-slate-900">{t('calendars.feedFor', { destination: t(`channelSource.${feed.destination}`) })}</p>
-                    <p className="text-slate-700">
+                    <p className="font-medium text-ink">{t('calendars.feedFor', { destination: t(`channelSource.${feed.destination}`) })}</p>
+                    <p className="text-ink">
                         {feed.last_fetched_at !== null ? t('calendars.lastRead', { date: formatDateTime(feed.last_fetched_at) }) : t('calendars.neverRead')}
                     </p>
-                    {feed.not_read_warning && <p className="text-amber-800">{t('calendars.notReadWarning')}</p>}
-                    {feed.retires_at !== null && <p className="text-slate-600">{t('calendars.retiresAt', { date: formatDateTime(feed.retires_at) })}</p>}
-                    {feed.url !== null && feed.status === 'ACTIVE' && <p className="break-all text-xs text-slate-600">{feed.url}</p>}
+                    {feed.not_read_warning && <p className="text-warning">{t('calendars.notReadWarning')}</p>}
+                    {feed.retires_at !== null && <p className="text-muted">{t('calendars.retiresAt', { date: formatDateTime(feed.retires_at) })}</p>}
+                    {feed.url !== null && feed.status === 'ACTIVE' && <p className="break-all text-xs text-muted">{feed.url}</p>}
                 </div>
-                <span className="rounded-full border border-slate-300 px-2 py-0.5 text-xs font-medium text-slate-700">{t(`feedStatus.${feed.status}`)}</span>
+                <span className="rounded-full border border-line px-2 py-0.5 text-xs font-medium text-ink">{t(`feedStatus.${feed.status}`)}</span>
             </div>
             {feed.status === 'ACTIVE' && (
                 <div className="mt-3 flex flex-wrap gap-2">
@@ -323,14 +334,11 @@ function FeedRow({ feed, onChange }: { feed: IcsFeed; onChange: () => void }) {
                         type="button"
                         className={dangerButton}
                         disabled={rotate.isPending}
-                        onClick={() => {
-                            if (window.confirm(t('calendars.rotateConfirm'))) {
-                                rotate.mutate();
-                            }
-                        }}
+                        onClick={() => confirmation.ask({ title: t('calendars.rotateConfirm'), confirmLabel: t('calendars.rotate'), action: () => rotate.mutate() })}
                     >
                         {t('calendars.rotate')}
                     </button>
+                    {confirmation.dialog}
                 </div>
             )}
             {rotate.isError && <FormError message={errorMessage(rotate.error)} />}
@@ -350,9 +358,9 @@ function ChecklistSection({ unitId }: { unitId: string }) {
 
     return (
         <Section title={t('calendars.checklist')}>
-            <p className="mb-4 text-sm text-slate-600">{t('calendars.checklistIntro')}</p>
-            {checklist.isPending && <p className="text-sm text-slate-600">{t('common.loading')}</p>}
-            {checklist.data?.steps.length === 0 && <p className="text-sm text-slate-600">{t('calendars.checklistEmpty')}</p>}
+            <p className="mb-4 text-sm text-muted">{t('calendars.checklistIntro')}</p>
+            {checklist.isPending && <Loading />}
+            {checklist.data?.steps.length === 0 && <EmptyState title={t('calendars.checklistEmpty')} />}
             {checklist.data?.complete === true && <p className="mb-3 text-sm font-medium text-emerald-800">{t('calendars.checklistComplete')}</p>}
             <ul className="space-y-2" data-testid="checklist">
                 {checklist.data?.steps.map((step) => {
@@ -361,7 +369,7 @@ function ChecklistSection({ unitId }: { unitId: string }) {
 
                     return (
                         <li key={step.key} className="flex flex-wrap items-center justify-between gap-2 text-sm" data-testid="checklist-step" data-done={step.done ? '1' : '0'}>
-                            <span className={step.done ? 'text-emerald-800' : 'text-slate-800'}>
+                            <span className={step.done ? 'text-emerald-800' : 'text-ink'}>
                                 {step.done ? '✓ ' : '○ '}
                                 {t(`checklistStep.${name}`, { channel })}
                                 {step.evidence.last_fetched_at !== undefined &&

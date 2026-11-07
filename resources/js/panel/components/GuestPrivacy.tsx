@@ -31,10 +31,10 @@ export function GuestPrivacy({ guestId, reservationId, anonymized }: { guestId: 
         <Section title={t('privacy.title')}>
             <div className="space-y-3 text-sm" data-testid="guest-privacy">
                 {anonymized ? (
-                    <p className="text-slate-600">{t('privacy.anonymized')}</p>
+                    <p className="text-muted">{t('privacy.anonymized')}</p>
                 ) : (
                     <>
-                        <p className="text-slate-600">{t('privacy.hint')}</p>
+                        <p className="text-muted">{t('privacy.hint')}</p>
                         <div className="flex flex-wrap items-start gap-3">
                             <ProtectedDownload path={privacyApi.exportPath(guestId)} fallbackName={`ospite-${guestId}.json`} label={t('privacy.export')} testId="guest-export" />
                             <Link className={secondaryButton} to={`/ospiti/${guestId}/dati`} data-testid="guest-print">
@@ -47,8 +47,8 @@ export function GuestPrivacy({ guestId, reservationId, anonymized }: { guestId: 
                             )}
                         </div>
                         {confirming && (
-                            <div className="space-y-3 rounded-md border border-red-200 bg-red-50 p-3">
-                                <p className="text-red-900">{t('privacy.eraseConfirm')}</p>
+                            <div className="space-y-3 rounded-control border border-red-200 bg-danger-soft p-3">
+                                <p className="text-danger">{t('privacy.eraseConfirm')}</p>
                                 <div className="flex gap-3">
                                     <button type="button" className={dangerButton} disabled={erase.isPending} onClick={() => erase.mutate()} data-testid="guest-erase-confirm">
                                         {t('privacy.erase')}

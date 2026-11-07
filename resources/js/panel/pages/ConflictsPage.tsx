@@ -6,7 +6,17 @@ import { Link } from 'react-router';
 import { calendarsApi, type Conflict, type ConflictEvent, CONFLICT_RESOLUTIONS, type ConflictResolution, type ConflictStatus } from '../api/calendars';
 import { fieldErrors } from '../api/client';
 import { useErrorMessage } from '../auth/session';
-import { dangerButton, Field, FormError, inputClass, primaryButton, secondaryButton, Section } from '../components/Form';
+import {
+    dangerButton,
+    EmptyState,
+    Field,
+    FormError,
+    inputClass,
+    Loading,
+    primaryButton,
+    secondaryButton,
+    Section,
+} from '../components/Form';
 import { formatDate, formatDateTime } from '../dates';
 
 const OPEN: ConflictStatus[] = ['OPEN', 'INVESTIGATING'];
@@ -25,8 +35,8 @@ export function ConflictsPage() {
 
     return (
         <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
-            <h1 className="text-2xl font-semibold text-slate-900">{t('conflicts.title')}</h1>
-            <p className="text-sm text-slate-600">{t('conflicts.intro')}</p>
+            <h1 className="text-2xl font-semibold text-ink">{t('conflicts.title')}</h1>
+            <p className="text-sm text-muted">{t('conflicts.intro')}</p>
             <Section
                 title={showClosed ? t('conflicts.closed') : t('conflicts.open')}
                 actions={
@@ -35,10 +45,10 @@ export function ConflictsPage() {
                     </button>
                 }
             >
-                {conflicts.isPending && <p className="text-sm text-slate-600">{t('common.loading')}</p>}
+                {conflicts.isPending && <Loading />}
                 {conflicts.isError && <FormError message={errorMessage(conflicts.error)} />}
-                {conflicts.data?.length === 0 && <p className="text-sm text-slate-600">{showClosed ? t('conflicts.noneClosed') : t('conflicts.none')}</p>}
-                <ul className="divide-y divide-slate-200" data-testid="conflict-list">
+                {conflicts.data?.length === 0 && <EmptyState title={showClosed ? t('conflicts.noneClosed') : t('conflicts.none')} />}
+                <ul className="divide-y divide-line-soft" data-testid="conflict-list">
                     {conflicts.data?.map((conflict) => <ConflictRow key={conflict.id} conflict={conflict} />)}
                 </ul>
             </Section>
@@ -91,35 +101,35 @@ function ConflictRow({ conflict }: { conflict: Conflict }) {
         <li className="py-4" data-testid="conflict-row" data-status={conflict.status}>
             <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="space-y-1 text-sm">
-                    <p className="font-medium text-slate-900">
+                    <p className="font-medium text-ink">
                         {conflict.unit.name ?? '—'} · {formatDate(conflict.check_in)} → {formatDate(conflict.check_out)}
                     </p>
                     {conflict.reservation !== null && (
                         <p>
-                            <Link to={`/prenotazioni/${conflict.reservation.id}`} className="text-blue-700 hover:underline">
+                            <Link to={`/prenotazioni/${conflict.reservation.id}`} className="text-brand-800 hover:underline">
                                 {t('conflicts.reservation', { code: conflict.reservation.code })}
                             </Link>
                         </p>
                     )}
-                    {conflict.kind === 'MANUAL_BLOCK' && <p className="text-slate-700">{t('conflicts.manualBlock')}</p>}
+                    {conflict.kind === 'MANUAL_BLOCK' && <p className="text-ink">{t('conflicts.manualBlock')}</p>}
                     {conflict.external_event !== null && (
-                        <p className="text-slate-700">
+                        <p className="text-ink">
                             <EventLine event={conflict.external_event} />
                         </p>
                     )}
                     {conflict.other_external_event !== null && (
-                        <p className="text-slate-700">
+                        <p className="text-ink">
                             <EventLine event={conflict.other_external_event} />
                         </p>
                     )}
-                    {conflict.suspected_echo && <p className="text-amber-800">{t('conflicts.suspectedEcho')}</p>}
-                    <p className="text-xs text-slate-500">
+                    {conflict.suspected_echo && <p className="text-warning">{t('conflicts.suspectedEcho')}</p>}
+                    <p className="text-xs text-muted">
                         {t('conflicts.detectedAt', { date: formatDateTime(conflict.detected_at) })}
                         {conflict.resolved_at !== null && ` · ${t('conflicts.closedAt', { date: formatDateTime(conflict.resolved_at) })}`}
                         {conflict.resolution !== null && ` · ${t(`conflictResolution.${conflict.resolution}`)}`}
                     </p>
                 </div>
-                <span className="rounded-full border border-slate-300 px-2 py-0.5 text-xs font-medium text-slate-700" data-testid="conflict-status">
+                <span className="rounded-full border border-line px-2 py-0.5 text-xs font-medium text-ink" data-testid="conflict-status">
                     {t(`conflictStatus.${conflict.status}`)}
                 </span>
             </div>
@@ -146,7 +156,7 @@ function ConflictRow({ conflict }: { conflict: Conflict }) {
             )}
 
             {open && mode !== null && (
-                <div className="mt-3 grid gap-3 rounded-md bg-slate-50 p-3 sm:grid-cols-2" data-testid="conflict-form">
+                <div className="mt-3 grid gap-3 rounded-control bg-canvas p-3 sm:grid-cols-2" data-testid="conflict-form">
                     {mode === 'resolve' && (
                         <Field label={t('conflicts.resolution')} errors={errors.resolution}>
                             <select className={inputClass} value={resolution} onChange={(e) => setResolution(e.target.value as ConflictResolution)}>
@@ -161,7 +171,7 @@ function ConflictRow({ conflict }: { conflict: Conflict }) {
                     <Field label={mode === 'ignore' ? t('conflicts.ignoreNotes') : t('conflicts.notes')} errors={errors.notes} hint={t('conflicts.notesHint')}>
                         <textarea className={inputClass} rows={2} maxLength={1000} value={notes} onChange={(e) => setNotes(e.target.value)} />
                     </Field>
-                    <p className="text-xs text-slate-600 sm:col-span-2">{t('conflicts.noCancellation')}</p>
+                    <p className="text-xs text-muted sm:col-span-2">{t('conflicts.noCancellation')}</p>
                     <div className="sm:col-span-2">
                         <button type="button" className={primaryButton} disabled={close.isPending} onClick={() => close.mutate()}>
                             {mode === 'ignore' ? t('conflicts.confirmIgnore') : t('conflicts.confirmResolve')}

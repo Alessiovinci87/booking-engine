@@ -1,45 +1,92 @@
-import type { ReactNode } from 'react';
+import { cloneElement, isValidElement, useId, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import type { LocaleCode, TranslationTexts, Translations } from '../api/admin';
+import { buttonClass, Card, ConfirmDialog, Skeleton } from '../../shared/ui';
 import { inputClass } from './AuthCard';
 
 export { FormError, inputClass } from './AuthCard';
+export { EmptyState } from '../../shared/ui';
 
-export const primaryButton =
-    'rounded-md bg-blue-700 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60';
+/** Caricamento di una sezione o di una pagina intera del pannello (8.5): annunciato agli screen reader. */
+export function Loading({ page = false, lines = 3 }: { page?: boolean; lines?: number }) {
+    const { t } = useTranslation();
+    const skeleton = <Skeleton label={t('common.loading')} lines={lines} />;
 
-export const secondaryButton =
-    'rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60';
+    return page ? <div className="mx-auto max-w-5xl px-4 py-8">{skeleton}</div> : skeleton;
+}
 
-export const dangerButton =
-    'rounded-md border border-red-300 bg-white px-3 py-1.5 text-sm text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60';
+interface PendingConfirmation {
+    title: string;
+    confirmLabel: string;
+    action: () => void;
+}
+
+/**
+ * Conferma prima di un'azione irreversibile (8.5) con il dialogo condiviso, al posto di window.confirm:
+ * `ask` apre il dialogo, `dialog` va messo nel markup vicino al pulsante.
+ */
+export function useConfirm(): { ask: (confirmation: PendingConfirmation) => void; dialog: ReactNode } {
+    const { t } = useTranslation();
+    const [pending, setPending] = useState<PendingConfirmation | null>(null);
+    const dialog = (
+        <ConfirmDialog
+            open={pending !== null}
+            title={pending?.title ?? ''}
+            confirmLabel={pending?.confirmLabel ?? ''}
+            cancelLabel={t('common.cancel')}
+            onConfirm={() => {
+                pending?.action();
+                setPending(null);
+            }}
+            onCancel={() => setPending(null)}
+            testId="confirm-dialog"
+        />
+    );
+
+    return { ask: setPending, dialog };
+}
+
+export const primaryButton = buttonClass('primary');
+
+export const secondaryButton = buttonClass('secondary');
+
+export const dangerButton = buttonClass('danger');
 
 /** Riquadro di una sezione della pagina. */
 export function Section({ title, children, actions }: { title: string; children: ReactNode; actions?: ReactNode }) {
     return (
-        <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="mb-4 flex items-center justify-between gap-4">
-                <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
-                {actions}
-            </div>
+        <Card title={title} actions={actions}>
             {children}
-        </section>
+        </Card>
     );
 }
 
 /** Campo con etichetta ed eventuali errori di validazione del server. */
 export function Field({ label, errors, children, hint }: { label: string; errors?: string[]; children: ReactNode; hint?: string }) {
+    const hintId = useId();
+    const errorId = useId();
+    const hasError = errors !== undefined && errors.length > 0;
+    const describedBy = [hint !== undefined ? hintId : null, hasError ? errorId : null].filter(Boolean).join(' ') || undefined;
+    // Errori e suggerimento collegati al controllo (8.2, WCAG 3.3.1 e 1.3.1).
+    const control = isValidElement<{ 'aria-invalid'?: boolean; 'aria-describedby'?: string }>(children)
+        ? cloneElement(children, { 'aria-invalid': hasError || undefined, 'aria-describedby': describedBy })
+        : children;
+
     return (
-        <label className="block text-sm font-medium text-slate-700">
+        <label className="block text-sm font-medium text-ink">
             {label}
-            {children}
-            {hint !== undefined && <span className="mt-1 block text-xs font-normal text-slate-500">{hint}</span>}
-            {errors?.map((message) => (
-                <span key={message} className="mt-1 block text-xs font-normal text-red-700">
-                    {message}
+            {control}
+            {hint !== undefined && (
+                <span id={hintId} className="mt-1 block text-xs font-normal text-muted">
+                    {hint}
                 </span>
-            ))}
+            )}
+            {hasError && (
+                <span id={errorId} className="mt-1 block text-xs font-normal text-danger">
+                    {errors.join(' ')}
+                </span>
+            )}
         </label>
     );
 }
@@ -58,6 +105,8 @@ export function TextInput({
     inputMode?: 'numeric' | 'decimal' | 'text' | 'email' | 'tel' | 'url';
     min?: number;
     max?: number;
+    'aria-invalid'?: boolean;
+    'aria-describedby'?: string;
 }) {
     return <input className={inputClass} type={type} value={value} onChange={(e) => onChange(e.target.value)} {...rest} />;
 }
@@ -103,8 +152,8 @@ export function TranslationFields({
                 const set = (field: keyof typeof value, text: string) => onChange({ ...draft, [locale]: { ...value, [field]: text } });
 
                 return (
-                    <fieldset key={locale} className="space-y-3 rounded-md border border-slate-200 p-3">
-                        <legend className="px-1 text-sm font-semibold text-slate-800">{t(`translations.${locale}`)}</legend>
+                    <fieldset key={locale} className="space-y-3 rounded-control border border-line-soft p-3">
+                        <legend className="px-1 text-sm font-semibold text-ink">{t(`translations.${locale}`)}</legend>
                         <Field label={t('translations.name')} errors={errors[`translations.${locale}.name`] ?? errors[`translations.${locale}`]}>
                             <TextInput value={value.name} onChange={(text) => set('name', text)} />
                         </Field>
@@ -125,7 +174,7 @@ export function SavedNotice({ show }: { show: boolean }) {
     const { t } = useTranslation();
 
     return show ? (
-        <span className="text-sm text-green-700" role="status">
+        <span className="text-sm text-success" role="status">
             {t('common.saved')}
         </span>
     ) : null;
@@ -139,7 +188,7 @@ export function ConflictNotice({ show }: { show: boolean }) {
     const { t } = useTranslation();
 
     return show ? (
-        <p className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900" role="alert">
+        <p className="rounded-control border border-amber-200 bg-warning-soft px-3 py-2 text-sm text-warning" role="alert">
             {t('common.conflictReloaded')}
         </p>
     ) : null;

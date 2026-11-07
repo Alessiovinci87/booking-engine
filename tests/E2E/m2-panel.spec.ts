@@ -88,7 +88,7 @@ test('M2: configurazione, anteprima golden e pubblicazione dal pannello', async 
 
         const details = section(page, "Dati dell'unità");
         await details.getByLabel('Notti minime').fill('3');
-        await details.getByLabel('Pulizie finali (€)').fill('60,00');
+        await details.getByLabel('Pulizia finale (€)').fill('60,00');
         await details.getByLabel('Supplemento per ospite in più').fill('15,00');
         await details.getByRole('button', { name: 'Salva' }).click();
         await expect(details.getByRole('status')).toHaveText('Salvato.');

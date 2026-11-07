@@ -35,10 +35,10 @@ export function MfaVerifyPage() {
 
     return (
         <AuthCard title={t('mfaVerify.title')}>
-            <p className="text-sm text-slate-700">{useRecovery ? t('mfaVerify.recoveryIntro') : t('mfaVerify.intro')}</p>
+            <p className="text-sm text-ink">{useRecovery ? t('mfaVerify.recoveryIntro') : t('mfaVerify.intro')}</p>
             <form className="mt-6 space-y-4" onSubmit={submit} noValidate>
                 <FormError message={verify.isError ? errorMessage(verify.error) : null} />
-                <label className="block text-sm font-medium text-slate-700">
+                <label className="block text-sm font-medium text-ink">
                     {useRecovery ? t('mfa.recoveryCode') : t('mfa.code')}
                     {useRecovery ? (
                         <input
@@ -67,10 +67,10 @@ export function MfaVerifyPage() {
                 </button>
             </form>
             <div className="mt-4 flex items-center justify-between text-sm">
-                <button type="button" className="text-blue-700 underline" onClick={toggle}>
+                <button type="button" className="text-brand-800 underline" onClick={toggle}>
                     {useRecovery ? t('mfaVerify.useTotp') : t('mfaVerify.useRecovery')}
                 </button>
-                <LogoutButton className="text-slate-600 underline" />
+                <LogoutButton className="text-muted underline" />
             </div>
         </AuthCard>
     );

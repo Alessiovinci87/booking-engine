@@ -11,15 +11,16 @@ import {
     Field,
     FormError,
     inputClass,
+    Loading,
     primaryButton,
     SavedNotice,
-    type SaveNotice,
     secondaryButton,
     Section,
     TextInput,
-    TranslationFields,
     translationDraft,
+    TranslationFields,
     translationPayload,
+    type SaveNotice,
 } from '../components/Form';
 import { centsToEuroInput, parseEuroToCents } from '../money';
 import { NotFoundPage } from './NotFoundPage';
@@ -36,7 +37,7 @@ export function UnitPage() {
     const [notice, setNotice] = useState<SaveNotice>(null);
 
     if (unit.isPending) {
-        return <p className="mx-auto max-w-5xl px-4 py-8 text-slate-600">{t('common.loading')}</p>;
+        return <Loading page />;
     }
 
     if (unit.isError) {
@@ -51,10 +52,10 @@ export function UnitPage() {
 
     return (
         <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
-            <Link to={`/strutture/${unit.data.property_id}`} className="text-sm text-blue-700 hover:underline">
+            <Link to={`/strutture/${unit.data.property_id}`} className="text-sm text-brand-800 hover:underline">
                 ← {t('unit.backToProperty')}
             </Link>
-            <h1 className="text-2xl font-semibold text-slate-900">{unit.data.name}</h1>
+            <h1 className="text-2xl font-semibold text-ink">{unit.data.name}</h1>
             <SalesSection unit={unit.data} onNotice={setNotice} />
             <UnitForm key={unit.data.version} unit={unit.data} notice={notice} onNotice={setNotice} />
             <UnitPhotosSection unitId={unit.data.id} />
@@ -116,7 +117,7 @@ function SalesSection({ unit, onNotice }: { unit: Unit; onNotice: (notice: SaveN
 
     return (
         <Section title={t('unit.salesTitle')}>
-            <div className="flex flex-wrap items-center gap-4 text-sm text-slate-700">
+            <div className="flex flex-wrap items-center gap-4 text-sm text-ink">
                 <span data-testid="unit-status">{t(`units.status.${unit.status}`)}</span>
                 <span>{unit.sales_suspended ? t('units.salesSuspended') : t('units.salesOpen')}</span>
                 <button className={secondaryButton} type="button" onClick={() => sales.mutate()} disabled={sales.isPending}>
@@ -127,7 +128,7 @@ function SalesSection({ unit, onNotice }: { unit: Unit; onNotice: (notice: SaveN
                 </button>
             </div>
             {confirming && (
-                <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900" role="alert" data-testid="last-unit-warning">
+                <div className="mt-3 rounded-control border border-amber-200 bg-warning-soft p-3 text-sm text-warning" role="alert" data-testid="last-unit-warning">
                     <p>{t('unit.lastActiveWarning')}</p>
                     <div className="mt-2 flex gap-2">
                         <button className={primaryButton} type="button" onClick={toggleStatus}>

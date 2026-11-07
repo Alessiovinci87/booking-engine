@@ -6,6 +6,7 @@ import { supportApi, type SupportAccessGrant } from '../api/support';
 import { useErrorMessage } from '../auth/session';
 import { dangerButton, FormError, secondaryButton } from '../components/Form';
 import { ReauthPrompt, needsReauth } from '../components/Reauth';
+import { Badge, EmptyState, Skeleton, type Tone } from '../../shared/ui';
 
 const dateTime = (iso: string | null) => (iso === null ? '—' : new Date(iso).toLocaleString('it-IT', { dateStyle: 'short', timeStyle: 'short' }));
 
@@ -20,8 +21,8 @@ export function SupportAccessPage() {
 
     if (grants.isPending) {
         return (
-            <main className="mx-auto max-w-5xl px-4 py-6 text-sm text-slate-600" role="status">
-                {t('support.loading')}
+            <main className="mx-auto max-w-5xl px-4 py-6">
+                <Skeleton label={t('support.loading')} />
             </main>
         );
     }
@@ -39,15 +40,13 @@ export function SupportAccessPage() {
     return (
         <main className="mx-auto max-w-5xl space-y-6 px-4 py-6" data-testid="support-access-page">
             <div>
-                <h1 className="text-xl font-semibold text-slate-900">{t('support.title')}</h1>
-                <p className="mt-1 text-sm text-slate-600">{t('support.intro')}</p>
+                <h1 className="text-xl font-semibold text-ink">{t('support.title')}</h1>
+                <p className="mt-1 text-sm text-muted">{t('support.intro')}</p>
             </div>
             {items.length === 0 ? (
-                <p className="text-sm text-slate-500" data-testid="support-access-empty">
-                    {t('support.empty')}
-                </p>
+                <EmptyState title={t('support.empty')} testId="support-access-empty" />
             ) : (
-                <ul className="divide-y divide-slate-200 rounded-md border border-slate-200 bg-white text-sm" data-testid="support-access-list">
+                <ul className="divide-y divide-line-soft rounded-control border border-line-soft bg-surface text-sm" data-testid="support-access-list">
                     {items.map((grant) => (
                         <GrantRow key={grant.id} grant={grant} />
                     ))}
@@ -56,6 +55,8 @@ export function SupportAccessPage() {
         </main>
     );
 }
+
+const statusTone: Record<string, Tone> = { active: 'warning', revoked_by_member: 'neutral', revoked: 'neutral', expired: 'neutral' };
 
 function GrantRow({ grant }: { grant: SupportAccessGrant }) {
     const { t } = useTranslation();
@@ -75,19 +76,21 @@ function GrantRow({ grant }: { grant: SupportAccessGrant }) {
         <li className="space-y-2 p-3" data-testid={`support-grant-${grant.id}`}>
             <div className="flex flex-wrap items-start justify-between gap-3">
                 <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1">
-                    <dt className="text-slate-500">{t('support.status')}</dt>
-                    <dd className="font-medium text-slate-900" data-testid="support-grant-status">
-                        {t(`support.${status}`)}
+                    <dt className="text-muted">{t('support.status')}</dt>
+                    <dd>
+                        <Badge tone={statusTone[status]} testId="support-grant-status">
+                            {t(`support.${status}`)}
+                        </Badge>
                     </dd>
-                    <dt className="text-slate-500">{t('support.operator')}</dt>
+                    <dt className="text-muted">{t('support.operator')}</dt>
                     <dd>{grant.operator_email ?? '—'}</dd>
-                    <dt className="text-slate-500">{t('support.reason')}</dt>
+                    <dt className="text-muted">{t('support.reason')}</dt>
                     <dd>{grant.reason}</dd>
-                    <dt className="text-slate-500">{t('support.opened')}</dt>
+                    <dt className="text-muted">{t('support.opened')}</dt>
                     <dd>{dateTime(grant.created_at)}</dd>
-                    <dt className="text-slate-500">{t('support.expires')}</dt>
+                    <dt className="text-muted">{t('support.expires')}</dt>
                     <dd>{dateTime(grant.revoked_at ?? grant.expires_at)}</dd>
-                    <dt className="text-slate-500">{t('support.used')}</dt>
+                    <dt className="text-muted">{t('support.used')}</dt>
                     <dd>{grant.first_used_at === null ? t('support.never_used') : `${dateTime(grant.first_used_at)} – ${dateTime(grant.last_used_at)}`}</dd>
                 </dl>
                 {grant.active && !confirming && (
@@ -97,8 +100,8 @@ function GrantRow({ grant }: { grant: SupportAccessGrant }) {
                 )}
             </div>
             {confirming && (
-                <div className="space-y-3 rounded-md border border-red-200 bg-red-50 p-3">
-                    <p className="text-red-900">{t('support.revoke_confirm')}</p>
+                <div className="space-y-3 rounded-control border border-red-200 bg-danger-soft p-3">
+                    <p className="text-danger">{t('support.revoke_confirm')}</p>
                     <div className="flex gap-3">
                         <button type="button" className={dangerButton} disabled={revoke.isPending} onClick={() => revoke.mutate()} data-testid="support-grant-revoke-confirm">
                             {t('support.revoke')}

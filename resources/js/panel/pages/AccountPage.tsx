@@ -37,14 +37,14 @@ export function AccountPage() {
 
     return (
         <main className="mx-auto max-w-5xl px-4 py-6">
-            <h1 className="text-xl font-semibold text-slate-900">{t('account.title')}</h1>
-            {me.data && <p className="mt-1 text-sm text-slate-600">{me.data.user.email}</p>}
-            <section className="mt-6 max-w-md rounded-lg border border-slate-200 bg-white p-6">
-                <h2 className="font-semibold text-slate-900">{t('account.changePassword')}</h2>
-                <p className="mt-1 text-sm text-slate-600">{t('account.changeIntro')}</p>
+            <h1 className="text-xl font-semibold text-ink">{t('account.title')}</h1>
+            {me.data && <p className="mt-1 text-sm text-muted">{me.data.user.email}</p>}
+            <section className="mt-6 max-w-md rounded-card border border-line-soft bg-surface p-6">
+                <h2 className="font-semibold text-ink">{t('account.changePassword')}</h2>
+                <p className="mt-1 text-sm text-muted">{t('account.changeIntro')}</p>
                 <form className="mt-4 space-y-4" onSubmit={submit} noValidate>
                     {change.isSuccess && (
-                        <p className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-800" role="status" data-testid="password-changed">
+                        <p className="rounded-control bg-green-50 px-3 py-2 text-sm text-green-800" role="status" data-testid="password-changed">
                             {t('account.changed')}
                         </p>
                     )}
@@ -57,7 +57,7 @@ export function AccountPage() {
                                   : errorMessage(change.error)
                         }
                     />
-                    <label className="block text-sm font-medium text-slate-700">
+                    <label className="block text-sm font-medium text-ink">
                         {t('account.current')}
                         <input
                             className={inputClass}
@@ -68,7 +68,7 @@ export function AccountPage() {
                             onChange={(e) => setCurrent(e.target.value)}
                         />
                     </label>
-                    <label className="block text-sm font-medium text-slate-700">
+                    <label className="block text-sm font-medium text-ink">
                         {t('password.new')}
                         <input
                             className={inputClass}
@@ -80,11 +80,11 @@ export function AccountPage() {
                         />
                     </label>
                     {errors.password?.map((message) => (
-                        <p key={message} className="text-sm text-red-700">
+                        <p key={message} className="text-sm text-danger">
                             {message}
                         </p>
                     ))}
-                    <label className="block text-sm font-medium text-slate-700">
+                    <label className="block text-sm font-medium text-ink">
                         {t('password.confirm')}
                         <input
                             className={inputClass}
@@ -95,23 +95,23 @@ export function AccountPage() {
                             onChange={(e) => setConfirmation(e.target.value)}
                         />
                     </label>
-                    <p className="text-xs text-slate-500">{t('password.rules')}</p>
+                    <p className="text-xs text-muted">{t('password.rules')}</p>
                     <button className={buttonClass} type="submit" disabled={change.isPending}>
                         {change.isPending ? t('common.wait') : t('account.submit')}
                     </button>
                 </form>
             </section>
-            <section className="mt-6 max-w-md rounded-lg border border-slate-200 bg-white p-6">
-                <h2 className="font-semibold text-slate-900">{t('offboarding.title')}</h2>
-                <p className="mt-1 text-sm text-slate-600">{t('offboarding.accountHint')}</p>
-                <Link to="/uscita" className="mt-3 inline-block text-sm font-medium text-blue-700 hover:underline" data-testid="account-offboarding-link">
+            <section className="mt-6 max-w-md rounded-card border border-line-soft bg-surface p-6">
+                <h2 className="font-semibold text-ink">{t('offboarding.title')}</h2>
+                <p className="mt-1 text-sm text-muted">{t('offboarding.accountHint')}</p>
+                <Link to="/uscita" className="mt-3 inline-block text-sm font-medium text-brand-800 hover:underline" data-testid="account-offboarding-link">
                     {t('offboarding.open')}
                 </Link>
             </section>
-            <section className="mt-6 max-w-md rounded-lg border border-slate-200 bg-white p-6">
-                <h2 className="font-semibold text-slate-900">{t('support.title')}</h2>
-                <p className="mt-1 text-sm text-slate-600">{t('support.intro')}</p>
-                <Link to="/accessi-supporto" className="mt-3 inline-block text-sm font-medium text-blue-700 hover:underline" data-testid="account-support-link">
+            <section className="mt-6 max-w-md rounded-card border border-line-soft bg-surface p-6">
+                <h2 className="font-semibold text-ink">{t('support.title')}</h2>
+                <p className="mt-1 text-sm text-muted">{t('support.intro')}</p>
+                <Link to="/accessi-supporto" className="mt-3 inline-block text-sm font-medium text-brand-800 hover:underline" data-testid="account-support-link">
                     {t('support.link')}
                 </Link>
             </section>

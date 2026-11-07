@@ -55,6 +55,9 @@ return [
         'SUPPORT_READ_ONLY' => 'Support access: the panel is read-only.',
         'SUPPORT_ACCESS_INACTIVE' => 'The support access has expired or has been revoked.',
         'SUPPORT_ACCESS_NOT_ACTIVE' => 'This support access is already closed.',
+        'CHECKOUT_EXPIRED' => 'The payment session has expired. Please try booking again.',
+        'PAYMENT_PROVIDER_REJECTED' => 'Stripe rejected the request. Check the Stripe account details and try again.',
+        'FEED_RETIRED' => 'This calendar is no longer published.',
     ],
     'idempotency' => [
         'key_required' => 'Missing or invalid Idempotency-Key header (UUID).',

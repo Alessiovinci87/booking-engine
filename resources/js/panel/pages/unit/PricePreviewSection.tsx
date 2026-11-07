@@ -76,7 +76,7 @@ export function PricePreviewSection({ unitId }: { unitId: string }) {
             {quote !== undefined && (
                 <div className="mt-6" data-testid="price-preview">
                     <table className="w-full text-left text-sm">
-                        <thead className="text-slate-500">
+                        <thead className="text-muted">
                             <tr>
                                 <th className="py-1 font-medium">{t('preview.line')}</th>
                                 <th className="py-1 font-medium">{t('preview.date')}</th>
@@ -84,7 +84,7 @@ export function PricePreviewSection({ unitId }: { unitId: string }) {
                                 <th className="py-1 text-right font-medium">{t('preview.amount')}</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-200">
+                        <tbody className="divide-y divide-line-soft">
                             {quote.lines.map((line, index) => (
                                 <tr key={`${line.kind}-${line.date ?? index}`}>
                                     <td className="py-1.5">{t(`preview.kinds.${line.kind}`)}</td>
@@ -96,25 +96,25 @@ export function PricePreviewSection({ unitId }: { unitId: string }) {
                         </tbody>
                     </table>
                     <dl className="mt-4 grid max-w-sm grid-cols-2 gap-x-4 gap-y-1 text-sm">
-                        <dt className="text-slate-600">{t('preview.nights')}</dt>
+                        <dt className="text-muted">{t('preview.nights')}</dt>
                         <dd className="text-right">{quote.nights}</dd>
-                        <dt className="font-semibold text-slate-900">{t('preview.total')}</dt>
+                        <dt className="font-semibold text-ink">{t('preview.total')}</dt>
                         <dd className="text-right font-semibold" data-testid="price-total">
                             {formatMoney(quote.total)}
                         </dd>
-                        <dt className="text-slate-600">{t('preview.deposit')}</dt>
+                        <dt className="text-muted">{t('preview.deposit')}</dt>
                         <dd className="text-right" data-testid="price-deposit">
                             {formatMoney(quote.deposit)}
                         </dd>
-                        <dt className="text-slate-600">{t('preview.balance')}</dt>
+                        <dt className="text-muted">{t('preview.balance')}</dt>
                         <dd className="text-right" data-testid="price-balance">
                             {formatMoney(quote.balance)}
                         </dd>
-                        <dt className="text-slate-600">{t('unit.booking_mode')}</dt>
+                        <dt className="text-muted">{t('unit.booking_mode')}</dt>
                         <dd className="text-right">{t(`unit.bookingModes.${quote.booking_mode}`)}</dd>
                     </dl>
                     {quote.cancellation_policy !== null && (
-                        <p className="mt-3 text-sm text-slate-600">
+                        <p className="mt-3 text-sm text-muted">
                             <span className="font-medium">{quote.cancellation_policy.title}</span> — {quote.cancellation_policy.text}
                         </p>
                     )}

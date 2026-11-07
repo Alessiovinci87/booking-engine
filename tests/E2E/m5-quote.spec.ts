@@ -54,7 +54,7 @@ test.describe('M5 preventivi', () => {
             await form.getByLabel('Check-in').fill(inDays(50));
             await form.getByLabel('Check-out').fill(inDays(53));
             await form.getByLabel('Sconto', { exact: false }).first().fill('20,00');
-            await form.getByLabel('Nome dell’ospite').fill('Marta Esempio');
+            await form.getByLabel("Nome dell'ospite").fill('Marta Esempio');
             await form.locator('input[type="email"]').fill('marta.esempio@example.test');
             await form.getByRole('button', { name: 'Crea preventivo' }).click();
 

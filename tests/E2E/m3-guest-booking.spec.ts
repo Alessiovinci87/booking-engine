@@ -76,7 +76,7 @@ test.describe('M3', () => {
             await page.getByLabel('Email', { exact: true }).fill('chiara.prova@example.test');
             await page.getByLabel('Telefono', { exact: true }).fill('+39 333 000 0199');
             await page.locator('select[name="country_code"]').selectOption('IT');
-            await page.getByLabel('Note per il gestore (facoltative)').fill('Arrivo in serata.');
+            await page.getByLabel('Note per la struttura (facoltative)').fill('Arrivo in serata.');
             await expect(page.getByTestId('notes-warning')).toBeVisible();
 
             // Senza accettazioni il modulo non parte.

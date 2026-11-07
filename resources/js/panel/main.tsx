@@ -1,37 +1,40 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { StrictMode } from 'react';
+import { lazy, StrictMode, Suspense } from 'react';
 import { createRoot } from 'react-dom/client';
 import { I18nextProvider } from 'react-i18next';
 import { BrowserRouter, Route, Routes } from 'react-router';
 
-import '../../css/app.css';
+import '../../css/panel.css';
+import { Skeleton, ToastProvider, useDocumentTitle } from '../shared/ui';
 import { ApiError } from './api/client';
 import { AuthGate } from './auth/AuthGate';
 import { sessionQueryKey } from './auth/session';
 import { PanelLayout } from './components/PanelLayout';
 import { i18n } from './i18n';
-import { AccountPage } from './pages/AccountPage';
-import { CalendarPage } from './pages/CalendarPage';
-import { CalendarsPage } from './pages/CalendarsPage';
-import { ConflictsPage } from './pages/ConflictsPage';
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 import { LoginPage } from './pages/LoginPage';
 import { MfaSetupPage } from './pages/MfaSetupPage';
 import { MfaVerifyPage } from './pages/MfaVerifyPage';
-import { GuestDataPage } from './pages/GuestDataPage';
-import { MetricsPage } from './pages/MetricsPage';
-import { NewReservationPage } from './pages/NewReservationPage';
-import { OffboardingPage } from './pages/OffboardingPage';
 import { NotFoundPage } from './pages/NotFoundPage';
-import { PaymentsPage } from './pages/PaymentsPage';
-import { PropertiesPage } from './pages/PropertiesPage';
-import { PropertyPage } from './pages/PropertyPage';
-import { QuotesPage } from './pages/QuotesPage';
-import { ReservationDetailPage } from './pages/ReservationDetailPage';
-import { ReservationsPage } from './pages/ReservationsPage';
 import { ResetPasswordPage } from './pages/ResetPasswordPage';
-import { SupportAccessPage } from './pages/SupportAccessPage';
-import { UnitPage } from './pages/UnitPage';
+
+/* Divisione del codice (8.4): ogni pagina del pannello dopo l'accesso si carica quando serve. */
+const AccountPage = lazy(() => import('./pages/AccountPage').then((m) => ({ default: m.AccountPage })));
+const CalendarPage = lazy(() => import('./pages/CalendarPage').then((m) => ({ default: m.CalendarPage })));
+const CalendarsPage = lazy(() => import('./pages/CalendarsPage').then((m) => ({ default: m.CalendarsPage })));
+const ConflictsPage = lazy(() => import('./pages/ConflictsPage').then((m) => ({ default: m.ConflictsPage })));
+const GuestDataPage = lazy(() => import('./pages/GuestDataPage').then((m) => ({ default: m.GuestDataPage })));
+const MetricsPage = lazy(() => import('./pages/MetricsPage').then((m) => ({ default: m.MetricsPage })));
+const NewReservationPage = lazy(() => import('./pages/NewReservationPage').then((m) => ({ default: m.NewReservationPage })));
+const OffboardingPage = lazy(() => import('./pages/OffboardingPage').then((m) => ({ default: m.OffboardingPage })));
+const PaymentsPage = lazy(() => import('./pages/PaymentsPage').then((m) => ({ default: m.PaymentsPage })));
+const PropertiesPage = lazy(() => import('./pages/PropertiesPage').then((m) => ({ default: m.PropertiesPage })));
+const PropertyPage = lazy(() => import('./pages/PropertyPage').then((m) => ({ default: m.PropertyPage })));
+const QuotesPage = lazy(() => import('./pages/QuotesPage').then((m) => ({ default: m.QuotesPage })));
+const ReservationDetailPage = lazy(() => import('./pages/ReservationDetailPage').then((m) => ({ default: m.ReservationDetailPage })));
+const ReservationsPage = lazy(() => import('./pages/ReservationsPage').then((m) => ({ default: m.ReservationsPage })));
+const SupportAccessPage = lazy(() => import('./pages/SupportAccessPage').then((m) => ({ default: m.SupportAccessPage })));
+const UnitPage = lazy(() => import('./pages/UnitPage').then((m) => ({ default: m.UnitPage })));
 
 const queryClient: QueryClient = new QueryClient({
     defaultOptions: {
@@ -63,6 +66,9 @@ createRoot(container).render(
     <StrictMode>
         <I18nextProvider i18n={i18n}>
             <QueryClientProvider client={queryClient}>
+                <ToastProvider>
+                    <DocumentTitle />
+                    <Suspense fallback={<PageLoading />}>
                 <BrowserRouter basename="/app">
                     <Routes>
                         <Route
@@ -126,7 +132,24 @@ createRoot(container).render(
                         </Route>
                     </Routes>
                 </BrowserRouter>
+                    </Suspense>
+                </ToastProvider>
             </QueryClientProvider>
         </I18nextProvider>
     </StrictMode>,
 );
+
+/** Titolo della scheda: titolo della pagina più il nome del pannello (8.2). */
+function DocumentTitle() {
+    useDocumentTitle(i18n.t('app.name'));
+
+    return null;
+}
+
+function PageLoading() {
+    return (
+        <main className="mx-auto max-w-5xl px-4 py-6">
+            <Skeleton label={i18n.t('common.loading')} lines={5} />
+        </main>
+    );
+}

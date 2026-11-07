@@ -28,3 +28,5 @@ Thumbs.db
 
 # Permessi locali di Claude Code (non condivisi)
 .claude/settings.local.json
+/storage/m8-prima
+/storage/m8-dopo

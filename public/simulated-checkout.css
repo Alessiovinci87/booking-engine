@@ -8,6 +8,6 @@ h1 { margin: 0 0 4px; font-size: 22px; }
 .notice { padding: 12px; background: #f1f5f9; border-radius: 8px; }
 form { margin: 8px 0; }
 .button { display: block; width: 100%; box-sizing: border-box; padding: 12px; border: 0; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; text-align: center; text-decoration: none; }
-.primary { background: #16a34a; color: #fff; }
+.primary { background: #0f766e; color: #fff; }
 .danger { background: #dc2626; color: #fff; }
 .secondary { background: #e2e8f0; color: #0f172a; }

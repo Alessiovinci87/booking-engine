@@ -6,7 +6,19 @@ import { Link, useSearchParams } from 'react-router';
 import { fieldErrors } from '../api/client';
 import { type CalendarData, type CalendarOccupancy, reservationsApi } from '../api/reservations';
 import { useErrorMessage } from '../auth/session';
-import { dangerButton, Field, FormError, inputClass, primaryButton, secondaryButton, Section, TextInput } from '../components/Form';
+import {
+    dangerButton,
+    EmptyState,
+    Field,
+    FormError,
+    inputClass,
+    Loading,
+    primaryButton,
+    secondaryButton,
+    Section,
+    TextInput,
+    useConfirm,
+} from '../components/Form';
 import { statusColors, UnitSelect, useAllUnits } from '../components/Reservations';
 import { addDays, coversNight, formatDate, formatMonth, fromIsoDate, monthStart, today, weekdayNames } from '../dates';
 
@@ -53,13 +65,13 @@ export function CalendarPage() {
     }, [month]);
 
     if (isPending) {
-        return <p className="mx-auto max-w-5xl px-4 py-8 text-slate-600">{t('common.loading')}</p>;
+        return <Loading page />;
     }
 
     if (options.length === 0) {
         return (
             <main className="mx-auto max-w-5xl px-4 py-8">
-                <p className="text-slate-600">{t('calendar.noUnits')}</p>
+                <EmptyState title={t('calendar.noUnits')} />
             </main>
         );
     }
@@ -67,8 +79,8 @@ export function CalendarPage() {
     return (
         <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
             <div className="flex flex-wrap items-end justify-between gap-4">
-                <h1 className="text-2xl font-semibold text-slate-900">{t('calendar.title')}</h1>
-                <label className="text-sm font-medium text-slate-700">
+                <h1 className="text-2xl font-semibold text-ink">{t('calendar.title')}</h1>
+                <label className="text-sm font-medium text-ink">
                     {t('calendar.unit')}
                     <UnitSelect options={options} value={unitId} onChange={setUnit} className={`${inputClass} min-w-56`} />
                 </label>
@@ -114,7 +126,7 @@ export function CalendarPage() {
             <NewBlockForm key={`${unitId}-${blockStart ?? ''}`} unitId={unitId} initialStart={blockStart} />
             {calendar.data !== undefined && calendar.data.conflicts.length > 0 && (
                 <Section title={t('calendar.conflicts')}>
-                    <ul className="space-y-1 text-sm text-red-800">
+                    <ul className="space-y-1 text-sm text-danger">
                         {calendar.data.conflicts.map((c) => (
                             <li key={c.id}>
                                 {t('calendar.conflictLine', { from: formatDate(c.check_in), to: formatDate(c.check_out) })}
@@ -147,9 +159,9 @@ function MonthGrid({
 
     return (
         <div className="overflow-x-auto">
-            <div className="grid min-w-[42rem] grid-cols-7 gap-px rounded-md border border-slate-200 bg-slate-200 text-xs" data-testid="calendar-grid">
+            <div className="grid min-w-[42rem] grid-cols-7 gap-px rounded-control border border-line-soft bg-slate-200 text-xs" data-testid="calendar-grid">
                 {weekdayNames().map((name) => (
-                    <div key={name} className="bg-slate-50 px-2 py-1 text-center font-medium uppercase text-slate-500">
+                    <div key={name} className="bg-canvas px-2 py-1 text-center font-medium uppercase text-muted">
                         {name}
                     </div>
                 ))}
@@ -162,10 +174,10 @@ function MonthGrid({
                     return (
                         <div
                             key={night}
-                            className={`min-h-20 bg-white p-1 ${inMonth ? '' : 'bg-slate-50 text-slate-400'} ${conflict ? 'ring-2 ring-inset ring-red-500' : ''}`}
+                            className={`min-h-20 bg-surface p-1 ${inMonth ? '' : 'bg-canvas text-muted'} ${conflict ? 'ring-2 ring-inset ring-red-500' : ''}`}
                             data-night={night}
                         >
-                            <div className={`mb-1 text-right ${night === now ? 'font-bold text-blue-700' : ''}`}>{fromIsoDate(night).getDate()}</div>
+                            <div className={`mb-1 text-right ${night === now ? 'font-bold text-brand-800' : ''}`}>{fromIsoDate(night).getDate()}</div>
                             {occupancy !== undefined ? (
                                 <OccupancyChip occupancy={occupancy} night={night} onBlock={onBlock} />
                             ) : external !== undefined ? (
@@ -175,7 +187,7 @@ function MonthGrid({
                             ) : night >= now ? (
                                 <button
                                     type="button"
-                                    className="h-8 w-full rounded text-slate-300 hover:bg-slate-100 hover:text-slate-600"
+                                    className="h-8 w-full rounded text-slate-300 hover:bg-surface-muted hover:text-muted"
                                     onClick={() => onFreeNight(night)}
                                     aria-label={t('calendar.blockFrom', { date: formatDate(night) })}
                                 >
@@ -236,7 +248,7 @@ function Legend() {
     ];
 
     return (
-        <div className="mt-3 space-y-1 text-xs text-slate-600">
+        <div className="mt-3 space-y-1 text-xs text-muted">
             <ul className="flex flex-wrap gap-2">
                 {items.map(([key, label]) => (
                     <li key={key} className={`rounded border px-2 py-0.5 ${statusColors[key]}`}>
@@ -251,6 +263,7 @@ function Legend() {
 
 function BlockDetails({ unitId, block, onDone }: { unitId: string; block: CalendarOccupancy; onDone: () => void }) {
     const { t } = useTranslation();
+    const confirmation = useConfirm();
     const errorMessage = useErrorMessage();
     const queryClient = useQueryClient();
     const remove = useMutation({
@@ -263,12 +276,19 @@ function BlockDetails({ unitId, block, onDone }: { unitId: string; block: Calend
 
     return (
         <Section title={t('calendar.blockTitle')}>
-            <p className="text-sm text-slate-700">{t('calendar.blockRange', { from: formatDate(block.check_in), to: formatDate(block.check_out) })}</p>
-            {block.note !== null && <p className="mt-1 text-sm text-slate-600">{block.note}</p>}
+            <p className="text-sm text-ink">{t('calendar.blockRange', { from: formatDate(block.check_in), to: formatDate(block.check_out) })}</p>
+            {block.note !== null && <p className="mt-1 text-sm text-muted">{block.note}</p>}
             <div className="mt-3 flex gap-2">
-                <button type="button" className={dangerButton} onClick={() => remove.mutate()} disabled={remove.isPending} data-testid="remove-block">
+                <button
+                    type="button"
+                    className={dangerButton}
+                    onClick={() => confirmation.ask({ title: t('calendar.removeBlockConfirm'), confirmLabel: t('calendar.removeBlock'), action: () => remove.mutate() })}
+                    disabled={remove.isPending}
+                    data-testid="remove-block"
+                >
                     {t('calendar.removeBlock')}
                 </button>
+                {confirmation.dialog}
                 <button type="button" className={secondaryButton} onClick={onDone}>
                     {t('common.close')}
                 </button>
@@ -323,7 +343,7 @@ function NewBlockForm({ unitId, initialStart }: { unitId: string; initialStart: 
                         {t('calendar.createBlock')}
                     </button>
                     {created && (
-                        <span className="text-sm text-green-700" role="status">
+                        <span className="text-sm text-success" role="status">
                             {t('calendar.blockCreated')}
                         </span>
                     )}
