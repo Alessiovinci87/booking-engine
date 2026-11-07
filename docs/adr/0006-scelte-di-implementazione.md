@@ -29,7 +29,7 @@ La specifica fissa lo stack (Laravel 13, PHP 8.4, PostgreSQL con RLS, Redis, Rea
 ### Librerie
 | Area | Scelta |
 |---|---|
-| Test | Pest (con `arch()` per i controlli architetturali), Playwright per E2E |
+| Test | Pest (con `arch()` per i controlli architetturali), Playwright per E2E; `@axe-core/playwright` per l'accessibilità e Lighthouse in locale per le prestazioni della pagina ospite (da M8, ADR-0017) |
 | Analisi statica e stile | Larastan (livello 6 all'inizio, 8 da M7 senza baseline: ADR-0018 punto 18), Laravel Pint |
 | Stripe | `stripe/stripe-php` ufficiale |
 | iCal | `sabre/vobject` |

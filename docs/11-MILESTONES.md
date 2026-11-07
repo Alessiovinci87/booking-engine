@@ -1,6 +1,6 @@
 # 11 — Piano di sviluppo a milestone
 
-Versione: 1.3 · Data: 07/11/2026 · Modifiche 1.2: criterio di uscita della demo di M2, attività 3.2 e 3.7 dopo la verifica di M2 (ADR-0010) · 1.3: gate pilota sull'attivazione dei piloti (ADR-0007 aggiornata), attività 6.10 e 7.5 (ADR-0014), attività 6.11 (ADR-0016) · Scelte tecniche: [ADR-0006](adr/0006-scelte-di-implementazione.md) · Calendario: [ADR-0007](adr/0007-sviluppo-anticipato.md) (sviluppo anticipato)
+Versione: 1.4 · Data: 07/11/2026 · Modifiche 1.4: milestone M8 "Qualità del frontend" ([ADR-0017](adr/0017-milestone-m8-qualita-frontend.md)) · 1.2: criterio di uscita della demo di M2, attività 3.2 e 3.7 dopo la verifica di M2 (ADR-0010) · 1.3: gate pilota sull'attivazione dei piloti (ADR-0007 aggiornata), attività 6.10 e 7.5 (ADR-0014), attività 6.11 (ADR-0016) · Scelte tecniche: [ADR-0006](adr/0006-scelte-di-implementazione.md) · Calendario: [ADR-0007](adr/0007-sviluppo-anticipato.md) (sviluppo anticipato)
 
 Questo documento è **vincolante**: lo sviluppo procede una milestone alla volta, nell'ordine indicato, e si passa alla successiva solo quando i criteri di uscita sono soddisfatti. Le decisioni tecniche sono già prese (specifica 01–10 e ADR-0006). Durante lo sviluppo non si discutono scelte, salvo i casi elencati in "Quando ci si ferma".
 
@@ -22,6 +22,7 @@ Questo documento è **vincolante**: lo sviluppo procede una milestone alla volta
 | — | **Gate pilota: esito Fase 0 positivo** | prima dell'attivazione dei piloti | la procedura di attivazione (6.8) si esegue solo con la Fase 0 positiva; lo sviluppo di M6 non la aspetta (ADR-0007) | | |
 | — | **Gate: pilota online** | aprile 2027 (invariato) | margine tra la fine di M6 e il pilota per Fase 0, collaudo e correzioni | | |
 | M7 | Completamento durante il pilota | apr – 31 mag 2027 | uscita del cliente, conservazione automatica, correzioni | M6 | — |
+| M8 | Qualità del frontend | dopo M7 (sviluppo anticipato, ADR-0017) | aspetto coerente, accessibilità, telefono, velocità, messaggi e testi; nessuna funzione nuova | M7 (senza 7.3) | pagina ospite e pannello per le demo ai gestori |
 
 Le milestone dopo il pilota (abbonamenti, channel manager, adempimenti) si pianificano a giugno 2027 con lo stesso formato.
 
@@ -250,6 +251,25 @@ Alla fine apri la pull request e scrivi il rapporto di fine milestone.
 | 7.5 | Accesso di supporto al tenant in sola lettura (08): motivazione obbligatoria, durata massima 2 ore, audit visibile al gestore nel pannello (ADR-0014 punto 31) |
 
 **Criteri di uscita:** AC18 verde; job di conservazione attivo con durate validate; nessun problema grave aperto dal pilota.
+
+---
+
+## M8 — Qualità del frontend
+
+**Periodo:** dopo M7 (senza 7.3), in sviluppo anticipato.
+**Perché:** prepara la pagina ospite, la vista incorporata, la pagina del preventivo e il pannello per le demo ai gestori e per il pilota ([ADR-0017](adr/0017-milestone-m8-qualita-frontend.md)). **Nessuna funzione nuova e nessun cambio di comportamento del backend.**
+
+| # | Attività |
+|---|---|
+| 8.1 | Fondamenta grafiche: token di design nel tema Tailwind (colori con contrasto AA, tipografia, spaziature, raggi, ombre) e componenti interni coerenti (pulsanti, campi, select, card, badge di stato, dialoghi, toast, tabelle, skeleton); pagine esistenti rifattorizzate per usarli |
+| 8.2 | Accessibilità WCAG 2.2 AA: test automatici con `@axe-core/playwright` su tutte le pagine, navigazione da tastiera, focus visibile, etichette, annunci per errori e caricamenti, calendario utilizzabile da tastiera e da screen reader |
+| 8.3 | Telefono: pagina ospite per 360–430 px, nessuno scorrimento orizzontale, aree toccabili di almeno 44 px, riepilogo del prezzo fisso in basso, galleria foto con ingrandimento, screenshot E2E su iPhone SE, iPhone 15 e Pixel 7 |
+| 8.4 | Velocità: JavaScript iniziale della pagina ospite al massimo 200 KB compressi, Lighthouse mobile prestazioni ≥ 90 e accessibilità ≥ 95, codice diviso tra pannello e pagina ospite, immagini con dimensioni e caricamento lazy; valori prima e dopo |
+| 8.5 | Stati e messaggi: caricamento, vuoto ed errore curati in ogni pagina; ogni codice di errore di 07 con un messaggio chiaro (IT/EN per l'ospite, IT per il gestore); conferme prima delle azioni irreversibili |
+| 8.6 | Testi: revisione IT/EN per un gestore non tecnico e per ospiti stranieri; glossario in `docs/guide/glossario.md` |
+| 8.7 | Fiducia nella pagina ospite: riepilogo della politica di cancellazione prima del pagamento, nota sul pagamento sicuro con Stripe, contatti della struttura, informativa ben visibile (solo dati già esistenti) |
+
+**Criteri di uscita:** E2E esistenti verdi; zero violazioni axe serie o critiche; budget della pagina ospite rispettato; rapporto con screenshot e valori di Lighthouse e axe prima e dopo.
 
 ---
 
