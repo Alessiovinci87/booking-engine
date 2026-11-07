@@ -11,6 +11,7 @@ use App\Domain\Inventory\Enums\OccupancyTempReason;
 use App\Domain\Inventory\Enums\UnitStatus;
 use App\Domain\Inventory\Models\InventoryOccupancy;
 use App\Domain\Inventory\Models\Unit;
+use App\Domain\Reservations\Enums\ReservationStatus;
 use App\Domain\Reservations\Models\Reservation;
 use App\Domain\Reservations\StayRange;
 use App\Domain\Tenancy\Audit\AuditLogger;
@@ -302,6 +303,36 @@ final class InventoryService
         );
 
         return array_map(fn (object $row): string => (string) $row->tenant_id, $rows);
+    }
+
+    /**
+     * Violazioni di I15 in tutti i tenant (05 "Riconciliazione", allerta P1): occupazione RESERVATION
+     * attiva con prenotazione terminale, o prenotazione occupante senza occupazione attiva. Da usare
+     * con la connessione app_admin_ops (sola lettura, 08); restituisce solo ID.
+     *
+     * @return list<array{tenant_id: string, reservation_id: string, problem: string}>
+     */
+    public static function i15Violations(ConnectionInterface $connection, int $limit = 100): array
+    {
+        $occupying = array_values(array_filter(ReservationStatus::cases(), fn (ReservationStatus $s): bool => $s->occupies()));
+        $terminal = array_values(array_filter(ReservationStatus::cases(), fn (ReservationStatus $s): bool => ! $s->occupies()));
+        $list = fn (array $cases): string => implode(',', array_map(fn (ReservationStatus $s): string => "'".$s->value."'", $cases));
+
+        $rows = $connection->select(
+            "(select o.tenant_id::text as tenant_id, o.reservation_id::text as reservation_id, 'active_occupancy_on_terminal' as problem
+              from inventory_occupancies o
+              join reservations r on r.tenant_id = o.tenant_id and r.id = o.reservation_id
+              where o.status = 'ACTIVE' and o.kind = 'RESERVATION' and r.status in ({$list($terminal)}) limit ?)
+             union all
+             (select r.tenant_id::text, r.id::text, 'occupying_without_occupancy'
+              from reservations r
+              where r.status in ({$list($occupying)})
+                and not exists (select 1 from inventory_occupancies o where o.tenant_id = r.tenant_id and o.reservation_id = r.id and o.status = 'ACTIVE')
+              limit ?)",
+            [$limit, $limit],
+        );
+
+        return array_map(fn (object $row): array => ['tenant_id' => (string) $row->tenant_id, 'reservation_id' => (string) $row->reservation_id, 'problem' => (string) $row->problem], $rows);
     }
 
     /**

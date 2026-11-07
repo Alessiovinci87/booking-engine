@@ -1,5 +1,7 @@
 <?php
 
+use App\Domain\Payments\Jobs\DispatchPaymentReconciliationJob;
+use App\Domain\Payments\Jobs\ReconcilePaymentsJob;
 use App\Domain\Reservations\Jobs\DispatchOccupancyReleaseJob;
 use App\Domain\Tenancy\Jobs\DispatchOutboxJob;
 use Illuminate\Foundation\Inspiring;
@@ -15,3 +17,8 @@ Schedule::job(new DispatchOutboxJob)->everyMinute()->withoutOverlapping()->name(
 
 // Rilascio delle occupazioni scadute (05, 03 T5/T6/T11/T16): dispatcher ogni minuto, un job per tenant.
 Schedule::job(new DispatchOccupancyReleaseJob)->everyMinute()->withoutOverlapping()->name('occupancies:release');
+
+// Riconciliazione dei pagamenti (05): giro completo ogni 15 minuti (con il controllo di I15), CAPTURING
+// ogni 5 minuti. Dispatcher con app_admin_ops, un job per tenant con app_runtime.
+Schedule::job(new DispatchPaymentReconciliationJob(ReconcilePaymentsJob::FULL))->everyFifteenMinutes()->withoutOverlapping()->name('payments:reconcile');
+Schedule::job(new DispatchPaymentReconciliationJob(ReconcilePaymentsJob::CAPTURING))->everyFiveMinutes()->withoutOverlapping()->name('payments:reconcile-capturing');
