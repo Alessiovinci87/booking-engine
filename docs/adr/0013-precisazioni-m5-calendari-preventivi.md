@@ -95,4 +95,4 @@ L'implementazione di M5 (import ed export iCal, conflitti, preventivi) ha incont
 
 ## Aggiornamento della specifica
 
-- [ ] 06-CALENDAR-SYNC e 08-SECURITY-OPERATIONS aggiornati con riferimento a questa ADR (alla chiusura di M5)
+- [x] 06-CALENDAR-SYNC, 07-API-CONTRACT e 08-SECURITY-OPERATIONS aggiornati con riferimento a questa ADR (alla chiusura di M5)

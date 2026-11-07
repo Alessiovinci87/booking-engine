@@ -1,6 +1,8 @@
 # 08 — Sicurezza e operatività
 
-Versione: 1.2 · Data: 06/11/2026 · Modifiche: ADR-0005, [CHANGELOG-v1.1](CHANGELOG-v1.1.md); 1.2: ADR-0008, ADR-0009
+Versione: 1.2 · Data: 06/11/2026 · Modifiche: ADR-0005, [CHANGELOG-v1.1](CHANGELOG-v1.1.md); 1.2: ADR-0008, ADR-0009; 1.3: ADR-0013 (SSRF: solo porta 443, nomi riservati, tutti gli indirizzi risolti pubblici, reti bloccate aggiuntive, `CURLOPT_RESOLVE`; token dei feed e dei preventivi cercati per hash con funzioni SECURITY DEFINER)
+
+> Le precisazioni di sicurezza di [ADR-0013](adr/0013-precisazioni-m5-calendari-preventivi.md) (punti 1–6, 24, 36) valgono come parte di questo documento.
 
 ## Multi-tenancy: due livelli
 
