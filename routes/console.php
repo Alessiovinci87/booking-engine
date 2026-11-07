@@ -1,5 +1,6 @@
 <?php
 
+use App\Domain\Calendar\Jobs\DispatchCalendarSyncJob;
 use App\Domain\Payments\Jobs\DispatchPaymentReconciliationJob;
 use App\Domain\Payments\Jobs\ReconcilePaymentsJob;
 use App\Domain\Reservations\Jobs\DispatchOccupancyReleaseJob;
@@ -22,3 +23,7 @@ Schedule::job(new DispatchOccupancyReleaseJob)->everyMinute()->withoutOverlappin
 // ogni 5 minuti. Dispatcher con app_admin_ops, un job per tenant con app_runtime.
 Schedule::job(new DispatchPaymentReconciliationJob(ReconcilePaymentsJob::FULL))->everyFifteenMinutes()->withoutOverlapping()->name('payments:reconcile');
 Schedule::job(new DispatchPaymentReconciliationJob(ReconcilePaymentsJob::CAPTURING))->everyFiveMinutes()->withoutOverlapping()->name('payments:reconcile-capturing');
+
+// Sincronizzazione dei calendari importati (06 "Polling"): dispatcher ogni minuto sui calendari con
+// next_poll_at scaduto, un job per calendario.
+Schedule::job(new DispatchCalendarSyncJob)->everyMinute()->withoutOverlapping()->name('calendars:sync');

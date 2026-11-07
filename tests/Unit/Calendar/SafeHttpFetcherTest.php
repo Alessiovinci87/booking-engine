@@ -2,8 +2,6 @@
 
 use App\Domain\Calendar\Http\FetchError;
 use App\Domain\Calendar\Http\FetchFailed;
-use App\Domain\Calendar\Http\HostResolver;
-use App\Domain\Calendar\Http\HttpTransport;
 use App\Domain\Calendar\Http\IpPolicy;
 use App\Domain\Calendar\Http\RawResponse;
 use App\Domain\Calendar\SafeHttpFetcher;
@@ -13,38 +11,6 @@ use App\Domain\Calendar\SafeHttpFetcher;
  * DNS risolto da noi e connessione all'IP validato, reti private e riservate bloccate, redirect
  * rivalidati (massimo 3), limiti di dimensione e tempo, solo header condizionali. DNS e trasporto finti.
  */
-
-final class FakeResolver implements HostResolver
-{
-    /** @param array<string, list<string>> $map */
-    public function __construct(public array $map = []) {}
-
-    public function resolve(string $host): array
-    {
-        return $this->map[$host] ?? [];
-    }
-}
-
-final class FakeTransport implements HttpTransport
-{
-    /** @var list<array{url: string, host: string, ip: string, headers: array<string, string>, max: int, timeout: int}> */
-    public array $calls = [];
-
-    /** @param array<string, RawResponse|FetchFailed> $responses per URL */
-    public function __construct(public array $responses = []) {}
-
-    public function get(string $url, string $host, int $port, string $ip, array $headers, int $maxBytes, int $timeoutSeconds): RawResponse
-    {
-        $this->calls[] = ['url' => $url, 'host' => $host, 'ip' => $ip, 'headers' => $headers, 'max' => $maxBytes, 'timeout' => $timeoutSeconds];
-        $response = $this->responses[$url] ?? new RawResponse(404, [], '');
-
-        if ($response instanceof FetchFailed) {
-            throw $response;
-        }
-
-        return $response;
-    }
-}
 
 function fetcher(FakeResolver $resolver, FakeTransport $transport): SafeHttpFetcher
 {

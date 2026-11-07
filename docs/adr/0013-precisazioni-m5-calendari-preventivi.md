@@ -20,6 +20,17 @@ L'implementazione di M5 (import ed export iCal, conflitti, preventivi) ha incont
 5. **Codici d'errore** del download (`FetchError`), salvati in `SyncRun.error_code`: `INVALID_URL`, `SCHEME_NOT_ALLOWED`, `PORT_NOT_ALLOWED`, `DNS_FAILED`, `BLOCKED_ADDRESS`, `TOO_MANY_REDIRECTS`, `TOO_LARGE`, `TIMEOUT`, `CONNECTION_FAILED`, `TLS_ERROR`. L'URL non compare mai in eccezioni e log: può contenere il token privato dell'OTA.
 6. **Trasporto separato.** Le funzioni cURL stanno in `App\Domain\Calendar\Http\CurlTransport`, usato solo da `SafeHttpFetcher` e aggiunto all'elenco di `Arch/ExternalHttpTest`; DNS e trasporto sono interfacce sostituibili nei test.
 
+### Import iCal (5.2)
+
+7. **Conversione in notti.** Un evento a giornata intera (`VALUE=DATE`) si usa così com'è. Un evento con orario si porta nel fuso della struttura: il check-in è il giorno dell'inizio, il check-out il giorno della fine, più un giorno se la fine non cade esattamente a mezzanotte. Senza `DTEND` si usa `DURATION`, altrimenti un giorno. Un intervallo vuoto diventa una notte.
+8. **Eventi scartati.** Ricorrenti (`RRULE`, `RDATE`, `RECURRENCE-ID`), annullati (`STATUS:CANCELLED`), già conclusi e senza `DTSTART` valido non entrano; ricorrenti e invalidi sono contati in un avviso di log (`calendar.events_skipped`, solo ID). Più di 5000 `VEVENT` → errore `TOO_MANY_EVENTS`; ICS illeggibile → `INVALID_ICS`; HTTP diverso da 200/304 → `HTTP_{codice}`.
+9. **SUMMARY.** Si conservano in `summary_redacted` solo le etichette neutre note dei feed di export ("CLOSED - Not available", "Reserved", "Airbnb (Not available)", "Not available", "Blocked", ...); ogni altro testo può contenere un nome e non si salva. `DESCRIPTION` non si legge mai.
+10. **Salvaguardia anti-svuotamento.** Si confrontano gli eventi futuri non rimossi prima del giro con quelli della risposta. La regola del 50% vale da 2 eventi futuri in su: con un solo evento, la sua scomparsa è una cancellazione normale (altrimenti non si libererebbe mai). Una risposta `SUSPICIOUS` applica gli eventi nuovi e modificati (bloccano solo date in più), non rimuove nulla, azzera ETag e Last-Modified (il giro successivo riscarica tutto) e **non** aggiorna `last_success_at`: se resta sospetta, dopo 3 ore il calendario diventa `UNHEALTHY` e il gestore riceve l'email (06, "Salute"). Allerta di log `calendar.sync_suspicious`.
+11. **Backoff.** Dopo n errori consecutivi: min(10 · 2^(n−1), 60) minuti, con jitter ±90 s; un `Retry-After` più lungo prevale, fino a 6 ore. 304 conta come successo. Un errore non tocca gli eventi né conferma un'assenza.
+12. **Scheduler.** `DispatchCalendarSyncJob` ogni minuto (app_admin_ops, solo ID) accoda `SyncExternalCalendarJob` per i calendari non `DISABLED` con `next_poll_at` scaduto o nullo; il job è unico in coda per calendario e prende un lock di cache (Redis) `calendar-sync:{id}`.
+13. **Macchine a stati.** Gli stati di eventi e calendari importati cambiano solo in `ExternalEventStateMachine` e `ExternalCalendarStateMachine` (CLAUDE.md regola 5); l'audit registra date e stati, mai il SUMMARY.
+14. **Libreria.** `sabre/vobject` 4.5.9 (ADR-0006): la 4.5.0 genera avvisi di deprecazione con PHP 8.4.
+
 ## Alternative considerate
 
 | Alternativa | Perché scartata |
@@ -33,7 +44,7 @@ L'implementazione di M5 (import ed export iCal, conflitti, preventivi) ha incont
 
 ## Impatto sui test
 
-- Test aggiunti: `Unit/Calendar/SafeHttpFetcherTest`.
+- Test aggiunti: `Unit/Calendar/SafeHttpFetcherTest`, `Unit/Calendar/IcsParserTest`, `Feature/Calendar/IcalImportTest`, `SyncErrorKeepsDatesTest`, `AntiWipeSafeguardTest`.
 - Test modificati: `Arch/ExternalHttpTest` (eccezione per `CurlTransport`).
 
 ## Aggiornamento della specifica

@@ -15,6 +15,7 @@
         "laravel/sanctum": "^4.3",
         "laravel/tinker": "^3.0",
         "pragmarx/google2fa": "^9.1",
+        "sabre/vobject": "4.5.9",
         "stripe/stripe-php": "^22.1"
     },
     "require-dev": {
