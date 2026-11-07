@@ -138,6 +138,8 @@
         "terms_url": "Indirizzo delle condizioni (https)",
         "defaultPolicy": "Politica di cancellazione predefinita",
         "defaultPolicyHint": "Obbligatoria per pubblicare; ogni unità può sceglierne un'altra.",
+        "otaCommission": "Commissione OTA abituale (%)",
+        "otaCommissionHint": "Usata solo per stimare nelle metriche le commissioni evitate con le prenotazioni dirette.",
         "noPolicy": "Nessuna",
         "legalUrlHint": "Se aggiorni il documento, cambia anche il link (per esempio aggiungendo ?v=2): così agli ospiti verrà chiesto di accettare la nuova versione.",
         "approvalWindow": "Ore per approvare le richieste",
