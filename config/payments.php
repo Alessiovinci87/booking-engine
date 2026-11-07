@@ -5,12 +5,16 @@
  */
 return [
 
-    // Implementazione di App\Domain\Payments\Gateway\PaymentGateway: "stripe" (M4) oppure "fake".
+    // Implementazione di App\Domain\Payments\Gateway\PaymentGateway: "stripe" oppure "fake".
     // "fake" funziona solo con APP_ENV local o testing (checkout simulato per test e demo).
     'gateway' => env('PAYMENT_GATEWAY', 'stripe'),
 
     // Durata della sessione di checkout (05, passo 2: 30 minuti, minimo Stripe).
     'checkout_session_minutes' => 30,
+
+    // Margine aggiunto alla scadenza della sessione (ADR-0012): Stripe rifiuta expires_at a meno di 30
+    // minuti dalla creazione, che segue di qualche istante il passo 1 di 05.
+    'checkout_session_margin_seconds' => 120,
 
     // Scadenza provvisoria dell'occupazione prima della sessione (05, passo 1).
     'provisional_hold_minutes' => 45,

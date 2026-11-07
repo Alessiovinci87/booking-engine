@@ -78,8 +78,10 @@ final class FakeStripeHttp implements ClientInterface
             }
 
             $body = $route['body'] instanceof Closure ? ($route['body'])($request['params'], $request) : $route['body'];
+            $status = (int) ($body['_status'] ?? $route['status']);
+            unset($body['_status']);
 
-            return [json_encode($body, JSON_THROW_ON_ERROR), $route['status'], new CaseInsensitiveArray(['request-id' => 'req_test_'.count($this->requests)])];
+            return [json_encode($body, JSON_THROW_ON_ERROR), $status, new CaseInsensitiveArray(['request-id' => 'req_test_'.count($this->requests)])];
         }
 
         throw new RuntimeException("Richiesta Stripe non prevista nel test: {$method} {$path}");

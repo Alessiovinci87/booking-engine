@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 
 use Tests\TestCase;
 
@@ -21,3 +21,4 @@ require_once __DIR__.'/Support/auth.php';
 require_once __DIR__.'/Support/concurrency.php';
 require_once __DIR__.'/Support/booking.php';
 require_once __DIR__.'/Support/stripe.php';
+require_once __DIR__.'/Support/stripe_simulator.php';

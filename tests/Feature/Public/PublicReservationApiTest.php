@@ -53,7 +53,7 @@ it('avvia la prenotazione: AWAITING_PAYMENT, URL di checkout e token di accesso'
     expect($code)->toMatch('/^[A-Z0-9]{8}$/')
         ->and($token)->toMatch('/^[a-f0-9]{64}$/')
         ->and($response->json('checkout_url'))->toContain('/_simulated-checkout/cs_fake_')
-        ->and($response->json('checkout_expires_at'))->toBe('2027-06-01T10:30:00Z')
+        ->and($response->json('checkout_expires_at'))->toBe('2027-06-01T10:32:00Z')
         ->and($response->headers->getCookies())->toBe([]);
 
     $r = inTenant($this->fx['tenant'], fn () => Reservation::query()->with('guest')->where('code', $code)->firstOrFail());
