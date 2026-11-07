@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\V1\Admin\PricePreviewController;
 use App\Http\Controllers\Api\V1\Admin\PropertyController;
 use App\Http\Controllers\Api\V1\Admin\RatePlanController;
 use App\Http\Controllers\Api\V1\Admin\ReservationController;
+use App\Http\Controllers\Api\V1\Admin\StripeAccountController;
 use App\Http\Controllers\Api\V1\Admin\UnitController;
 use App\Http\Controllers\Api\V1\Admin\UnitPhotoController;
 use App\Http\Controllers\Api\V1\Public\PropertyController as PublicPropertyController;
@@ -62,6 +63,12 @@ Route::prefix('admin')->middleware(EnsureFrontendRequestsAreStateful::class)->gr
     // Chiamate al servizio di pagamento fuori transazione (05): il servizio apre i propri passi.
     Route::middleware(['auth:sanctum', 'panel.fresh', 'mfa', 'throttle:admin', 'idempotent', 'tenant:panel,steps'])->group(function (): void {
         Route::post('reservations/{reservation}/recovery-link', [ReservationController::class, 'recoveryLink'])->name('admin.reservations.recovery-link');
+    });
+
+    // Collegamento Stripe (4.1): letture e link di onboarding con chiamate a Stripe fuori transazione.
+    Route::middleware(['auth:sanctum', 'panel.fresh', 'mfa', 'throttle:admin', 'tenant:panel,steps'])->group(function (): void {
+        Route::get('stripe/account', [StripeAccountController::class, 'show'])->name('admin.stripe.account');
+        Route::post('stripe/onboarding-link', [StripeAccountController::class, 'onboardingLink'])->name('admin.stripe.onboarding-link');
     });
 
     Route::middleware(['auth:sanctum', 'panel.fresh', 'mfa', 'throttle:admin', 'tenant'])->group(function (): void {
