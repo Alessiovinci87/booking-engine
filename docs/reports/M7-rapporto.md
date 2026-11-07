@@ -19,7 +19,7 @@ Tutte le decisioni sono nell'**ADR-0018 (Proposta, punti 1–25)**. Nessun compo
 | 7.2 | Fatta | #63 (chiusa) | `f2f5996` | Conservazione dei dati con `RetentionService` e job notturno `retention:nightly` (02:30). Dettagli sotto la tabella. |
 | 7.3 | Non iniziata | #64 (aperta) | — | Dipende dal pilota. |
 | 7.4 | Fatta | #65 (chiusa) | `513b2f4` | Larastan a livello 8 su `app`, `bootstrap`, `database` e `routes`, senza baseline e senza errori ignorati. Dettagli sotto la tabella. |
-| 7.5 | Fatta | #75 | `COMMIT75` | Accesso di supporto in sola lettura. Dettagli sotto la tabella. |
+| 7.5 | Fatta | #75 (chiusa) | `bf5a216` | Accesso di supporto in sola lettura. Dettagli sotto la tabella. |
 
 **7.1 — uscita del cliente** (`OffboardingService`)
 - **Avvio**:
@@ -75,7 +75,7 @@ Documentazione:
 - `composer lint` (Pint) e `composer analyse` (Larastan **livello 8**, senza baseline): verdi.
 - `npm run typecheck` e `npm run build`: verdi.
 - E2E `npx playwright test m2-panel m3-guest m5-quote m6-acceptance m6-password`: **10 verdi**.
-- CI: verde su `97e2d66`, `f2f5996` e `513b2f4`; CI75.
+- CI: verde su `97e2d66`, `f2f5996` e `513b2f4`; verde su `bf5a216` (https://github.com/Alessiovinci87/booking-engine/actions/runs/42394339971).
 
 | Criterio | Test |
 |---|---|
